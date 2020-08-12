@@ -1,5 +1,5 @@
 
-# __To Run The APP Enter <span style="color:red">"*python main.py*"</span> in your Console__
+# __To Run The APP Enter <span style="color:red">*python main.py*</span> in your Console__
 
 ## FVS-GIT-CLONE
 
