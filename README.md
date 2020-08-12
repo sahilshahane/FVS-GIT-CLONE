@@ -9,4 +9,4 @@
 
 
 ## Misc
-#### * it can compress commit data at almost 60-80% compression Ratio
+* it can compress commit data at almost 60-80% compression Ratio
