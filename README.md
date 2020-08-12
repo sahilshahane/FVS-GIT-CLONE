@@ -1,3 +1,5 @@
+# __To Run The APP Enter "python main.py" in your Console__
+
 ## FVS-GIT-CLONE
 
 * it can has File Change Detection System
