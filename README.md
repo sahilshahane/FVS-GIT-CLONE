@@ -3,7 +3,7 @@
 
 ## FVS-GIT-CLONE
 
-* it can has File Change Detection System
+* it has File Change Detection System
 * it can save logs
 * it can cache data
 * it can save 300k+ lines of data in less than 3-5 secs __[Depends on your System Speed]__
