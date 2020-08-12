@@ -4,7 +4,7 @@
 * it can save logs
 * it can cache data
 * it can save 300k+ lines of data in less than 3 secs
-* new Features will be implemented in future updates [cant wait for that ;)]
+* __new Features will be implemented in future updates [cant wait for that ;)]__
 * GUI and Drive Integration will be added in v3.x
 
 
