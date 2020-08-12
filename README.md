@@ -3,9 +3,9 @@
 * it can has File Change Detection System
 * it can save logs
 * it can cache data
-* it can save 300k+ lines of data in less than 3 secs
+* it can save 300k+ lines of data in less than 3-5 secs __[Depends on your System Speed]__
 * __new Features will be implemented in future updates [cant wait for that ;)]__
-* GUI and Drive Integration will be added in v3.x
+* __GUI and Drive Integration will be added in v3.x__
 
 
 ## Misc
