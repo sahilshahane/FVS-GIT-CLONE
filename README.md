@@ -13,3 +13,4 @@
 
 ## Misc
 * It can compress commit data at almost 60-80% compression Ratio
+* It only Detects Files, Ignores Empty Folder
