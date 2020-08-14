@@ -12,9 +12,6 @@ class detectChange():
         self.generatedFilePath = generatedFileInfo["absolutePath"]
         self.changeDetected = self.detectChange(self.generatedFilePath,self.previousFilePath)
 
-        if(self.changeDetected==True):
-            self.getDetectedChange()
-
     def detectChange(self,generatedFilePath,previousFilePath):
 
         G_DATA_HASH = generateFileHash(generatedFilePath,"xxh3_64")
@@ -26,12 +23,7 @@ class detectChange():
         return True
 
     def getDetectedChange(self):
-        start = time.time()
-
-        newFiles = dict()
-        deletedFiles = dict()
-        modifiedFiles = dict()
-
+        # start = time.time()
         with open(self.generatedFilePath,"r") as FILE:
             newData = json.load(FILE)
 
@@ -41,20 +33,21 @@ class detectChange():
         genFiles = set(newData.keys())
         prevFiles = set(prevData.keys())
 
-        NEW_FILES = list(genFiles.symmetric_difference(prevFiles))
-        DELETED_FILES = list(prevFiles.difference(genFiles))
+        NEW_FILES = genFiles.difference(prevFiles)
+        DELETED_FILES = prevFiles.difference(genFiles)
+        # cFfilter means common File Filter 
+        cFfilter = set(newData.keys()) - (NEW_FILES | DELETED_FILES) # NEW_FILES | DELETED_FILES means two sets are combined
 
-        print(NEW_FILES)
-        print(DELETED_FILES)
+        MODIFIED_FILES = [cKey for cKey in cFfilter if(prevData[cKey] not in newData[cKey])] #cKey = Common Key/File
 
-        for (nkey,pkey) in newData.keys(),prevData.keys():
-            pass
+        # end = time.time()
+        # print("it took - "+str(end-start))
 
-
-
-        end = time.time()
-
-        print("it took - "+str(end-start))
+        return {
+            "NEW_FILES":NEW_FILES,
+            "DELETED_FILES":DELETED_FILES,
+            "MODIFIED_FILES":MODIFIED_FILES
+        }
 
         
         

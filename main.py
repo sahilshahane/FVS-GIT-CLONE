@@ -7,6 +7,7 @@ from decompressFile import decompress
 from HashGen import generateHash,generateFileHash 
 from mdLog import initLog
 from detectChange import detectChange
+from termcolor
 
 # YOU CAN CALCULATE THESE HASHES FOR FILE CHECKING DEFAULT HASH IS "XXH3_64"
 # [blake2b, blake2s, md5,
@@ -25,7 +26,7 @@ class App():
     decomMDFileReport = None
     comMDFileReport = None
     decomMDFileReport = None
-    DEFAULT_REPOSITORY = "TestSmall" # THE '.' REPRESENTS CURRENT REPOSITORY
+    DEFAULT_REPOSITORY = "./TestSmall" # THE '.' REPRESENTS CURRENT REPOSITORY
     LOG = None
 
     def __init__(self,args):
@@ -58,7 +59,7 @@ class App():
             repositoryDirectory = repositoryFile.readline()
             repositoryFile.close()
             if(repositoryDirectory==self.DEFAULT_REPOSITORY or os.path.exists(repositoryDirectory)):
-                print("An Existing Repository Exists!.")
+                # print("An Existing Repository Exists!")
                 self.repositoryDirectory = repositoryDirectory
                 return True
 
@@ -84,15 +85,32 @@ class App():
             self.LOG.commit(self.metaDataFileInformation)
         else:
             previousFileInfo = self.LOG.getFileInfo(previousLogFileInfo)
-
-            if(detectChange(self.metaDataFileInformation,previousFileInfo).changeDetected==True):
+            changesObj = detectChange(self.metaDataFileInformation,previousFileInfo)
+            if(changesObj.changeDetected==True):
+                changes = changesObj.getDetectedChange()
                 self.LOG.commit(self.metaDataFileInformation)
-                print("Changes Detected. Saving Commit...")
+                if(changes["NEW_FILES"]):
+                    print("\nnew files :")
+                    for filePath in changes["NEW_FILES"]:
+                        print(f"\t{filePath}")
+
+                if(changes["DELETED_FILES"]):
+                    print("deleted files :")
+                    for filePath in changes["DELETED_FILES"]:
+                        print(f"\t{filePath}")
+                
+                if(changes["MODIFIED_FILES"]):
+                    print("modified files :")
+                    for filePath in changes["MODIFIED_FILES"]:
+                        print(f"\t{filePath}")
+                
+
+                print("\nChanges Detected. Saving Commit...")
             else:
                 print("No Change Detected! Aborting Commit Changes...")
                 self.deleteFile(self.metaDataFileInformation["absolutePath"])
                 return False
-
+        
         return True
 
 

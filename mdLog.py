@@ -42,10 +42,8 @@ class initLog():
     def getPreviousCommitInfo(self):
         if(self.totalCommits==0):
             return None
-        elif(self.totalCommits==1):
-            return self.commitFile["latest"]
-        else:  
-            return self.commitFile["previousCommits"][str(self.totalCommits-1)]
+ 
+        return self.commitFile["latest"]
 
         
     def getFileInfo(self,logFile):
@@ -57,7 +55,6 @@ class initLog():
         latestCommitLoc = self.folderDirectory+fileInfo["fileName"]+self.fileExtension
 
         with open(latestCommitLoc,"w") as logFile:
-            fileInfo.update()   
             logFile.write(json.dumps(fileInfo))
 
         if(self.commitFile["latest"]!=None):
