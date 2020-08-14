@@ -8,7 +8,7 @@ from HashGen import generateHash,generateFileHash
 from mdLog import initLog
 from detectChange import detectChange
 
-# YOU CAN CALCULATE THESE HASHES FOR FILE CHECKING DEFAULT HASH IS 'MD5'
+# YOU CAN CALCULATE THESE HASHES FOR FILE CHECKING DEFAULT HASH IS "XXH3_64"
 # [blake2b, blake2s, md5,
 # sha1, sha224, sha256,
 # sha384, sha3_224, sha3_256,
@@ -25,7 +25,7 @@ class App():
     decomMDFileReport = None
     comMDFileReport = None
     decomMDFileReport = None
-    DEFAULT_REPOSITORY = "./Testing" # THE '.' REPRESENTS CURRENT REPOSITORY
+    DEFAULT_REPOSITORY = "TestSmall" # THE '.' REPRESENTS CURRENT REPOSITORY
     LOG = None
 
     def __init__(self,args):

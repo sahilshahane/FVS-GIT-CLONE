@@ -38,29 +38,49 @@ class generateMetaData():
             # print("Cache Folder Does not Exist")
 
         self.FILE = open(self.fileDirectory+self.fileName,"w")
+        # self.FILE.write("{")
        
     def gatherFileData(self):
         print("Saving Cache Data...")
+
+        DATA = dict()
+
         for currentDir,folders,files in os.walk(self.repositoryDirectory):
-            if(".usp" in currentDir):
-                continue
-            
+
+            # if(".usp" in currentDir or "__pycache__" in currentDir or "./.git" in currentDir):
+            #     continue
+          
             for fileName in files:
+                if(".py" in fileName):
+                    break
                 path = os.path.join(currentDir, fileName)
+                
+                # UNCOMMENT THIS ONLY IF YOU WANT TO ADD MORE THAN 1 FILE PROPERTY DATA
+                # fileData = {
+                #     "lm":os.path.getmtime(path)
+                # }
+                # fileData = os.path.getmtime(path)
+                # if(self.allFolders.intersection([currentDir])):
+                #     filesDict = folderData[currentDir]
+                #     filesDict[fileName] = fileData
+                #     folderData[currentDir] = filesDict
+                # else:
+                #     folderData[currentDir] = {fileName:fileData} 
 
-                fileData = fileName+","+currentDir+","+str(os.path.getsize(path))+","+str(os.path.getatime(path))+","+str(os.path.getmtime(path))+","+str(os.path.getctime(path))+"\n"
 
-                self.FILE.write(fileData)
+                # METHOD 2
+                DATA[path] = generateFileHash(path,"xxh3_64")
+
                 self.allFolders.add(currentDir)
                 self.totalFiles+=1
 
+
+        json.dump(DATA,self.FILE,indent=2)
+        
         self.FILE.close()
         self.absolutePath = self.fileDirectory+self.fileName
-    # def ignoreFunc(self):
-    #     if len(set(file["fileDirectory"].split("/")).intersection(self.ignoreFolder))>0:
-    #         return True
-    #     return False
-    
+
+
     def getInformation(self):
         return {
             "fileDirectory":self.fileDirectory,
