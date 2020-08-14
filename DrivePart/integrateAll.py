@@ -2,7 +2,7 @@ import authenticate
 import upload
 import os
 
-# This contains "folder name" : "its id"
+# This contains "folder path" : "its id"
 folderIdDictionary = {}
 fileIdDictionary = {}
 
@@ -15,17 +15,18 @@ class UploadItBoi():
   def generateIDmeta(self, folderPath, parentId="", FIRSTTIME=False):
     global folderIdDictionary
     folderName = os.path.basename(folderPath)
-    folderId = upload.createFolder(folderName, parentId)
+    parentPath = os.path.dirname(folderPath)
+    # parentFolderName = (os.path.dirname(folderPath)).split("/")[-1]   #This gives the parent folder name
 
     if FIRSTTIME:
-      parentFolderName = (os.path.dirname(folderPath)).split("/")[-1]   #This gives the parent folder name
       for key in folderIdDictionary:
-        if key == parentFolderName:
+        if key == parentPath:
           parentId = folderIdDictionary[key]
         else:
-          parentId=""                                               # This should happen only fo rthe root level folders
-
-    folderIdDictionary.__setitem__(folderName, folderId)
+          parentId = ""
+    
+    folderId = upload.createFolder(folderName, parentId)
+    folderIdDictionary.__setitem__(folderPath, folderId)
     print(f"Uploaded -> {folderName} folderId -> {folderId} ParentId -> {folderId}")
     folderCount += 1
 
@@ -33,36 +34,38 @@ class UploadItBoi():
     global folderIdDictionary
     global fileIdDictionary
     fileName = os.path.basename(filePath)
-    parentFolderName = (os.path.dirname(filePath)).split("/")[-1]
-    fileId = upload.uploadFile(filePath, parentId)
+    parentPath = os.path.dirname(filePath)
+    # parentFolderName = (os.path.dirname(filePath)).split("/")[-1]
 
     for key in folderIdDictionary:
-      if key == parentFolderName:
+      if key == parentPath:
         parentId = folderIdDictionary[key]
       else:
         parentId="" 
 
+    fileId = upload.uploadFile(filePath, parentId)
     fileIdDictionary.__setitem__(fileName, fileId)
-    
-    print(f"Uploaded -> {os.path.basename(filePath)} Fileid -> {fileId} ParentId -> {parentId}")
+    print(f"Uploaded -> {fileName} Fileid -> {fileId} ParentId -> {parentId}")
     fileCount += 1
 
   def readFolderId(self):
-    print("")
+    with open("folderNameId.txt", "r") as f:
+      s = (f.readline()).split("<!@#$%>")
 
+      folderIdDictionary.__setitem__(s[0], s[1][:-1])         # This [-1] is to remove the last "\n"
+
+  #This wont be necessary in future version
   def createMetaFiles(self):
     global fileIdDictionary
     global folderIdDictionary
 
     with open("fileNameId.txt", "w") as f:
       for key in fileIdDictionary:
-        f.write(f"{key}<--->{folderIdDictionary}\n")
+        f.write(f"{key}<!@#$%>{folderIdDictionary}\n")
 
     with open("folderNameId.txt", "w") as f:
       for key in folderIdDictionary:
-        f.write(f"{key}<-->{folderIdDictionary[key]}")
+        f.write(f"{key}<!@#$%>{folderIdDictionary[key]}")
   
 uplo = UploadItBoi()
-
-
 
