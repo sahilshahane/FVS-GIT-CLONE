@@ -31,9 +31,9 @@ class App():
     LOG = None
 
     def __init__(self,args):
-        # args.add_argument('-init',type=str, help="it initializes the current directory with USP")
-        # args.add_argument('-commit',type=str, help="it initializes the current directory with USP")
-        # self.args = args.parse_args()
+        args.add_argument('-init',type=str, help="it initializes the current directory with USP")
+        args.add_argument('-commit',type=str, help="it initializes the current directory with USP")
+        self.args = args.parse_args()
 
         self.initRepository() # AUTOMATICALLY CHECKS EXISTING REPOSITORY AND INITIALIZES IT REPOSITORY [In our Case Testing Folder is our Repository]
         
@@ -53,7 +53,7 @@ class App():
             repositoryDirectory = repositoryFile.readline()
             repositoryFile.close()
             if(repositoryDirectory==self.DEFAULT_REPOSITORY or os.path.exists(repositoryDirectory)):
-                print("An Existing Repository Exists!")
+                print(f"{Fore.CYAN}An Existing Repository Exists!{Style.RESET_ALL}")
                 self.repositoryDirectory = repositoryDirectory
                 return True
 
@@ -61,7 +61,7 @@ class App():
 
     def initRepository(self):
         if(self.checkRepository()==False):
-            print("Initializing New Repository...")
+            print(f"{Fore.CYAN}Initializing New Repository...{Style.RESET_ALL}")
             try: os.mkdir(self.uspFolder)
             except Exception as e: pass
             self.repositoryDirectory = self.DEFAULT_REPOSITORY if self.args.init==None else self.args.init
