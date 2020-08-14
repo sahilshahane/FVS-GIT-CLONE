@@ -1,13 +1,14 @@
 import argparse
 import os
+from colorama import Fore
+from colorama import Style
 
 from generateData import generateMetaData
 from compressFile import compress
 from decompressFile import decompress
-from HashGen import generateHash,generateFileHash 
+from HashGen import generateHash,generateFileHash
 from mdLog import initLog
 from detectChange import detectChange
-from termcolor
 
 # YOU CAN CALCULATE THESE HASHES FOR FILE CHECKING DEFAULT HASH IS "XXH3_64"
 # [blake2b, blake2s, md5,
@@ -30,11 +31,9 @@ class App():
     LOG = None
 
     def __init__(self,args):
-        args.add_argument('-init',type=str, help="it initializes the current directory with USP")
-        args.add_argument('-commit',type=str, help="it initializes the current directory with USP")
-        self.args = args.parse_args()
-
-        self.beforeStart()
+        # args.add_argument('-init',type=str, help="it initializes the current directory with USP")
+        # args.add_argument('-commit',type=str, help="it initializes the current directory with USP")
+        # self.args = args.parse_args()
 
         self.initRepository() # AUTOMATICALLY CHECKS EXISTING REPOSITORY AND INITIALIZES IT REPOSITORY [In our Case Testing Folder is our Repository]
         
@@ -45,11 +44,6 @@ class App():
         if(self.tryToDetectChange()==True):
             self.compressData()
 
-
-
-    def beforeStart(self):
-        pass
-
     def checkRepository(self):
         location = self.uspFolder+"repository.dat"
 
@@ -59,7 +53,7 @@ class App():
             repositoryDirectory = repositoryFile.readline()
             repositoryFile.close()
             if(repositoryDirectory==self.DEFAULT_REPOSITORY or os.path.exists(repositoryDirectory)):
-                # print("An Existing Repository Exists!")
+                print("An Existing Repository Exists!")
                 self.repositoryDirectory = repositoryDirectory
                 return True
 
@@ -92,22 +86,22 @@ class App():
                 if(changes["NEW_FILES"]):
                     print("\nnew files :")
                     for filePath in changes["NEW_FILES"]:
-                        print(f"\t{filePath}")
+                        print(f"{Fore.GREEN}\t{filePath}{Style.RESET_ALL}")
 
                 if(changes["DELETED_FILES"]):
                     print("deleted files :")
                     for filePath in changes["DELETED_FILES"]:
-                        print(f"\t{filePath}")
+                        print(f"{Fore.LIGHTRED_EX}\t{filePath}{Style.RESET_ALL}")
                 
                 if(changes["MODIFIED_FILES"]):
                     print("modified files :")
                     for filePath in changes["MODIFIED_FILES"]:
-                        print(f"\t{filePath}")
+                        print(f"{Fore.YELLOW}\t{filePath}{Style.RESET_ALL}")
                 
 
-                print("\nChanges Detected. Saving Commit...")
+                print(f"\n{Fore.CYAN}Saving Commit...{Style.RESET_ALL}")
             else:
-                print("No Change Detected! Aborting Commit Changes...")
+                print(f"{Fore.RED}No Change Detected! Aborting Commit Changes...{Style.RESET_ALL}")
                 self.deleteFile(self.metaDataFileInformation["absolutePath"])
                 return False
         

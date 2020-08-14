@@ -41,7 +41,7 @@ class generateMetaData():
         # self.FILE.write("{")
        
     def gatherFileData(self):
-        print("Saving Cache Data...")
+        # print("Saving Cache Data...")
 
         DATA = dict()
 
