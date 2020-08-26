@@ -4,6 +4,8 @@ import json
 from compressFile import compress
 from decompressFile import decompress
 from HashGen import generateHash,generateFileHash
+from colorama import Fore
+from colorama import Style
 
 class generateMetaData():
     repositoryDirectory = None
@@ -19,17 +21,28 @@ class generateMetaData():
     fileDirectory = None
     absolutePath = None
 
-    def __init__(self,repositoryDirectory,uspFolder="./.usp/",cacheFolder=".cache/",ignore=[]):
+    def __init__(self,repositoryDirectory,uspFolder=".usp/",cacheFolder=".cache/",ignore=[]):
 
-        self.repositoryDirectory = repositoryDirectory.replace("./","")
-        self.fileDirectory = uspFolder + cacheFolder
+        self.repositoryDirectory = repositoryDirectory
+        self.uspFolder = repositoryDirectory+uspFolder
+        self.fileDirectory = self.uspFolder + cacheFolder
         self.ignore = ignore
-        self.uspFolder = uspFolder
         self.cacheFolder = cacheFolder + "" if cacheFolder[::-len(cacheFolder)]=="/" else "/"
         self.createMDFile()
+
+        # DEFAULT IGNORES
+        ignore += [uspFolder,self.repositoryDirectory+"__pycache__",self.repositoryDirectory+".uspignore"]
+
+        self.initIgnore(ignore)
         self.gatherFileData()
         self.totalFolders = len(self.allFolders)
         
+    def initIgnore(self,ignore):
+        self.ignore = ignore
+        if (os.path.exists(self.repositoryDirectory+".uspignore")):
+            with open(self.repositoryDirectory+".uspignore",'r') as FILE:
+                self.ignore += [line.replace("\n","") for line in FILE.readlines()]
+
 
     def createMDFile(self):
         self.fileName = str(int(time.time()))+".mdfile"
@@ -42,40 +55,64 @@ class generateMetaData():
        
     def gatherFileData(self):
         # print("Saving Cache Data...")
-
         DATA = dict()
-
         for currentDir,folders,files in os.walk(self.repositoryDirectory):
 
-            # if(".usp" in currentDir or "__pycache__" in currentDir or "./.git" in currentDir):
-            #     continue
-          
+            if("./.usp" in currentDir) or ("./__pycache__" in currentDir) or ("./.uspignore" in currentDir):
+                continue
+            
             for fileName in files:
-                if(".py" in fileName):
-                    break
                 path = os.path.join(currentDir, fileName)
+                # ADD DATA
                 
-                # UNCOMMENT THIS ONLY IF YOU WANT TO ADD MORE THAN 1 FILE PROPERTY DATA
-                # fileData = {
-                #     "lm":os.path.getmtime(path)
+                # DATA[path] = {
+                #     "fileName" : fileName,
+                #     "hash": generateFileHash(path,"xxh3_64"),
+                #     "directory":currentDir,
                 # }
-                # fileData = os.path.getmtime(path)
-                # if(self.allFolders.intersection([currentDir])):
-                #     filesDict = folderData[currentDir]
-                #     filesDict[fileName] = fileData
-                #     folderData[currentDir] = filesDict
-                # else:
-                #     folderData[currentDir] = {fileName:fileData} 
 
-
-                # METHOD 2
                 DATA[path] = generateFileHash(path,"xxh3_64")
 
                 self.allFolders.add(currentDir)
                 self.totalFiles+=1
 
+        DATA.pop("./.uspignore")
+        self.totalFiles-=1
 
-        json.dump(DATA,self.FILE,indent=2)
+        def ignoreFunc(folderDirectory,fileDirectory):
+            for ignore in self.ignore:
+                if("*/*" in ignore):       
+                    ignoreExtention = ignore[ignore.rindex("*/*")+3:]
+                    ignoreDirectory = ignore[:ignore.rindex("*/*")]
+                    fileExtension = fileDirectory[absPath.rindex("/"):]
+                    if("." not in fileExtension):
+                        fileExtension = ""
+                    else:
+                        fileExtension = fileExtension[fileExtension.rindex("."):]
+                    
+                    if(folderDirectory==ignoreDirectory and fileExtension==ignoreExtention):
+                        return True
+
+                elif(folderDirectory == ignore) or (fileDirectory == ignore):
+                    return True
+            return False
+            
+
+        try:
+            FILTER_DATA = dict()
+            for absPath,fileHash in DATA.items():
+                ignoreFile = False
+                folderDirectory = absPath[:absPath.rindex("/")+1]
+                if(ignoreFunc(folderDirectory,absPath)):
+                    # print(f"{Fore.CYAN}Ignoring : {Fore.YELLOW}{absPath}{Style.RESET_ALL}")
+                    continue
+
+                FILTER_DATA[absPath] = fileHash
+
+        except Exception as exp:
+            print(f"{Fore.RED}Something Went Wrong while Ignoring files, Please check syntax correctly\n{exp}{Style.RESET_ALL}")
+
+        json.dump(FILTER_DATA,self.FILE,indent=2)
         
         self.FILE.close()
         self.absolutePath = self.fileDirectory+self.fileName

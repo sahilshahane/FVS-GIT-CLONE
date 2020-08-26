@@ -20,14 +20,14 @@ from detectChange import detectChange
 class App():
     log = None
     repositoryDirectory = None
-    uspFolder = "./.usp/"
+    REPOSITORY = "./" # THE '.' REPRESENTS CURRENT REPOSITORY
+    uspFolder = REPOSITORY+".usp/"
     args = None
     metaDataFileInformation = None
     comMDFile = None
     decomMDFileReport = None
     comMDFileReport = None
     decomMDFileReport = None
-    DEFAULT_REPOSITORY = "./TestSmall" # THE '.' REPRESENTS CURRENT REPOSITORY
     LOG = None
 
     def __init__(self,args):
@@ -52,7 +52,7 @@ class App():
             repositoryFile = open(location,'r')
             repositoryDirectory = repositoryFile.readline()
             repositoryFile.close()
-            if(repositoryDirectory==self.DEFAULT_REPOSITORY or os.path.exists(repositoryDirectory)):
+            if(repositoryDirectory==self.REPOSITORY or os.path.exists(repositoryDirectory)):
                 print(f"{Fore.CYAN}An Existing Repository Exists!{Style.RESET_ALL}")
                 self.repositoryDirectory = repositoryDirectory
                 return True
@@ -64,7 +64,7 @@ class App():
             print(f"{Fore.CYAN}Initializing New Repository...{Style.RESET_ALL}")
             try: os.mkdir(self.uspFolder)
             except Exception as e: pass
-            self.repositoryDirectory = self.DEFAULT_REPOSITORY if self.args.init==None else self.args.init
+            self.repositoryDirectory = self.REPOSITORY if self.args.init==None else self.args.init
             repositoryFile = open(self.uspFolder+"/repository.dat",'w')
             repositoryFile.write(self.repositoryDirectory)
             repositoryFile.close()
@@ -84,17 +84,17 @@ class App():
                 changes = changesObj.getDetectedChange()
                 self.LOG.commit(self.metaDataFileInformation)
                 if(changes["NEW_FILES"]):
-                    print("\nnew files :")
+                    print(f"\n{Fore.CYAN}new files :{Style.RESET_ALL}")
                     for filePath in changes["NEW_FILES"]:
                         print(f"{Fore.GREEN}\t{filePath}{Style.RESET_ALL}")
 
                 if(changes["DELETED_FILES"]):
-                    print("deleted files :")
+                    print(f"{Fore.CYAN}deleted files :{Style.RESET_ALL}")
                     for filePath in changes["DELETED_FILES"]:
                         print(f"{Fore.LIGHTRED_EX}\t{filePath}{Style.RESET_ALL}")
                 
                 if(changes["MODIFIED_FILES"]):
-                    print("modified files :")
+                    print(f"{Fore.CYAN}modified files :{Style.RESET_ALL}")
                     for filePath in changes["MODIFIED_FILES"]:
                         print(f"{Fore.YELLOW}\t{filePath}{Style.RESET_ALL}")
                 
