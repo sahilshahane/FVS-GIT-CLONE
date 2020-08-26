@@ -6,7 +6,6 @@
 * It has File Change Detection System
 * It can save logs
 * It can cache data
-* It can save 300k+ lines of data in less than 3-5 secs __[Depends on your System Speed]__
 * __New Features will be implemented in future updates [cant wait for that ;)]__
 * __GUI and Drive Integration will be added in v3.x__
 * We are gonna sell your data to Facebook :)
