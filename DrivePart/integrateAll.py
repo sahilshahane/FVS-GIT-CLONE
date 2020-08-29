@@ -27,6 +27,7 @@ class UploadItBoi():
     folderId = upload.createFolder(folderName, parentId)
     folderIdDictionary.__setitem__(folderPath, folderId)
     print(f"Uploaded -> {folderName} folderId -> {folderId} ParentId -> {folderId}")
+    return folderId
 
 # To upload the files (NOT THE FIRST TIME)
   def putFiles(self, filePath, parentId=""):
