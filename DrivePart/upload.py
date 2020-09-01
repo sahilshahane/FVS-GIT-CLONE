@@ -1,35 +1,85 @@
-from __future__ import print_function
-import authenticate   
-import pickle
+import authenticate
 import os
-import os.path
-from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.http import MediaFileUpload
 
-service = authenticate.get_gdrive_service()
-folder_id = ""
+def search(searchData,mimeType,spaces="drive", service=authenticate.get_gdrive_service()):
+  page_token = None
+  
+  while True:
+      response = service.files().list(q=f"name='{searchData}' and mimeType='{mimeType}'",
+                                      spaces=spaces,
+                                      fields='nextPageToken, files(id, name)',
+                                      pageToken=page_token).execute()
+      
+      files = response.get('files', [])
+      
+      for file in files:
+          if searchData==file.get('name'):
+            # print(f'Found file: %s (%s)' % (file.get('name'), file.get('id')))
+            return file
 
-def createFolder(folderName, parentId=""):
-  global folder_id
+      page_token = response.get('nextPageToken', None)
+      if page_token is None: return None
+  
 
-  folder_metadata = {
-    "name": folderName,
-    "mimeType": "application/vnd.google-apps.folder",       #If the user wants to upload gsuit files(docs, spreadsheet etc) then there is another mimeType for that https://developers.google.com/drive/api/v3/manage-uploads#multipart
-    "parents": [parentId],                                  # If the parents is left empty then the files will be added to your MyDrive and not inside any other folder
-  }                                                         # In the first case the parent can be empty in order to add the main folder in "MyDrive"
 
-  file = service.files().create(body=folder_metadata, fields="id").execute()
-  folder_id = file.get("id")
+def createFolder(folderName, parentID="My Drive", service=authenticate.get_gdrive_service()):
+  try:
+    data = search(searchData=folderName,mimeType = 'application/vnd.google-apps.folder',service=service)
 
-  print(f"Folder {folderName} Created ----------------- Folder Id -> {folder_id}")
+    if data:
+      parentFolder = getParentFolder(data["id"])
+      if(parentID==parentFolder["id"]):
+        # print("Folder Already Exists")
+        return {
+          "code":409,  #409 means file already Exists
+          "data":{
+            "folder":data,
+            "parentFolder":parentFolder
+          }
+        }
+      
+    folder_metadata = {
+      "name": folderName,
+      "mimeType": "application/vnd.google-apps.folder",       #If the user wants to upload gsuit files(docs, spreadsheet etc) then there is another mimeType for that https://developers.google.com/drive/api/v3/manage-uploads#multipart
+    }                                                         # In the first case the parent can be empty in order to add the main folder in "MyDrive"
 
-  return folder_id
+    if parentID: folder_metadata["parents"] = [parentID]
 
+    file = service.files().create(body=folder_metadata, fields="id").execute()
+    folderID = file.get("id")
+
+    # print(f"Folder {folderName} Created ----------------- Folder Id -> {folder_id}")
+    parentFolder = getParentFolder(data["id"])
+    if(parentID==parentFolder["id"]):
+      return {
+      "code":200,
+      "data":{
+        "folder":{
+          "id":folderID,
+          "name":folderName
+        },
+        "parentFolder": parentFolder
+      }
+    }
+  except Exception as exp:
+    print("Something Went Wrong\n",exp)
+    
+
+
+def getParentFolder(id):
+  folderID = None
+  folderName = None
+
+  return {
+    "id":folderID,
+    "name":folderName
+  }
 
 # Here fileName is optional as it may be helpful when calling the function
-def uploadFile(filePath, parentId, fileName = ""):
+def uploadFile(filePath, parentId, mimeType, fileName = "", service=authenticate.get_gdrive_service()):
   
   try:
     if fileName == "":
@@ -45,6 +95,7 @@ def uploadFile(filePath, parentId, fileName = ""):
     file_metadata = {
       "name": fileName,
       "parents": [parentId],
+      "mimeType": mimeType
     }
 
     media = MediaFileUpload(filePath, resumable=True)
@@ -57,10 +108,9 @@ def uploadFile(filePath, parentId, fileName = ""):
   
   return file_id
 
- 
-
-# createFolder("TheFinalTest", "")
+  
 # uploadFile("/home/uttkarsh/Downloads/Indian_YT_Analysis.ipynb", folder_id)
 
 
 # FOR ANY REFERENCE VISIT : https://www.thepythoncode.com/article/using-google-drive--api-in-python
+print(createFolder(folderName="sahil shahane"))

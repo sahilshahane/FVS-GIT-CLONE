@@ -3,48 +3,51 @@ import upload
 import os
 
 # This contains "folder path" : "its id"
-folderIdDictionary = {}
-fileIdDictionary = {}
 
-class UploadItBoi():
+
+class GDrive():
+  service = None
+  folderIdDictionary = {}
+  fileIdDictionary = {}
+
   def __init__(self):
-    service = authenticate.get_gdrive_service()
+    self.service = authenticate.get_gdrive_service()
   
+
   # This is to upload the Files
   def generateIDmeta(self, folderPath, parentId="", FIRSTTIME=False):
-    global folderIdDictionary
     folderName = os.path.basename(folderPath)
     parentPath = os.path.dirname(folderPath)
     # parentFolderName = (os.path.dirname(folderPath)).split("/")[-1]   #This gives the parent folder name
 
     if FIRSTTIME:
-      for key in folderIdDictionary:
+      for key in self.folderIdDictionary:
         if key == parentPath:
-          parentId = folderIdDictionary[key]
+          parentId = self.folderIdDictionary[key]
+          break
         else:
           parentId = ""
   
-    folderId = upload.createFolder(folderName, parentId)
-    folderIdDictionary.__setitem__(folderPath, folderId)
+    folderId = upload.createFolder(folderName, parentId, self.service)
+    self.folderIdDictionary[folderPath] = folderId
     print(f"Uploaded -> {folderName} folderId -> {folderId} ParentId -> {folderId}")
     return folderId
 
 # To upload the files (NOT THE FIRST TIME)
   def putFiles(self, filePath, parentId=""):
-    global folderIdDictionary
-    global fileIdDictionary
+
     fileName = os.path.basename(filePath)
     parentPath = os.path.dirname(filePath)
     # parentFolderName = (os.path.dirname(filePath)).split("/")[-1]
 
-    for key in folderIdDictionary:
+    for key in self.folderIdDictionary:
       if key == parentPath:
-        parentId = folderIdDictionary[key]
+        parentId = self.folderIdDictionary[key]
       else:
         parentId="" 
 
     fileId = upload.uploadFile(filePath, parentId)
-    fileIdDictionary.__setitem__(fileName, fileId)
+    self.fileIdDictionary[fileName] =  fileId
     print(f"Uploaded -> {fileName} Fileid -> {fileId} ParentId -> {parentId}")
     return fileId
 
@@ -52,23 +55,24 @@ class UploadItBoi():
     with open("folderNameId.txt", "r") as f:
       s = (f.readline()).split("<!@#$%>")
 
-      folderIdDictionary.__setitem__(s[0], s[1][:-1])         # This [-1] is to remove the last "\n"
+      self.folderIdDictionary[s[0]] = s[1][:-1]        # This [-1] is to remove the last "\n"
 
   #This wont be necessary in future version
   def createMetaFiles(self):
-    global fileIdDictionary
-    global folderIdDictionary
 
     with open("fileNameId.txt", "w") as f:
       # Here the "key" is not the id bitch dont't get confused (for uttkarsh)
-      for key in fileIdDictionary:
-        f.write(f"{key}<!@#$%>{fileIdDictionary[key]}\n")
+      for key in self.fileIdDictionary:
+        f.write(f"{key}<!@#$%>{self.fileIdDictionary[key]}\n")
 
     with open("folderNameId.txt", "w") as f:
-      for key in folderIdDictionary:
-        f.write(f"{key}<!@#$%>{folderIdDictionary[key]}")
+      for key in self.folderIdDictionary:
+        f.write(f"{key}<!@#$%>{self.folderIdDictionary[key]}")
   
-uplo = UploadItBoi()
+
+obj = GDrive()
+
+obj.createFolder("TheFinalTest", "")
 
 # STEPS TO UPLOAD SH!T for the first time
 # 

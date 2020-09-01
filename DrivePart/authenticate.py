@@ -6,7 +6,7 @@ from google.auth.transport.requests import Request
 from tabulate import tabulate #Is just used to print the data in a tabular manner
 
 # If modifying these scopes, delete the file token.pickle.
-SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly', "https://www.googleapis.com/auth/drive"]
+SCOPES = ["https://www.googleapis.com/auth/drive","https://www.googleapis.com/auth/drive.appdata"]
 
 # WHENEVER THE SCOPE CHANGES THE YOU HAVE TO RECREATE THE tocken.pickle FILE SO MAKE SURE YOU DELETE THE FILE AND THEN RUN THE 
 # CODE AGAIN WITH THE NEW SCOPE

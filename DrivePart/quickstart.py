@@ -6,7 +6,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 # If modifying these scopes, delete the file token.pickle.
-SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+SCOPES = ['https://www.googleapis.com/auth/drive',]
 
 def main():
     """Shows basic usage of the Drive v3 API.
@@ -35,7 +35,7 @@ def main():
 
     # Call the Drive v3 API
     results = service.files().list(
-        pageSize=100, fields="nextPageToken, files(id, name)").execute()
+        pageSize=5, fields="nextPageToken, files(id, name)").execute()
     items = results.get('files', [])
 
     if not items:
@@ -44,7 +44,6 @@ def main():
         print('Files:')
         for item in items:
             print(u'{0} ({1})'.format(item['name'], item['id']))
-            print()
 
 if __name__ == '__main__':
     main()
