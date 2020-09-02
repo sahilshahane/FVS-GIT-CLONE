@@ -99,7 +99,7 @@ def getFileData(id,fields="*",service=authenticate.get_gdrive_service()):
   return service.files().get(fileId = id,fields=fields).execute()
   
 def getParentID(childID,service=authenticate.get_gdrive_service()):
-  ID = getFileData(childID,"parents",service)["parents"]if not parentID: parentID = getDriveID(service)
+  ID = getFileData(childID,"parents",service)["parents"]
   return ID[0]
 
 
@@ -139,7 +139,9 @@ def uploadFile(filePath, parentId, mimeType, fileName = "", service=authenticate
 
 # FOR ANY REFERENCE VISIT : https://www.thepythoncode.com/article/using-google-drive--api-in-python
 
-data = Folder("SAASDASD1",checkFolder=True)
+# TEST CASE
+# data = Folder("SAASDASD1",checkFolder=True)
+# with open("fileds.txt","w") as FILE:
+#   json.dump(getFileData(data["id"]),FILE,indent=2)
 
-with open("fileds.txt","w") as FILE:
-  json.dump(getFileData(data["id"]),FILE,indent=2)
+
