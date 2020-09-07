@@ -21,5 +21,7 @@
 - Get Changes when user edits the file in google drive
 - Add Download Functionality from Google Drive
 - Add Insertion and Deletion functionality
-- [feature] Convert Selected / Specific-Type-of File to other type example docx to pdf, images to pdf, etc.
-- [feature] Add filters to file Exclution
+- __[feature]__ Convert Selected / Specific-Type-of File to other type example docx to pdf, images to pdf, etc.
+- __[feature]__ Add Auto Rename File
+- __[feature]__ Add Filters to file Exclution
+- __[feature]__ Add One Drive and Mega API Integration
