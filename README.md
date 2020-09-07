@@ -14,3 +14,12 @@
 ## Misc
 * It can compress commit data at almost 60-80% compression Ratio
 * It can only Detect Files, Ignores Empty Folder
+
+# Things To Do
+- Integrate Google Drive [integrate.py] with main file
+- Add App Meta data functionality in Google Drive [integrate.py]
+- Get Changes when user edits the file in google drive
+- Add Download Functionality from Google Drive
+- Add Insertion and Deletion functionality
+- [feature] Convert Selected / Specific-Type-of File to other type example docx to pdf, images to pdf, etc.
+- [feature] Add filters to file Exclution
