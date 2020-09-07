@@ -1,6 +1,0 @@
-- Integrate Google Drive [integrate.py] with main file
-- Add App Meta data functionality in Google Drive [integrate.py]
-- Get Changes when user edits the file in google drive
-- Add Insertion and Deletion functionality
-- __[feature]__ Convert Selected / Specific-Type-of File to other type example docx to pdf, images to pdf, etc.
-- __[feature]__ Add filters to file Exclution
