@@ -22,6 +22,7 @@
 - Add Download Functionality from Google Drive
 - Add Insertion and Deletion functionality
 - Add GUI support [Minimalistic Design] with Dark Mode Supprt
+- Add Synchronization functionality
 - __[feature]__ Convert Selected / Specific-Type-of File to other type example docx to pdf, images to pdf, etc.
 - __[feature]__ Add Auto Rename File
 - __[feature]__ Add Filters to file Exclution
