@@ -1,5 +1,5 @@
 ./*/*.py
-./*/*
 ./TestSmall/2/
 ./.gitignore
 ./TestSmall/3/thr.txt
+./.git/**

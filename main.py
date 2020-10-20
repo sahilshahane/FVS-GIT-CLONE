@@ -20,7 +20,7 @@ from detectChange import detectChange
 class App():
     log = None
     repositoryDirectory = None
-    REPOSITORY = "./" # THE '.' REPRESENTS CURRENT REPOSITORY
+    REPOSITORY = "./" # THE './' REPRESENTS CURRENT REPOSITORY
     uspFolder = REPOSITORY+".usp/"
     args = None
     metaDataFileInformation = None

@@ -53,15 +53,15 @@ def getDriveID(service=authenticate.get_gdrive_service()):
     'name': 'temp',
     'mimeType': 'application/vnd.google-apps.folder'
   }
+
   tempFolderId = service.files().create(body=file_metadata, fields='id').execute()["id"]
   driveID = service.files().get(fileId=tempFolderId, fields='parents').execute()["parents"][0]
   service.files().delete(fileId=tempFolderId).execute()
 
   return driveID
 
-
 def Folder(folderName,parentID=None,checkFolder=False,service=authenticate.get_gdrive_service()):
-  if not parentID: parentID = getDriveID(service)
+  if not parentID: parentID = getDriveID(service=service)
 
   if checkFolder:
     folder = checkFolderExists(folderName,parentID,service)
@@ -83,7 +83,6 @@ def checkFolderExists(folderName, parentID=None, service=authenticate.get_gdrive
       if parentID==FILE_parentID: 
         # print("Folder Already Exists")
         return FILE
-          
 
   return False
 
@@ -95,7 +94,7 @@ def getFileData(id,fields="*",service=authenticate.get_gdrive_service()):
       propName = ""
       for index in range(len(fields)-1):propName+=f"{fields[index]},{fields[index+1]}"
       fields = propName
-
+ 
   return service.files().get(fileId = id,fields=fields).execute()
   
 def getParentID(childID,service=authenticate.get_gdrive_service()):
@@ -134,7 +133,7 @@ def uploadFile(filePath, parentId, mimeType, fileName = "", service=authenticate
   return file_id
 
   
-# uploadFile("/home/uttkarsh/Downloads/Indian_YT_Analysis.ipynb", folder_id)
+# uploadFile("/home/uttkarsh/Downloads/Indian_YT_Analysis.ipynb", None)
 
 
 # FOR ANY REFERENCE VISIT : https://www.thepythoncode.com/article/using-google-drive--api-in-python
@@ -144,4 +143,4 @@ def uploadFile(filePath, parentId, mimeType, fileName = "", service=authenticate
 # with open("fileds.txt","w") as FILE:
 #   json.dump(getFileData(data["id"]),FILE,indent=2)
 
-
+print(search("Experiments","application/vnd.google-apps.folder"))

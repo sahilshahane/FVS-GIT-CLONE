@@ -12,7 +12,6 @@ class GDrive():
 
   def __init__(self):
     self.service = authenticate.get_gdrive_service()
-  
 
   # This is to upload the Files
   def generateIDmeta(self, folderPath, parentId="", FIRSTTIME=False):

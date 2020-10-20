@@ -1,1 +1,7 @@
+[sahil@sahil--pc FVS-GIT-CLONE]$ /usr/bin/python /home/sahil/Desktop/FVS-GIT-CLONE/main.py
+Initializing New Repository...
+[sahil@sahil--pc FVS-GIT-CLONE]$ /usr/bin/python /home/sahil/Desktop/FVS-GIT-CLONE/main.py
+An Existing Repository Exists!
+modified files :
+        ./TestSmall/1/1.2.txt
 Ss

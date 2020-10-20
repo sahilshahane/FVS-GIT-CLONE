@@ -80,6 +80,7 @@ class generateMetaData():
         self.totalFiles-=1
 
         def ignoreFunc(folderDirectory,fileDirectory):
+            ignore = str
             for ignore in self.ignore:
                 if("*/*" in ignore):       
                     ignoreExtention = ignore[ignore.rindex("*/*")+3:]
@@ -89,12 +90,14 @@ class generateMetaData():
                         fileExtension = ""
                     else:
                         fileExtension = fileExtension[fileExtension.rindex("."):]
-                    
+
                     if(folderDirectory==ignoreDirectory and fileExtension==ignoreExtention):
                         return True
-
+                elif ignore.endswith("**") and (ignore[:-2] in fileDirectory):
+                    return True
                 elif(folderDirectory == ignore) or (fileDirectory == ignore):
                     return True
+
             return False
             
 
