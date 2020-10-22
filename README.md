@@ -16,12 +16,12 @@
 * It can only Detect Files, Ignores Empty Folder
 
 # Things To Do
-- Integrate Google Drive [integrate.py] with main file
-- Add App Meta data functionality in Google Drive in [integrate.py]
+- Integrate Google Drive with main file
+- Add App Meta data functionality in Google Drive
 - Get Changes when user edits the file in google drive
 - Add Download Functionality from Google Drive
 - Add Insertion and Deletion functionality
-- Add GUI support [Minimalistic Design] with Dark Mode Supprt
+- Add GUI support with Dark Mode Supprt
 - Add Synchronization functionality
 - Add Http Exception Handling
 - __[feature]__ Convert Selected / Specific-Type-of File to other type example docx to pdf, images to pdf, etc.
