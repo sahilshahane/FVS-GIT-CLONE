@@ -4,10 +4,7 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from tabulate import tabulate #Is just used to print the data in a tabular manner
-
-# If modifying these scopes, delete the file token.pickle.
-SCOPES = ["https://www.googleapis.com/auth/drive","https://www.googleapis.com/auth/drive.appdata"]
-
+from colorama import Fore,Style
 # WHENEVER THE SCOPE CHANGES THE YOU HAVE TO RECREATE THE tocken.pickle FILE SO MAKE SURE YOU DELETE THE FILE AND THEN RUN THE 
 # CODE AGAIN WITH THE NEW SCOPE
 #
@@ -25,7 +22,10 @@ SCOPES = ["https://www.googleapis.com/auth/drive","https://www.googleapis.com/au
 #   Different scope means different privileges, you need to delete token.pickle file in your working directory and run again the code to authenticate with the new scope.
 
 def get_gdrive_service():
+    # print(f"{Fore.YELLOW}Requesting Google Drive Service{Style.RESET_ALL}")
     creds = None
+    # If modifying these scopes, delete the file token.pickle.
+    SCOPES = ["https://www.googleapis.com/auth/drive","https://www.googleapis.com/auth/drive.appdata"]
 
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -39,8 +39,8 @@ def get_gdrive_service():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+            # credFile = 
+            flow = InstalledAppFlow.from_client_secrets_file('/home/sahil/Desktop/FVS-GIT-CLONE/DrivePart/credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
 
         # Save the credentials for the next run

@@ -1,13 +1,14 @@
 import json
 import os
 import time
-
+from colorama import Fore,Style
+class NoFirstCommit(Exception):
+    pass
 
 class initLog():
     uspFolder = None
     folderDirectory = None
     fileExtension = ".log"
-    latestCommit = None
     previousCommitInfo = None
     commitFileLoc = None
     commitFile = None
@@ -36,18 +37,24 @@ class initLog():
             
 
     def saveCommitInfo(self):
+        print(f"{Fore.CYAN}Saving Commit Locally...{Style.RESET_ALL}")
         with open(self.commitFileLoc,"w") as FILE:
             json.dump(self.commitFile,FILE,allow_nan=True)
 
     def getPreviousCommitInfo(self):
-        if(self.totalCommits==0):
+        if(len(self.commitFile["previousCommits"])==0):
             return None
- 
-        return self.commitFile["latest"]
+        
+        return self.commitFile["previousCommits"][str(self.totalCommits-1)]
 
+    def getLatestCommitInfo(self):
+        if(self.commitFile["latest"]==None) and self.totalCommits==0:
+            # raise NoFirstCommit("You Need to Commit atleast 1 time")
+            return None
+
+        return self.commitFile["latest"]
         
     def getFileInfo(self,logFile):
-
         with open(logFile["absolutePath"],"r") as FILE:
             return json.load(FILE)
 
@@ -64,7 +71,9 @@ class initLog():
             "absolutePath":latestCommitLoc,
             "commitedOn":time.time()
         }
+
         self.commitFile["totalCommits"]+=1
+
         self.saveCommitInfo()
 
 # TEST CASE

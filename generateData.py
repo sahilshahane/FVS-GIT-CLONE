@@ -20,11 +20,14 @@ class generateMetaData():
     fileName = None
     fileDirectory = None
     absolutePath = None
+    HASH = "xxh3_64"
 
     def __init__(self,repositoryDirectory,uspFolder=".usp/",cacheFolder=".cache/",ignore=[]):
 
         self.repositoryDirectory = repositoryDirectory
+       
         self.uspFolder = repositoryDirectory+uspFolder
+
         self.fileDirectory = self.uspFolder + cacheFolder
         self.ignore = ignore
         self.cacheFolder = cacheFolder + "" if cacheFolder[::-len(cacheFolder)]=="/" else "/"
@@ -42,7 +45,7 @@ class generateMetaData():
         if (os.path.exists(self.repositoryDirectory+".uspignore")):
             with open(self.repositoryDirectory+".uspignore",'r') as FILE:
                 self.ignore += [line.replace("\n","") for line in FILE.readlines()]
-
+                
 
     def createMDFile(self):
         self.fileName = str(int(time.time()))+".mdfile"
@@ -53,12 +56,27 @@ class generateMetaData():
         self.FILE = open(self.fileDirectory+self.fileName,"w")
         # self.FILE.write("{")
        
+    def ignoreFunc(self,folderDirectory,fileDirectory):
+        ignore = str
+        for ignore in self.ignore:
+            if("*." in ignore):
+                fileExtension = fileDirectory[fileDirectory.rindex(".")+1:]
+                if(fileExtension==ignore[2:]):
+                    return True
+            elif ignore.endswith("**") & (ignore[:-2] in fileDirectory):
+                return True
+            elif(folderDirectory == ignore) or (fileDirectory == ignore):
+                return True
+
+        return False
+        
     def gatherFileData(self):
         # print("Saving Cache Data...")
         DATA = dict()
+
         for currentDir,folders,files in os.walk(self.repositoryDirectory):
 
-            if("./.usp" in currentDir) or ("./__pycache__" in currentDir) or ("./.uspignore" in currentDir):
+            if self.uspFolder[:-1] in currentDir:
                 continue
             
             for fileName in files:
@@ -67,53 +85,41 @@ class generateMetaData():
                 
                 # DATA[path] = {
                 #     "fileName" : fileName,
-                #     "hash": generateFileHash(path,"xxh3_64"),
+                #     "hash": generateFileHash(path,self.HASH),
                 #     "directory":currentDir,
                 # }
+                # DATA[path] = generateFileHash(path,self.HASH)
 
-                DATA[path] = generateFileHash(path,"xxh3_64")
+                DATA[path] = {
+                    "fileName":fileName,
+                    "hash":generateFileHash(path,self.HASH),
+                    "parentDir":currentDir if currentDir=="./" else currentDir+"/",
+                    "hashType":self.HASH
+                }
+
 
                 self.allFolders.add(currentDir)
                 self.totalFiles+=1
 
-        DATA.pop("./.uspignore")
         self.totalFiles-=1
-
-        def ignoreFunc(folderDirectory,fileDirectory):
-            ignore = str
-            for ignore in self.ignore:
-                if("*/*" in ignore):       
-                    ignoreExtention = ignore[ignore.rindex("*/*")+3:]
-                    ignoreDirectory = ignore[:ignore.rindex("*/*")]
-                    fileExtension = fileDirectory[absPath.rindex("/"):]
-                    if("." not in fileExtension):
-                        fileExtension = ""
-                    else:
-                        fileExtension = fileExtension[fileExtension.rindex("."):]
-
-                    if(folderDirectory==ignoreDirectory and fileExtension==ignoreExtention):
-                        return True
-                elif ignore.endswith("**") and (ignore[:-2] in fileDirectory):
-                    return True
-                elif(folderDirectory == ignore) or (fileDirectory == ignore):
-                    return True
-
-            return False
             
-
         try:
             FILTER_DATA = dict()
-            for absPath,fileHash in DATA.items():
+    
+            for absPath,rowData in DATA.items():
+                fileName = rowData["fileName"]
+                fileHash = rowData["hash"]
+                folderDirectory = rowData["parentDir"]+"/"
+
                 ignoreFile = False
-                folderDirectory = absPath[:absPath.rindex("/")+1]
-                if(ignoreFunc(folderDirectory,absPath)):
+                if(self.ignoreFunc(folderDirectory,absPath)):
                     # print(f"{Fore.CYAN}Ignoring : {Fore.YELLOW}{absPath}{Style.RESET_ALL}")
                     continue
 
-                FILTER_DATA[absPath] = fileHash
+                FILTER_DATA[absPath] = rowData
 
         except Exception as exp:
-            print(f"{Fore.RED}Something Went Wrong while Ignoring files, Please check syntax correctly\n{exp}{Style.RESET_ALL}")
+            print(f"{Fore.RED}Something Went Wrong while Ignoring files, Please check syntax correctly\nError : {exp}{Style.RESET_ALL}")
 
         json.dump(FILTER_DATA,self.FILE,indent=2)
         

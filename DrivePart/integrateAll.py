@@ -67,11 +67,9 @@ class GDrive():
     with open("folderNameId.txt", "w") as f:
       for key in self.folderIdDictionary:
         f.write(f"{key}<!@#$%>{self.folderIdDictionary[key]}")
-  
+
 
 obj = GDrive()
-
-obj.createFolder("TheFinalTest", "")
 
 # STEPS TO UPLOAD SH!T for the first time
 # 
