@@ -8,7 +8,7 @@ def getTime(service=authenticate.get_gdrive_service()):
 
   while True:
     response = service.files().list(spaces='drive', 
-                                    fields="nextPageToken, files(id, name, modifiedTime)", 
+                                    fields="nextPageToken, files(id, modifiedTime)", # add name, in files() if you want the name also
                                     pageSize=1000,
                                     pageToken=page_token).execute()
     

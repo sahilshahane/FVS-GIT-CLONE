@@ -1,5 +1,16 @@
+from concurrent import futures
+from os import wait
+import re
+from typing import final
 import authenticate
 import os
+import multiprocessing
+import pickle
+from time import sleep
+import concurrent.futures
+import httplib2
+import socket
+import googlesearch
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.http import MediaFileUpload
@@ -103,19 +114,35 @@ def getParentID(childID,service=authenticate.get_gdrive_service()):
   return ID[0]
 
 
-# Here fileName is optional as it may be helpful when calling the function
-def uploadFile(filePath, parentId, mimeType, fileName = "", service=authenticate.get_gdrive_service()):
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def doUpload(fileInfo):
+  filePath = fileInfo[0]
+  parentId = fileInfo[1]
+  mimeType = fileInfo[2]
+  fileName = fileInfo[3]
   try:
+    service=authenticate.get_gdrive_service()
     if fileName == "":
       fileName = os.path.basename(filePath)
+    tempName = os.path.basename(filePath)
 
-    print(f"parentId ---------------------------------> {parentId}")
+    print(f"Uploading -> {fileName}")
     
     if parentId == "":
       raise Exception("Give a parent id to the function uploadFile in upload.py")
-    
-    print(parentId)
 
     file_metadata = {
       "name": fileName,
@@ -126,22 +153,96 @@ def uploadFile(filePath, parentId, mimeType, fileName = "", service=authenticate
     media = MediaFileUpload(filePath, resumable=True)
     file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()  
     file_id = file.get("id")
-    
     print(f"File {fileName} uploaded")
+    return [tempName, file_id]
+  except OSError:
+    print("---Check your internet---")
+  except socket.gaierror:
+    print("CHECK YOUR INTERNET CONNECTION BRO")
   except Exception as e:
-    raise Exception("ERROR IN uploadFile in upload.py ---------> ", e)
-  
-  return file_id
+    raise Exception("ERROR IN uploadFile in upload.py ---------> \n", e)
 
-  
-# uploadFile("/home/uttkarsh/Downloads/Indian_YT_Analysis.ipynb", folder_id)
+def uploadFiles(allFiles):
 
+  uploadedFiles = []
+  results=""
+  try:
+    socket.create_connection(("www.google.com", 80))
+    with concurrent.futures.ThreadPoolExecutor() as executor:
 
-# FOR ANY REFERENCE VISIT : https://www.thepythoncode.com/article/using-google-drive--api-in-python
+      results = [executor.submit(doUpload, file) for file in allFiles]
+      for f in futures.as_completed(results):
+        data = f.result()
+        if data!=None:
+          uploadedFiles.append(data)
+
+    print("\nFinal Uploaded files")
+    print(uploadedFiles)
+
+  except OSError:
+    print("Check your internet connection")
+  except Exception as e:     
+    print("Your Internet Connection was inturrupted")
+    print("The files left to to upload will be uploaded next time when you run the code")
+  finally:
+    if len(uploadedFiles) != len(allFiles):
+      print("Your Internet Connection was inturrupted")
+      print("The files left to to upload will be uploaded next time when you run the code")
+      for uploadedFile in uploadedFiles:
+        for file in allFiles:
+          if uploadedFile[0] == os.path.basename(file[0]):
+            allFiles.remove(file)
+      if(len(allFiles) != 0):
+        if os.path.exists("remaningUplad.pickle"):
+          with open("remaningUplad.pickle", "rb") as f:
+            temp = pickle.load(f)
+            for f in allFiles:
+              temp.append(f)
+            allFiles = temp
+        with open("remaningUpload.pickle", "wb") as f:
+          pickle.dump(allFiles, f)
+      print("\nTHESE ARE THE FILES THAT ARE NOT UPLOADED")
+      for f in allFiles:
+        print(f)
+
+def resumeUpload():
+  if os.path.exists("remaningUpload.pickle"):
+    with open("remaningUpload.pickle", "rb") as f:
+      uploadFiles(pickle.load(f))
+      
+
+fileInfo =[
+            ["/home/uttkarsh/Videos/SampleVideo.mp4", "1BjDkr3FfaUtYlAncX4SOEB5lOxG6zXJx", "video/mp4", ""],
+            ["/home/uttkarsh/Videos/Pexels Videos 3688.mp4", "1BjDkr3FfaUtYlAncX4SOEB5lOxG6zXJx", "video/mp4", ""],
+            ["/home/uttkarsh/Videos/pexels-aleks-b-5290028.mp4", "1BjDkr3FfaUtYlAncX4SOEB5lOxG6zXJx", "video/mp4", ""],
+            ["/home/uttkarsh/Videos/production ID_3873465.mp4", "1BjDkr3FfaUtYlAncX4SOEB5lOxG6zXJx", "video/mp4", ""],
+            ["/home/uttkarsh/Videos/video (1).mp4", "1BjDkr3FfaUtYlAncX4SOEB5lOxG6zXJx", "video/mp4", ""],
+          ]
+
+uploadFiles(fileInfo)
+# resumeUpload()
 
 # TEST CASE
-# data = Folder("SAASDASD1",checkFolder=True)
-# with open("fileds.txt","w") as FILE:
-#   json.dump(getFileData(data["id"]),FILE,indent=2)
+# data = Folder("Photos",checkFolder=True)
+# print(data)
+# allFiles => filePath, parentId, mimeType, fileName = "", service=authenticate.get_gdrive_service()  
 
 
+# while results:
+      #   done, running = concurrent.futures.wait(results)
+      #   for f in done:
+      #     print(f.result())
+
+      # results = executor.map(doUpload, allFiles)
+      # print("Value of temp -> ",results)
+
+      # for i in results:
+      #   try:
+      #     uploadedFiles.append(i)
+      #   except Exception:
+      #     print("A~bad~file")   
+
+# delete files 
+# how to reupload
+# update not uploaded
+# GUI
