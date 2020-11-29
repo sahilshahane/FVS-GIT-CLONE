@@ -114,20 +114,6 @@ def getParentID(childID,service=authenticate.get_gdrive_service()):
   return ID[0]
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def doUpload(fileInfo):
   filePath = fileInfo[0]
   parentId = fileInfo[1]
@@ -162,7 +148,37 @@ def doUpload(fileInfo):
   except Exception as e:
     raise Exception("ERROR IN uploadFile in upload.py ---------> \n", e)
 
+def getStorageInfo(allFiles, service=authenticate.get_gdrive_service()):
+  info = service.about().get(fields="storageQuota").execute().get('storageQuota')
+  # info = {'limit': '16106127360', 'usage': '5919890824', 'usageInDrive': '5003790615', 'usageInDriveTrash': '50486252'}
+  totalStorageNeeded=0
+  limit = int(info.get('limit'))
+  usage = int(info.get('usage'))
+
+  for file in allFiles:
+    totalStorageNeeded += os.path.getsize(file[0]) 
+  
+  if((usage+1610612736)>=limit):
+    print("You are running low on space")
+    print(f"You are left with {(limit-usage)/1073741824} Gb of storage")
+    print("Or you can extend your quota by going to :-")
+    print("https://one.google.com/storage?i=m&utm_source=drive&utm_medium=web&utm_campaign=widget_normal#upgrade")
+
+  if(totalStorageNeeded < limit):
+    print(f"Current space left = {(limit-usage)/1073741824}")
+    print(f"Total space of the current files = {totalStorageNeeded/1073741824}")
+    print(f"Space left after uploading = {(limit-(usage+totalStorageNeeded))/1073741824} ")
+    while(1):
+      ans = input("Do you want to continue? Y/N\n")
+      if(ans.strip().lower()=='y' or ans==""):
+        return True
+      elif(ans.strip().lower()=='n'):
+        return False
+
 def uploadFiles(allFiles):
+
+  if(not getStorageInfo(allFiles)):    
+    return
 
   uploadedFiles = []
   results=""
@@ -226,23 +242,3 @@ uploadFiles(fileInfo)
 # data = Folder("Photos",checkFolder=True)
 # print(data)
 # allFiles => filePath, parentId, mimeType, fileName = "", service=authenticate.get_gdrive_service()  
-
-
-# while results:
-      #   done, running = concurrent.futures.wait(results)
-      #   for f in done:
-      #     print(f.result())
-
-      # results = executor.map(doUpload, allFiles)
-      # print("Value of temp -> ",results)
-
-      # for i in results:
-      #   try:
-      #     uploadedFiles.append(i)
-      #   except Exception:
-      #     print("A~bad~file")   
-
-# delete files 
-# how to reupload
-# update not uploaded
-# GUI
