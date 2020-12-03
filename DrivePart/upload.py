@@ -164,13 +164,13 @@ def getStorageInfo(allFiles, service=authenticate.get_gdrive_service()):
     print("Or you can extend your quota by going to :-")
     print("https://one.google.com/storage?i=m&utm_source=drive&utm_medium=web&utm_campaign=widget_normal#upgrade")
 
-  if(totalStorageNeeded < limit):
+  if(totalStorageNeeded+usage < limit):
     print(f"Current space left = {(limit-usage)/1073741824}")
     print(f"Total space of the current files = {totalStorageNeeded/1073741824}")
     print(f"Space left after uploading = {(limit-(usage+totalStorageNeeded))/1073741824} ")
     while(1):
-      ans = input("Do you want to continue? Y/N\n")
-      if(ans.strip().lower()=='y' or ans==""):
+      ans = input("Do you want to continue? Y/N\n").strip().lower()
+      if(ans=='y' or ans==""):
         return True
       elif(ans.strip().lower()=='n'):
         return False
@@ -178,7 +178,7 @@ def getStorageInfo(allFiles, service=authenticate.get_gdrive_service()):
 def uploadFiles(allFiles):
 
   if(not getStorageInfo(allFiles)):    
-    return
+    return False
 
   uploadedFiles = []
   results=""
@@ -197,9 +197,11 @@ def uploadFiles(allFiles):
 
   except OSError:
     print("Check your internet connection")
+    return False
   except Exception as e:     
     print("Your Internet Connection was inturrupted")
     print("The files left to to upload will be uploaded next time when you run the code")
+    return False
   finally:
     if len(uploadedFiles) != len(allFiles):
       print("Your Internet Connection was inturrupted")
@@ -220,12 +222,14 @@ def uploadFiles(allFiles):
       print("\nTHESE ARE THE FILES THAT ARE NOT UPLOADED")
       for f in allFiles:
         print(f)
+      return False
+  return True
 
 def resumeUpload():
   if os.path.exists("remaningUpload.pickle"):
     with open("remaningUpload.pickle", "rb") as f:
-      uploadFiles(pickle.load(f))
-      
+      if(uploadFiles(pickle.load(f))):
+        os.remove("remaningUpload.pickle")      
 
 fileInfo =[
             ["/home/uttkarsh/Videos/SampleVideo.mp4", "1BjDkr3FfaUtYlAncX4SOEB5lOxG6zXJx", "video/mp4", ""],
