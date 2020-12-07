@@ -148,6 +148,10 @@ def doUpload(fileInfo):
   except Exception as e:
     raise Exception("ERROR IN uploadFile in upload.py ---------> \n", e)
 
+def generateIds(x, service=authenticate.get_gdrive_service()):
+	ids = service.files().generateIds(count=x).execute().get("ids")
+	return ids
+
 def getStorageInfo(allFiles, service=authenticate.get_gdrive_service()):
   info = service.about().get(fields="storageQuota").execute().get('storageQuota')
   # info = {'limit': '16106127360', 'usage': '5919890824', 'usageInDrive': '5003790615', 'usageInDriveTrash': '50486252'}
@@ -239,8 +243,9 @@ fileInfo =[
             ["/home/uttkarsh/Videos/video (1).mp4", "1BjDkr3FfaUtYlAncX4SOEB5lOxG6zXJx", "video/mp4", ""],
           ]
 
-uploadFiles(fileInfo)
+# uploadFiles(fileInfo)
 # resumeUpload()
+generateIds(20)
 
 # TEST CASE
 # data = Folder("Photos",checkFolder=True)
