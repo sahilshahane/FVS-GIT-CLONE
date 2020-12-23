@@ -1,0 +1,42 @@
+@import '~antd/dist/antd.dark.min.css';
+/* @import '~antd/dist/antd.css';
+Light Theme */
+:root {
+  --app-bg-color: #0e0e0e;
+  --component-bg-color: #1b1b1b;
+  --malachite: #13cd3c;
+  --royal-blue: #4d53d9;
+  --red-violet: #cd45a2;
+  --gray: #717171;
+  --arsenic: #333436;
+  --cerise: #ed2a70;
+  --dark-pastel-green: #13c63a;
+  --cerulean-blue: #2f45c5;
+  --amethyst: #8145cd;
+  --bittersweet: #ff6370;
+  --bistre: #452326;
+  --power-blue: #9babc5;
+  --fire-brick: #c52f2f;
+  --pastel-pink: #ffdff5;
+  --orchid: #d758ab;
+  --blue-black: #181826;
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--app-bg-color);
+  box-shadow: inset 0px -15px 50px -22px rgba(0, 0, 0, 0.57),
+    inset 0px 60px 50px -30px rgba(0, 0, 0, 0.5);
+}
+.app-bg {
+  background-color: var(--app-bg-color);
+}
+.component-bg {
+  background-color: var(--component-bg-color);
+}

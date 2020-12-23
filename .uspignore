@@ -1,5 +1,0 @@
-./.gitignore
-./.git/**
-__pycache__/**
-./DrivePart/**
-*.py
