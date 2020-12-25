@@ -1,0 +1,86 @@
+@import '~antd/dist/antd.dark.min.css';
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@500&display=swap');
+/* @import '~antd/dist/antd.css';
+Light Theme */
+:root {
+  --app-bg-color: #0e0e0e;
+  --component-bg-color: #1b1b1b;
+  --malachite: #13cd3c;
+  --royal-blue: #4d53d9;
+  --red-violet: #cd45a2;
+  --gray: #717171;
+  --arsenic: #333436;
+  --cerise: #ed2a70;
+  --dark-pastel-green: #13c63a;
+  --cerulean-blue: #2f45c5;
+  --amethyst: #8145cd;
+  --bittersweet: #ff6370;
+  --bistre: #452326;
+  --power-blue: #9babc5;
+  --fire-brick: #c52f2f;
+  --pastel-pink: #ffdff5;
+  --orchid: #d758ab;
+  --blue-black: #181826;
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+  margin: 0px;
+  padding: 0px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--app-bg-color);
+  box-shadow: inset 0px -15px 50px -22px rgba(0, 0, 0, 0.57),
+    inset 0px 60px 50px -30px rgba(0, 0, 0, 0.5);
+}
+.app-bg {
+  background-color: var(--app-bg-color);
+}
+.component-bg {
+  background-color: var(--component-bg-color);
+}
+
+.folder-area{
+  margin: 10px 100px;
+  overflow: auto;
+}
+
+.folder-bubble{
+  /* border: 1px solid whitesmoke; */
+  border-radius: 10px;
+  padding: 5px;
+  position: relative;
+  height: 75px ;
+  margin-top: 5px;
+  background-color: rgb(27, 27, 27);
+}
+.folder-bubble h3{
+  font-family: 'Ubuntu', sans-serif;
+  position: absolute;
+  left: 15px;
+  top: 15px;
+}
+
+.symbl{
+  width: 50px;
+}
+
+.synced-true, .synced-false{
+  height: 17px;
+  width: 17px;
+  border-radius: 50%;
+  display: inline-block;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.synced-true{
+  background-color: #17a736;
+}
+.synced-false{
+  background-color: var(--fire-brick);
+}
