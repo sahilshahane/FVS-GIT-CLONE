@@ -11,7 +11,7 @@ const initFolder = async () => {
     console.log(data);
   };
 
-  const errorHandler = (err, code, signal) => {
+  const errorHandler = (err: any, code: any, signal: any) => {
     showError(String(err), `Exit Code : ${code}\nSignal : ${signal}`);
   };
 
@@ -20,7 +20,7 @@ const initFolder = async () => {
     'main.py',
     {
       changeDirectory: SELECTED_FOLDER,
-      args: ['-init'],
+      args: ['-init', '-dev'],
     },
     Handler,
     errorHandler

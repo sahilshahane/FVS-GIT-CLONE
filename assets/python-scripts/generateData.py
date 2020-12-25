@@ -14,7 +14,7 @@ class generateMetaData():
         self.FILE_NAME = FILE_NAME
         self.FILE_PATH = os.path.join(EXPORT_DIRECTORY,FILE_NAME)
         self.ignore = ignore
-        self.APP_DATA_FOLDER  = APP_DATA_FOLDER
+        self.APP_DATA_FOLDER = APP_DATA_FOLDER
         self.HASH = HASH
 
     def ignoreFunc(self,folderDirectory,fileDirectory=None):
@@ -37,58 +37,37 @@ class generateMetaData():
         return False
 
     def generate(self,indent=None):
-        with open(self.FILE_PATH,'w') as file_:
-            DATA = dict()
-            
-            for directory,_,files in os.walk("./"):
+      with open(self.FILE_PATH,'w') as file_:
+          file_.write("{")
+          for directory,_,files in os.walk('.'):
 
-                if directory.startswith(self.APP_DATA_FOLDER):continue
-                if self.ignoreFunc(directory):continue
-                # directory = directory if directory=="./" else directory+"/"
+              if directory.startswith(self.APP_DATA_FOLDER):continue
+              if self.ignoreFunc(directory):continue
+              # directory = directory if directory=="./" else directory+"/"
 
-                for fileName in files:
-                    filePath = os.path.join(directory, fileName)
+              for fileName in files:
+                  filePath = os.path.join(directory, fileName)
 
-                    if self.ignoreFunc(directory,filePath):continue
+                  if self.ignoreFunc(directory,filePath): continue
 
-                    # ADD DATA
-                    DATA[filePath] = {
+                  DATA = dict()
+                  DATA = {
+                      filePath : {
                         "fileName":fileName,
                         "hash":generateFileHash(filePath,self.HASH),
                         "parentDir":directory,
-                        "hashType":self.HASH
-                    }
-                    self.totalFiles+=1
+                      }
+                  }
+                  DATA = json.dumps(DATA,indent=indent)[1:-1]
 
-                    yield DATA[filePath]
-            json.dump(DATA,file_,indent=indent)
-        del(DATA)
+                  file_.write(DATA+",")
+                  self.totalFiles+=1
+                  yield DATA
+                  del(DATA)
 
-    def generate_Optimized(self):
-        with open(self.FILE_PATH,'w+') as file_:
-            file_.write("{")
-            for directory,_,files in os.walk("./"):
-
-                if directory.startswith(self.APP_DATA_FOLDER):continue
-                if self.ignoreFunc(directory):continue
-                # directory = directory if directory=="./" else directory+"/"
-
-                for fileName in files:
-                    filePath = os.path.join(directory, fileName)
-
-                    if self.ignoreFunc(directory,filePath):continue
-
-                    # ADD DATA
-                    DATA = f"\"{filePath}\":{{\"fileName\":\"{fileName}\",\"hash\":\"{generateFileHash(filePath,self.HASH)}\",\"parentDir\":\"{directory}\"}}"
-
-                    file_.write(DATA+",")
-                    self.totalFiles+=1
-
-                    yield json.loads(f"{{{DATA}}}")
-                    del(DATA)
-            file_.seek(file_.tell() - 1, os.SEEK_SET)
-            file_.write("}")
-            file_.close()
+          file_.seek(file_.tell() - 1, os.SEEK_SET)
+          file_.write("}")
+          file_.close()
 
     def getInfo(self):
         return {
