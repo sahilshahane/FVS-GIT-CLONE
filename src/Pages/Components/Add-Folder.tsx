@@ -3,7 +3,6 @@ import { Button, Tooltip } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import selectDir from '../modules/select-directory';
 import runPyScript from '../modules/Run-Script';
-import showError from '../modules/ErrorPopup';
 import log from '../modules/log';
 
 const initFolder = async () => {
@@ -11,20 +10,11 @@ const initFolder = async () => {
     console.log(data);
   };
 
-  const errorHandler = (err: any, code: any, signal: any) => {
-    showError(String(err), `Exit Code : ${code}\nSignal : ${signal}`);
-  };
-
   const SELECTED_FOLDER = await selectDir();
-  runPyScript(
-    'main.py',
-    {
-      changeDirectory: SELECTED_FOLDER,
-      args: ['-init', '-dev'],
-    },
-    Handler,
-    errorHandler
-  );
+  runPyScript('assets\\python-scripts\\main.py', Handler, {
+    changeDirectory: SELECTED_FOLDER,
+    args: ['-init', '-dev'],
+  });
 };
 
 const AddFolder = () => {

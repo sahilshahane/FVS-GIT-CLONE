@@ -1,30 +1,39 @@
-import { PythonShell } from 'python-shell';
+import { PythonShell, PythonShellError } from 'python-shell';
+import showError from './ErrorPopup';
 
-const runPythonScript = (
-  scriptName: string,
-  options = { changeDirectory: String, args: Array<string>('') },
+const runPythonScript: (
+  scriptPath: string,
   handler: (arg0: any) => void,
-  errorHandler = (_err: any, _code: any, _sig: any) => {}
+  options?: {
+    changeDirectory: string;
+    args: Array<string> | [];
+  },
+  errorHandler?: (err: PythonShellError, code: number, signal: string) => void
+) => void = (
+  scriptPath,
+  handler,
+  options = { changeDirectory: '.', args: [] },
+  errorHandler
 ) => {
   const { changeDirectory, args } = options;
-  if (changeDirectory) {
-    const options = {
-      mode: 'text',
-      // pythonPath: 'path/to/python',
-      pythonOptions: ['-u'], // get print results in real-time
-      scriptPath: 'assets/python-scripts/',
-      args: [`-cd`, `${changeDirectory}`, ...args],
-    };
-    const script = PythonShell.run(scriptName, options);
 
-    script.on('message', (data) => {
-      handler(JSON.parse(data));
-    });
+  const script = PythonShell.run(scriptPath, {
+    mode: 'text',
+    // pythonPath: 'path/to/python',
+    pythonOptions: ['-u'], // get print results in real-time
+    scriptPath: '.',
+    args: [`-cd`, `${changeDirectory}`, ...args],
+  });
 
+  script.on('message', (data) => {
+    handler(JSON.parse(data));
+  });
+  if (errorHandler) script.end(errorHandler);
+  else
     script.end((err, code, signal) => {
-      if (err) errorHandler(err, code, signal);
+      if (err)
+        showError(String(err), `Exit Code : ${code}\nSignal : ${signal}`);
     });
-  }
 };
 
 export default runPythonScript;
