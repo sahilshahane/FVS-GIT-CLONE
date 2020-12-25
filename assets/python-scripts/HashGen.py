@@ -27,6 +27,7 @@ def generateHash(data,hashType="md5"):
     except TypeError:
         raise Exception("Only Input String Data for Hasing")
 
+# Checks a File in Chucks to make it memory efficient and faster
 def generateFileHash(filePath,hashType="md5",BYTE_SIZE=32768):
        with open(filePath,"rb") as file_:
         file_hash = HASHES[hashType]()
