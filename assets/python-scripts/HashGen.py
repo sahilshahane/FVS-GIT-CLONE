@@ -1,11 +1,7 @@
 import hashlib
 import xxhash
 
-default_hash = "md5"
-
-def generateHash(data,hashType=default_hash):
-    try:
-        return {
+HASHES = {
         "blake2b":hashlib.blake2b,
         "blake2s":hashlib.blake2s,
         "md5":hashlib.md5,
@@ -23,12 +19,20 @@ def generateHash(data,hashType=default_hash):
         "xxh64":xxhash.xxh64,
         "xxh32":xxhash.xxh32,
         "xxh3_64":xxhash.xxh3_64,
-        }[hashType](data).hexdigest()
+    }
+
+def generateHash(data,hashType="md5"):
+    try:
+        return HASHES[hashType](data).hexdigest()
     except TypeError:
         raise Exception("Only Input String Data for Hasing")
-    
 
-def generateFileHash(filePath,hashType=default_hash):
-    with open(filePath,"rb") as EXTERNAL_FILE:
-        return generateHash(EXTERNAL_FILE.read(),hashType)
-       
+def generateFileHash(filePath,hashType="md5",BYTE_SIZE=32768):
+       with open(filePath,"rb") as file_:
+        file_hash = HASHES[hashType]()
+        chunk = file_.read(BYTE_SIZE)
+        while chunk:=file_.read(BYTE_SIZE):
+          file_hash.update(chunk)
+
+        return file_hash.hexdigest()
+
