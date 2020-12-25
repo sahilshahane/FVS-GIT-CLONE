@@ -5,9 +5,6 @@ import zmq
 
 from generateData import generateMetaData
 from HashGen import generateHash,generateFileHash
-from DrivePart.authenticate import get_gdrive_service
-from DrivePart.upload import createEmptyFoldersInDrive
-from DrivePart.upload import uploadFile
 
 # AVAILABLE HASHES, DEFAULT = md5
 # [blake2b, blake2s, md5,
