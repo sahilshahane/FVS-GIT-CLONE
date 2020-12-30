@@ -1,8 +1,6 @@
 # SYSTEM IMPORTS
 import sys,os,pathlib,time,json,shutil,argparse
 
-import zmq
-
 from generateData import generateMetaData
 from HashGen import generateHash,generateFileHash
 
@@ -77,12 +75,6 @@ class App():
     # LOAD CLOUD_STORAGE CONFIGURATION, GID_FOLDER_PATH = GOOGLE DRIVE IDs will be stored
     self.REPOSITORY_CLOUD_STORAGE_FOLDER_PATH = os.path.join(self.REPOSITORY_PATH,self.APP_SETTINGS["repository_cloudData_folderName"])
     self.GID_FOLDER_PATH = os.path.join(self.REPOSITORY_CLOUD_STORAGE_FOLDER_PATH, self.APP_SETTINGS["repository_googleDriveID_folderName"])
-
-  def LOAD_APP_FOLDER_PATH(self):
-    USER_HOME_PATH = pathlib.Path.home()
-    APP_FOLDER_PATH = os.path.join(USER_HOME_PATH,".usp")
-
-    return APP_FOLDER_PATH
 
   def LOAD_APP_SETTINGS(self):
     APP_SETTINGS_PATH = os.path.join(self.APP_FOLDER_PATH,"Appsetting.json")
@@ -195,12 +187,6 @@ class App():
 
       return MD_.getInfo()
 
-  def INSTALL_REQUIRED_FILES(self):
-      # AUTOMATICALLY INSTALLS THE REQUIRED FILES
-      if(os.path.exists(self.APP_FOLDER_PATH)==False):
-          os.mkdir(self.APP_FOLDER_PATH)
-          shutil.copytree("assets/installation",self.APP_FOLDER_PATH)
-
   def LOAD_IGNORE_DATA(self):
       IGNORE_FILE_PATH = os.path.join('.',self.APP_SETTINGS["repository_Ignore_fileName"])
       ignores = self.APP_SETTINGS["defaultIgnores"]
@@ -307,14 +293,6 @@ class App():
           self.commit(MD_FILE_INFO=FILE_INFO)
           self.output({"code":self.CCODES["INIT"],"msg":"Repository Initialization Completed"})
 
-  def Development(self):
-    self.APP_FOLDER_PATH = os.path.join('assets\\installation',".usp") # APP's Main Folder, Where we are going to store App related Files
 
-  # def zeroMQ(self):
-  #   # Zero MQ
-  #   PORT = 5555
-  #   context = zmq.Context()
-  #   socket = context.socket(zmq.REP)
-  #   socket.bind(f'tcp://*:{PORT}')
 
 App()
