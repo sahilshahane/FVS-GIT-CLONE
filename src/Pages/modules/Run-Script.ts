@@ -3,7 +3,7 @@ import showError from './ErrorPopup';
 
 const runPythonScript: (
   scriptPath: string,
-  handler: (arg0: any) => void,
+  handler: (arg0: { code: number }) => void,
   options?: {
     changeDirectory: string;
     args: Array<string> | [];

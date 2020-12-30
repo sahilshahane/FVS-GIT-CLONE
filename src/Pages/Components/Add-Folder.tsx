@@ -9,8 +9,11 @@ const initFolder = async () => {
   const Handler = (data: any) => {
     console.log(data);
   };
+  let SELECTED_FOLDER = String();
 
-  const SELECTED_FOLDER = await selectDir();
+  if (process.env.NODE_ENV === 'development') SELECTED_FOLDER = '.';
+  else SELECTED_FOLDER = await selectDir();
+
   runPyScript('assets\\python-scripts\\main.py', Handler, {
     changeDirectory: SELECTED_FOLDER,
     args: ['-init', '-dev'],

@@ -13,24 +13,22 @@ const { Content } = Layout;
 const App = () => {
   log('Rendering App_Inner.tsx');
   return (
-    <div>
-      <Layout>
-        <SideBar />
-        <Layout style={{ padding: 5 }} className="app-bg">
-          <Content style={{ backgroundColor: 'inherit' }}>
-            <NAV_BAR />
-            <Row
-              style={{
-                margin: '5px 0 0 0',
-              }}
-            >
-              <InnerRoutes />
-              <AddFolder />
-            </Row>
-          </Content>
-        </Layout>
+    <Layout>
+      <SideBar />
+      <Layout style={{ padding: 5 }} className="app-bg">
+        <Content style={{ backgroundColor: 'inherit' }}>
+          <NAV_BAR />
+          <Row
+            style={{
+              margin: '5px 0 0 0',
+            }}
+          >
+            <InnerRoutes />
+            <AddFolder />
+          </Row>
+        </Content>
       </Layout>
-    </div>
+    </Layout>
   );
 };
 export default App;
