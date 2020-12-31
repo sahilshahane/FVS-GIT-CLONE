@@ -1,5 +1,4 @@
 @import '~antd/dist/antd.dark.min.css';
-@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@500&display=swap');
 /* @import '~antd/dist/antd.css';
 Light Theme */
 :root {
@@ -44,32 +43,33 @@ body {
   background-color: var(--component-bg-color);
 }
 
-.folder-area{
+.folder-area {
   margin: 10px 100px;
   overflow: auto;
 }
 
-.folder-bubble{
+.folder-bubble {
   /* border: 1px solid whitesmoke; */
   border-radius: 10px;
   padding: 5px;
   position: relative;
-  height: 75px ;
+  height: 75px;
   margin-top: 5px;
   background-color: rgb(27, 27, 27);
 }
-.folder-bubble h3{
+.folder-bubble h3 {
   font-family: 'Ubuntu', sans-serif;
   position: absolute;
   left: 15px;
   top: 15px;
 }
 
-.symbl{
+.symbl {
   width: 50px;
 }
 
-.synced-true, .synced-false{
+.synced-true,
+.synced-false {
   height: 17px;
   width: 17px;
   border-radius: 50%;
@@ -78,9 +78,9 @@ body {
   top: 10px;
   right: 10px;
 }
-.synced-true{
+.synced-true {
   background-color: #17a736;
 }
-.synced-false{
+.synced-false {
   background-color: var(--fire-brick);
 }

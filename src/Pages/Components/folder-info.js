@@ -1,23 +1,21 @@
 const folderinfo = [
   {
     id: 1,
-    name: 'File Name - A',
+    name: '1',
     syncStatus: true,
+    localLocation: '/home/uttkarsh/Testing/1',
   },
   {
     id: 2,
-    name: 'File Name - B',
+    name: '2',
     syncStatus: false,
+    localLocation: '/home/uttkarsh/Testing/2',
   },
   {
     id: 3,
-    name: 'File Name - C',
-    syncStatus: false,
-  },
-  {
-    id: 4,
-    name: 'File Name - D',
+    name: '3',
     syncStatus: true,
+    localLocation: '/home/uttkarsh/Testing/3',
   },
 ];
 

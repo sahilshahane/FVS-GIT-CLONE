@@ -144,7 +144,7 @@ app.on('activate', () => {
 
 ipcMain.on('get-home-path', (evt) => {
   if (process.env.NODE_ENV === 'development') {
-    evt.returnValue = path.join("assets", "installation");
+    evt.returnValue = path.join('assets', 'installation');
   } else {
     evt.returnValue = app.getPath('home');
   }

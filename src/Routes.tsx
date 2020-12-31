@@ -22,7 +22,7 @@ const ParentRoutes = () => {
     } else {
       history.push('/');
     }
-  }, [Appsettings.cloudLoginStatus.googleDrive]);
+  }, []);
 
   return (
     <Switch>

@@ -1,12 +1,16 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
-import { CurrentSettings } from './modules/Redux/AppSettingsSlicer';
 import log from './modules/log';
+// import FolderArea from './Components/folder-area';
+import RoutingArea from './Components/Routing-area';
 
 const Home = () => {
   log('Rendering Home.tsx');
-  const Appsettings = useSelector(CurrentSettings);
-  return <h1>{`Current Theme : ${Appsettings.theme}`}</h1>;
+
+  return (
+    <div style={{ width: '100%' }}>
+      <RoutingArea />
+    </div>
+  );
 };
 
 export default Home;
