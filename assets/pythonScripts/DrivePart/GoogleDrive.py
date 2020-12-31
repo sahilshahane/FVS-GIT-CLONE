@@ -1,8 +1,10 @@
+import json
 import pickle,os,socket
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
+from log import output
 import webbrowser
 import wsgiref.simple_server
 import wsgiref.util
@@ -70,18 +72,18 @@ def get_gdrive_service(CCODES):
           # Save the credentials for the next run
           with open(TOKEN_FILE_PATH, 'wb') as token:
               pickle.dump(creds, token)
+
+      output({"code":CCODES["GOOGLE_ID_FOUND"],'msg':"Found an Google Account"})
       # return Google Drive API service
-      service_obj = build('drive', 'v3', credentials=creds)  #This the drive service object which will be used to carry out all the tasks
-      yield {"code":CCODES["GOOGLE_SERVICE_OBJECT"],"data": service_obj}
+      return build('drive', 'v3', credentials=creds)  #This the drive service object which will be used to carry out all the tasks
 
     except OSError as e:
-      yield {"code":CCODES["INTERNET_CONNECTION_ERROR"],"msg":str(e)}
+      output({"code":CCODES["INTERNET_CONNECTION_ERROR"],"msg":str(e)})
     except NoGoogleIDFound as e:
-      yield {"code":CCODES["GOOGLE_ID_NOT_FOUND"],"msg":str(e)}
-
+      output({"code":CCODES["GOOGLE_ID_NOT_FOUND"],"msg":str(e)})
 
 def startLogin(CCODES):
-  yield {"code":CCODES["GOOGLE_LOGIN_STARTED"],"msg":"Google Login Started"}
+  output({"code":CCODES["GOOGLE_LOGIN_STARTED"],"msg":"Google Login Started"})
 
   try:
     SCOPES = ["https://www.googleapis.com/auth/drive","https://www.googleapis.com/auth/drive.appdata"]
@@ -104,28 +106,37 @@ def startLogin(CCODES):
     )
 
     webbrowser.open(auth_url, new=1, autoraise=True)
-    yield {"code":CCODES["OPEN_BROWSER"],"msg":"Open your Browser, For Google Login"}
+    output({"code":CCODES["OPEN_BROWSER"],"msg":"Open your Browser, For Google Login"})
 
-    yield {"code":CCODES["LOCAL_SERVER_STARTED"],"msg":f"Local Server Started at http://{host}:{port}","data":{"host":host,"port":port}}
+    output({"code":CCODES["LOCAL_SERVER_STARTED"],"msg":f"Local Server Started at http://{host}:{port}","data":{"host":host,"port":port}})
     local_server.handle_request()
 
-    yield {"code":CCODES["LOCAL_SERVER_CLOSED"],"msg":"Local Server Closed"}
+    output({"code":CCODES["LOCAL_SERVER_CLOSED"],"msg":"Local Server Closed"})
     local_server.server_close()
 
     # Note: using https here because oauthlib is very picky that
     # OAuth 2.0 should only occur over https.
     authorization_response = wsgi_app.last_request_uri.replace('http','https')
-    yield {"code":CCODES["GOOGLE_LOGIN_URL"],"msg":"Google Login URL","data":{"url":authorization_response}}
+    output({"code":CCODES["GOOGLE_LOGIN_URL"],"msg":"Google Login URL","data":{"url":authorization_response}})
 
     flow.fetch_token(authorization_response=authorization_response)
 
     creds = flow.credentials
 
+    output({"code":CCODES["GOOGLE_LOGIN_SUCCESS"],"msg":"Google Login Was Successfull!"})
+
     with open(TOKEN_FILE_PATH, 'wb') as token:
       pickle.dump(creds, token)
-    yield {"code":CCODES["GOOGLE_LOGIN_SUCCESS"],"msg":"Google Login Was Successfull!"}
 
+    return build('drive', 'v3', credentials=creds)
   except OSError as e:
-    yield {"code":CCODES["INTERNET_CONNECTION_ERROR"],"msg":str(e)}
+    output({"code":CCODES["INTERNET_CONNECTION_ERROR"],"msg":str(e)})
+    output({"code":CCODES["GOOGLE_LOGIN_FAILED"],"msg":str(e)})
   except Exception as e:
-    yield {"code":CCODES["GOOGLE_LOGIN_FAILED"],"msg":str(e)}
+    output({"code":CCODES["GOOGLE_LOGIN_FAILED"],"msg":str(e)})
+
+def getUSERInfo(CCODES,service = None):
+  if(not service): service = get_gdrive_service(CCODES)
+  userInfo = service.about().get(fields="user,storageQuota").execute()
+
+  return userInfo

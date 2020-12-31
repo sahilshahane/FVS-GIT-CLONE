@@ -15,8 +15,11 @@ const FolderArea = () => {
           return (
             <Col
               xs={{ span: 24 }}
-              sm={{ span: 8 }}
-              md={{ span: 6 }}
+              sm={{ span: 12 }}
+              md={{ span: 8 }}
+              lg={{ span: 6 }}
+              xl={{ span: 6 }}
+              xxl={{ span: 6 }}
               key={nanoid()}
             >
               <Folder folderInfo={folder} />

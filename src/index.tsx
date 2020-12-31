@@ -13,6 +13,7 @@ import log from './Pages/modules/log';
 import { CurrentSettings } from './Pages/modules/Redux/AppSettingsSlicer';
 import App from './App';
 import Login from './Pages/Login';
+import { CCODES } from './Pages/modules/get_App_Data';
 
 // Top Routes
 const MAIN = () => {
@@ -36,6 +37,7 @@ const MAIN = () => {
     </Switch>
   );
 };
+console.log(CCODES);
 
 render(
   <Provider store={store}>

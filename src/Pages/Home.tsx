@@ -5,7 +5,11 @@ import FolderArea from './Components/folder-area';
 const Home = () => {
   log('Rendering Home.tsx');
 
-  return <FolderArea />;
+  return (
+    <div style={{ width: '100%' }}>
+      <FolderArea />
+    </div>
+  );
 };
 
 export default Home;

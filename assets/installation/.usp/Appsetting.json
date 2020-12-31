@@ -13,7 +13,7 @@
   "defaultIgnores": [".usp/**"],
   "profileImage_fileName": "profile.jpg",
   "cloudLoginStatus": {
-    "googleDrive": true
+    "googleDrive": null
   },
   "theme": "dark"
 }
