@@ -37,17 +37,16 @@ const Routing = () => {
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
-      {routeHistory.forEach((r) => {
-
-        if(r === ''){
-          
-        }
-
-      })}
-
+      {routeHistory.forEach((r) => {})}
       <FolderArea updateRoute={updateRoute} data={route} />
     </div>
   );
 };
+
+const breadCrums = () => {
+  return (
+    
+  )
+}
 
 export default Routing;
