@@ -43,6 +43,10 @@ body {
   background-color: var(--component-bg-color);
 }
 
+.routing-area{
+  border: 1px solid yellow;
+}
+
 .folder-area {
   margin: 10px 100px;
   overflow: auto;

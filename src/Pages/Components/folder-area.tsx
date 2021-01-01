@@ -11,6 +11,7 @@ const FolderArea = ({ data, updateRoute }: any) => {
   const [folderInfo, setFolderInfo] = useState(data);
   let folderList: any[] = [];
   let fileList: any[] = [];
+  let errorList: any[] = [];
 
   useEffect(
     () =>
@@ -20,16 +21,21 @@ const FolderArea = ({ data, updateRoute }: any) => {
     []
   );
 
-  console.log('Data recieved at folder-area -> ', data);
+  // console.log('Data recieved at folder-area -> ', data);
 
   data.map((uno: any) => {
-    if (fs.statSync(uno.localLocation).isDirectory()) {
-      folderList = [...folderList, uno];
-    } else {
-      fileList = [...fileList, uno];
+    try {
+      if (fs.statSync(uno.localLocation).isDirectory()) {
+        folderList = [...folderList, uno];
+      } else {
+        fileList = [...fileList, uno];
+      }
+    } catch {
+      errorList = [...errorList, uno];
     }
     return 0;
   });
+  console.log(errorList);
 
   return (
     <Row gutter={[5, 5]} className="folder-area">

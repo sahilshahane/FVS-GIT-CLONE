@@ -1,7 +1,7 @@
 import React from 'react';
 
 const Folder = ({ folderInfo, updateRoute }: any) => {
-  console.log('Folder-UI recieved data ', folderInfo);
+  // console.log('Folder-UI recieved data ', folderInfo);
   const { name, syncStatus } = folderInfo;
   return (
     <div

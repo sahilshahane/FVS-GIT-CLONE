@@ -6,6 +6,7 @@ import FolderArea from './folder-area';
 
 const fs = require('fs');
 const path = require('path');
+
 let routeHistory = [''];
 
 const Routing = () => {
@@ -13,8 +14,22 @@ const Routing = () => {
   useEffect(() => {});
 
   const updateRoute = (newRoute: string) => {
-    // newRoute = newRoute === '' ? data : newRoute;
-    let newData = [];
+    let newData:
+      | any[]
+      | ((
+          prevState: {
+            id: number;
+            name: string;
+            syncStatus: boolean;
+            localLocation: string;
+          }[]
+        ) => {
+          id: number;
+          name: string;
+          syncStatus: boolean;
+          localLocation: string;
+        }[]) = [];
+
     if (newRoute !== '') {
       fs.readdir(newRoute, (err: any, files: string[]) => {
         if (err) return err;
@@ -38,7 +53,7 @@ const Routing = () => {
   };
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
+    <div className="routing-area" style={{ width: '100%', height: '100%' }}>
       <Breadcrumb
         separator=">"
         style={{ border: '1px solid red', height: '50px' }}
@@ -49,6 +64,7 @@ const Routing = () => {
               key={nanoid()}
               onClick={() => {
                 routeHistory = routeHistory.slice(0, routeHistory.indexOf(r));
+                if (routeHistory.length === 0) routeHistory.unshift('');
                 console.log('UPDATING ROUTE BY ', r);
                 updateRoute(r);
               }}
