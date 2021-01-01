@@ -1,17 +1,6 @@
 xxhash==2.0.0
-<<<<<<< HEAD:assets/python-scripts/requirements.txt
-=======
-
->>>>>>> 2c71fdead2a32e164037931496f7724625683ff6:assets/pythonScripts/requirements.txt
 google-api-python-client
-
 google-auth-httplib2
-
 google-auth-oauthlib
-
 tabulate
-<<<<<<< HEAD:assets/python-scripts/requirements.txt
 pandas
-=======
-
->>>>>>> 2c71fdead2a32e164037931496f7724625683ff6:assets/pythonScripts/requirements.txt

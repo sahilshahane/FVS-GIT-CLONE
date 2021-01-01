@@ -4,19 +4,14 @@
   "data_fileExtension": ".json",
   "log_folderName": "logs",
   "log_fileExtension": ".log",
-<<<<<<< HEAD
   "available_cloudStorage": [
     "google_drive"
   ],
-=======
-  "available_cloudStorage": ["google_drive"],
->>>>>>> 2c71fdead2a32e164037931496f7724625683ff6
   "repository_cloudData_folderName": "c_storage",
   "repository_googleDriveID_folderName": "google_drive",
   "repositorySettings_fileName": "repository.json",
   "repository_commit_fileName": "commit.json",
   "repository_Ignore_fileName": ".ignore",
-<<<<<<< HEAD
   "defaultIgnores": [
     ".usp/**"
   ],
@@ -29,12 +24,3 @@
   },
   "theme": "dark"
 }
-=======
-  "defaultIgnores": [".usp/**"],
-  "profileImage_fileName": "profile.jpg",
-  "cloudLoginStatus": {
-    "googleDrive": null
-  },
-  "theme": "dark"
-}
->>>>>>> 2c71fdead2a32e164037931496f7724625683ff6

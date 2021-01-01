@@ -1,32 +1,17 @@
 import React, { useState } from 'react';
 import { Button, Tooltip } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-<<<<<<< HEAD
-=======
-import path from 'path';
->>>>>>> 2c71fdead2a32e164037931496f7724625683ff6
 import selectDir from '../modules/select-directory';
 import runPyScript from '../modules/Run-Script';
 import log from '../modules/log';
 
 const initFolder = async () => {
-<<<<<<< HEAD
   const Handler = (data: any) => {
     console.log(data);
   };
 
   const SELECTED_FOLDER = await selectDir();
   runPyScript('assets\\python-scripts\\main.py', Handler, {
-=======
-  const Handler = (data: any) => {};
-
-  let SELECTED_FOLDER = String();
-
-  if (!(process.env.NODE_ENV === 'development'))
-    SELECTED_FOLDER = await selectDir();
-
-  runPyScript(Handler, {
->>>>>>> 2c71fdead2a32e164037931496f7724625683ff6
     changeDirectory: SELECTED_FOLDER,
     args: ['-init', '-dev'],
   });

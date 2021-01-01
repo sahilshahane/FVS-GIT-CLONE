@@ -4,15 +4,9 @@ import fs from 'fs';
 import log from './log';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-<<<<<<< HEAD
 const Load_APP_HOME_PATH = () => {
   try {
     return path.join(ipcRenderer.sendSync('get-home-path'), '.usp');
-=======
-export const Load_APP_HOME_PATH = () => {
-  try {
-    return ipcRenderer.sendSync('get-home-path');
->>>>>>> 2c71fdead2a32e164037931496f7724625683ff6
   } catch (e_) {
     log('Could Not Load App Home Path', e_.message);
     ipcRenderer.sendSync('quit', {
@@ -47,7 +41,6 @@ const Load_APPSETTINGS = () => {
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const Load_CCODES = () => {
-<<<<<<< HEAD
   const VALUE = {
     CCODES: '',
     CCODES_PATH: '',
@@ -69,11 +62,4 @@ const Load_CCODES = () => {
 
 export const { APP_SETTINGS, APP_SETTINGS_PATH } = Load_APPSETTINGS();
 export const { CCODES, CCODES_PATH } = Load_CCODES();
-=======
-  return ipcRenderer.sendSync('get-CCODES');
-};
-
-export const { APP_SETTINGS, APP_SETTINGS_PATH } = Load_APPSETTINGS();
-export const { CCODES } = Load_CCODES();
->>>>>>> 2c71fdead2a32e164037931496f7724625683ff6
 export const APP_HOME_PATH = Load_APP_HOME_PATH();

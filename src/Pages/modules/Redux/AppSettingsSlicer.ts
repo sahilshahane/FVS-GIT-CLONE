@@ -40,14 +40,4 @@ export const {
   saveGoogleLogin,
 } = AppSettingsSlice.actions;
 export const CurrentSettings = (state: any) => state.AppSettings;
-<<<<<<< HEAD
-=======
-export const GetGoogleUsername = (state: any) => {
-  try {
-    return state.AppSettings.cloudLoginStatus.googleDrive.user.displayName;
-  } catch (e) {
-    return '';
-  }
-};
->>>>>>> 2c71fdead2a32e164037931496f7724625683ff6
 export default AppSettingsSlice.reducer;

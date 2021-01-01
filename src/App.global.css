@@ -84,3 +84,7 @@ body {
 .synced-false {
   background-color: var(--fire-brick);
 }
+
+.file-ui:hover, .folder-ui:hover, .breadcrumb-item:hover{
+  cursor: pointer;
+}

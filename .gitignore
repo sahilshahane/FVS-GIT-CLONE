@@ -48,7 +48,3 @@ npm-debug.log.*
 *.css.d.ts
 *.sass.d.ts
 *.scss.d.ts
-<<<<<<< HEAD
-=======
-token.pickle
->>>>>>> 2c71fdead2a32e164037931496f7724625683ff6

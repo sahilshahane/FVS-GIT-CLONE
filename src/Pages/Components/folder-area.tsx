@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col } from 'antd';
 import { nanoid } from '@reduxjs/toolkit';
 import Folder from './folder-ui';
-<<<<<<< HEAD
 import File from './file-ui';
 import runPythonScript from '../modules/Run-Script';
 
@@ -31,9 +30,6 @@ const FolderArea = ({ data, updateRoute }: any) => {
     }
     return 0;
   });
-
-  console.log("FOLDER LIST = ", folderList);
-  console.log("FILE LIST = ", fileList);
 
   return (
     <Row gutter={[5, 5]} className="folder-area">
@@ -67,34 +63,6 @@ const FolderArea = ({ data, updateRoute }: any) => {
         );
       })}
     </Row>
-=======
-import data from './folder-info';
-import runPythonScript from '../modules/Run-Script';
-
-const FolderArea = () => {
-  const [folderInfo, setFolderInfo] = useState(data);
-
-  return (
-    <>
-      <Row gutter={[5, 5]} className="folder-area">
-        {folderInfo.map((folder) => {
-          return (
-            <Col
-              xs={{ span: 24 }}
-              sm={{ span: 12 }}
-              md={{ span: 8 }}
-              lg={{ span: 6 }}
-              xl={{ span: 6 }}
-              xxl={{ span: 6 }}
-              key={nanoid()}
-            >
-              <Folder folderInfo={folder} />
-            </Col>
-          );
-        })}
-      </Row>
-    </>
->>>>>>> 2c71fdead2a32e164037931496f7724625683ff6
   );
 };
 

@@ -25,19 +25,5 @@
     "yarn.lock": true,
     "*.{css,sass,scss}.d.ts": true
   },
-<<<<<<< HEAD
   "git.ignoreLimitWarning": true
-=======
-  "git.ignoreLimitWarning": true,
-  "files.exclude": {
-    "**/.git": true,
-    "**/.svn": true,
-    "**/.hg": true,
-    "**/CVS": true,
-    "**/.DS_Store": true,
-    "**/.git/objects/**": true,
-    "**/.git/subtree-cache/**": true,
-    "**/node_modules/*/**": true
-  }
->>>>>>> 2c71fdead2a32e164037931496f7724625683ff6
 }

@@ -1,13 +1,15 @@
 import React from 'react';
 
 const File = ({ fileInfo }: any) => {
-  console.log("File-UI recieved data ", fileInfo);
+  console.log('File-UI recieved data ', fileInfo);
+  
   const { name, syncStatus } = fileInfo;
 
   return (
     <div
+      className="file-ui"
       style={{
-        background: 'brown',
+        background: 'rgb(30, 30, 30)',
         height: '75px',
         borderRadius: '5px',
         padding: '5px',
