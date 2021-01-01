@@ -20,6 +20,10 @@
     "@types/react-redux": "^7.1.12",
     "@types/regenerator-runtime": "^0.13.0",
     "@types/request": "^2.48.5",
+<<<<<<< HEAD
     "@types/uuid": "^8.3.0"
+=======
+    "@types/zeromq": "^4.6.3"
+>>>>>>> 2c71fdead2a32e164037931496f7724625683ff6
   }
 }

@@ -18,7 +18,13 @@ import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
+<<<<<<< HEAD
 import MenuBuilder from './menu';
+=======
+import fs from 'fs';
+import MenuBuilder from './menu';
+import logApp from './Pages/modules/log';
+>>>>>>> 2c71fdead2a32e164037931496f7724625683ff6
 
 export default class AppUpdater {
   constructor() {
@@ -33,7 +39,38 @@ const QUIT = () => {
   mainWindow.close();
 };
 
+<<<<<<< HEAD
 let mainWindow: BrowserWindow | null = null;
+=======
+const getAppHomePath = () => {
+  if (process.env.NODE_ENV === 'development')
+    return path.join('assets', 'installation', '.usp');
+
+  return path.join(app.getPath('home'), '.usp');
+};
+
+const Load_CCODES = () => {
+  const VALUE = {
+    CCODES: '',
+    CCODES_PATH: '',
+  };
+
+  try {
+    const APP_HOME_PATH = getAppHomePath();
+
+    VALUE.CCODES_PATH = path.join(APP_HOME_PATH, 'Communication_Codes.json');
+    VALUE.CCODES = JSON.parse(fs.readFileSync(VALUE.CCODES_PATH).toString());
+  } catch (e_) {
+    logApp('Could not Load Communication Codes', e_.message);
+    dialog.showErrorBox('Could not Load Communication Codes', e_.message);
+    QUIT();
+  }
+  return VALUE;
+};
+
+let mainWindow: BrowserWindow | null = null;
+const CCODES = Load_CCODES();
+>>>>>>> 2c71fdead2a32e164037931496f7724625683ff6
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -143,11 +180,15 @@ app.on('activate', () => {
 });
 
 ipcMain.on('get-home-path', (evt) => {
+<<<<<<< HEAD
   if (process.env.NODE_ENV === 'development') {
     evt.returnValue = path.join('assets', 'installation');
   } else {
     evt.returnValue = app.getPath('home');
   }
+=======
+  evt.returnValue = getAppHomePath();
+>>>>>>> 2c71fdead2a32e164037931496f7724625683ff6
 });
 
 ipcMain.handle('select-directory', async () => {
@@ -165,3 +206,10 @@ ipcMain.on('quit', (evt, args) => {
   dialog.showErrorBox('', message);
   QUIT();
 });
+<<<<<<< HEAD
+=======
+
+ipcMain.on('get-CCODES', (evt) => {
+  evt.returnValue = CCODES;
+});
+>>>>>>> 2c71fdead2a32e164037931496f7724625683ff6
