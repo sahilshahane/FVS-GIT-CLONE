@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Row, Col } from 'antd';
 import { nanoid } from '@reduxjs/toolkit';
-import Folder from './folder-ui';
-import File from './file-ui';
-import runPythonScript from '../modules/Run-Script';
+import Folder from '../Components/folder-ui';
+import File from '../Components/file-ui';
+import runPythonScript from './Run-Script';
+import { RoutingContext } from './routing-context';
 
 const fs = require('fs');
 
-const FolderArea = ({ data, updateRoute }: any) => {
+//  const FolderArea = ({ data, updateRoute }: any) => {
+const FolderArea = () => {
+  const { route, updateRoute }: any = useContext(RoutingContext);
+  const data = route;
+
   const [folderInfo, setFolderInfo] = useState(data);
   let folderList: any[] = [];
   let fileList: any[] = [];
@@ -35,7 +40,6 @@ const FolderArea = ({ data, updateRoute }: any) => {
     }
     return 0;
   });
-  console.log(errorList);
 
   return (
     <Row gutter={[5, 5]} className="folder-area">
