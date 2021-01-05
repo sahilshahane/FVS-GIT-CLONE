@@ -42,10 +42,7 @@ const Routing = () => {
   return (
     <RoutingContext.Provider value={{ updateRoute, route }}>
       <div className="routing-area" style={{ width: '100%', height: '100%' }}>
-        <Breadcrumb
-          separator=">"
-          style={{ border: '1px solid red', height: '50px' }}
-        >
+        <Breadcrumb separator="/" className="breadcrumb">
           {routeHistory.map((r) => {
             return (
               <Breadcrumb.Item
@@ -53,12 +50,11 @@ const Routing = () => {
                 onClick={() => {
                   routeHistory = routeHistory.slice(0, routeHistory.indexOf(r));
                   if (routeHistory.length === 0) routeHistory.unshift('');
-                  console.log('UPDATING ROUTE BY ', r);
                   updateRoute(r);
                 }}
                 className="breadcrumb-item"
               >
-                {r === '' ? 'Home' : path.basename(r)}
+                {r === '' ? 'Home' : path.basename(r).length > 20 ? `${path.basename(r).slice(0, 20)}...` : path.basename(r)}
               </Breadcrumb.Item>
             );
           })}

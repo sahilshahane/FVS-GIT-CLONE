@@ -16,7 +16,7 @@ const Folder = ({ folderInfo, updateRoute }: any) => {
         padding: '5px',
       }}
     >
-      <h3>{name}</h3>
+      <h3>{name.length > 20 ? `${name.slice(0, 20)}...` : name}</h3>
       {syncStatus === true ? (
         <span className="synced-true" />
       ) : (
