@@ -9,7 +9,6 @@ const onSelect = (value: unknown) => {
 
 const NAV_BAR = () => {
   log('Rendering NAV_BAR.tsx');
-
   // console.log('Rendering Nav-bar.tsx');
 
   return (
@@ -20,7 +19,7 @@ const NAV_BAR = () => {
       >
         <Input.Search
           size="large"
-          placeholder="input here"
+          placeholder="Search"
           enterButton
           style={{ borderRadius: '35px' }}
         />

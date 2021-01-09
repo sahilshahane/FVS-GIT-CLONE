@@ -26,7 +26,7 @@ const FolderArea = () => {
     []
   );
 
-  // console.log('Data recieved at folder-area -> ', data);
+  console.log('Data recieved at folder-area -> ', data);
 
   data.map((uno: any) => {
     try {
