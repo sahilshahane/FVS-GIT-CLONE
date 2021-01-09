@@ -41,12 +41,19 @@ class App():
     args_const.add_argument('-init',"--initialize", help='Initillizes the Current Working Directory', action="store_true")
     args_const.add_argument('-u',"--update", help='Update the Repository App Data', action="store_true")
     args_const.add_argument('-dev',"--development", help='Enable Development Environment', action="store_true")
+    args_const.add_argument('-clean',"--clean", help='Cleans repository data, must be used with Development Environment Only', action="store_true")
     args_const.add_argument('-glogin',"--googleLogin", help='Log-in into Google Account', action="store_true")
     args_const.add_argument('-guserinfo',"--googleUserInfo", help='Provides Account Information for Logged In Google Account', action="store_true")
 
     args = args_const.parse_args()
 
-    if(args.development): self.Development()
+    if(args.development):
+      if(args.clean):
+        try:
+          shutil.rmtree(os.path.join('.',"Testing",'.usp'))
+        except Exception as e: pass
+
+      self.Development()
     else:
       # CHANGE THE CWD [CURRENT WORKING DIRECTORY] ARGUMENT, ALWAYS SPECIFY THIS ARGUMENT
       if(args.change_directory): os.chdir(args.change_directory)
@@ -72,7 +79,6 @@ class App():
       self.REPOSITORY_SETTINGS = self.LOAD_REPOSITORY_SETTINGS()
       self.update()
 
-
   def Production(self):
     USER_HOME_PATH = pathlib.Path.home()
 
@@ -80,10 +86,6 @@ class App():
 
   def Development(self):
     os.environ["APP_FOLDER_PATH"] = os.path.join(os.getcwd(),'assets','installation','.usp') # APP's Main Folder, Where we are going to store App related Files
-
-    try:
-      shutil.rmtree(os.path.join('.',"Testing",'.usp'))
-    except Exception as e: pass
 
     os.chdir(os.path.join('.',"Testing"))
 
@@ -334,4 +336,6 @@ class App():
     output({"code":self.CCODES["GOOGLE_USER_INFO"],"msg":"Google User Data","data":userInfo})
     return userInfo
 
-App()
+if __name__ == "__main__":
+  App()
+
