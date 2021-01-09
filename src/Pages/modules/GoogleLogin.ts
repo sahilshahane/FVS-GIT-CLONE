@@ -5,7 +5,7 @@ import querystring from 'querystring';
 import openURLinBrowser from 'open';
 import path from 'path';
 import portfinder from 'portfinder';
-import { APP_HOME_PATH } from './get_App_Data';
+import { APP_HOME_PATH } from './get_AppData';
 
 const loadCredentials = () => {
   return fs.promises

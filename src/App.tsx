@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layout, Row } from 'antd';
 
-import NAV_BAR from './Pages/Components/Nav-bar';
+import Search_Bar from './Pages/Components/Search_Bar';
 // eslint-disable-next-line import/no-cycle
 import InnerRoutes from './InnerRoutes';
 import SideBar from './Pages/Components/Side-Bar';
@@ -17,7 +17,7 @@ const App = () => {
       <SideBar />
       <Layout style={{ padding: 5 }} className="app-bg">
         <Content style={{ backgroundColor: 'inherit' }}>
-          <NAV_BAR />
+          <Search_Bar />
           <Row
             style={{
               margin: '5px 0 0 0',

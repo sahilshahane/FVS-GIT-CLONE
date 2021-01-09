@@ -1,6 +1,6 @@
 import { PythonShell, PythonShellError } from 'python-shell';
 import path from 'path';
-import showError from './ErrorPopup';
+import showError from './ErrorPopup_dialog';
 
 const DEFAULT_OPTIONS = {
   scriptPath: path.join('assets', 'pythonScripts', 'main.py'),
@@ -9,7 +9,10 @@ const DEFAULT_OPTIONS = {
 };
 
 const runPythonScript: (
-  handler: (arg0: { code: number }, arg1?: () => void) => void,
+  handler: (
+    arg0: { code: number; msg?: string; data?: Object | any },
+    arg1?: () => void
+  ) => void,
   options?: {
     scriptPath?: string;
     changeDirectory?: string;

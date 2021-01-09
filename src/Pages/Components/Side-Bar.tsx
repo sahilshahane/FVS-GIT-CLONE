@@ -8,7 +8,7 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import log from '../modules/log';
-import Profile from './Profile';
+import Profile from './Side-Bar_Profile';
 
 const { Sider } = Layout;
 const { SubMenu } = Menu;

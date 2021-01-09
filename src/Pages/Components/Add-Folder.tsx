@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Tooltip } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import path from 'path';
-import selectDir from '../modules/select-directory';
+import selectDir from '../modules/select_directory_dialog';
 import runPyScript from '../modules/Run-Script';
 import log from '../modules/log';
 

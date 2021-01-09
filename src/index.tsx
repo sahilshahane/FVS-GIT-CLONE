@@ -13,7 +13,7 @@ import log from './Pages/modules/log';
 import { CurrentSettings } from './Pages/modules/Redux/AppSettingsSlicer';
 import App from './App';
 import Login from './Pages/Login';
-import { CCODES } from './Pages/modules/get_App_Data';
+import { CCODES } from './Pages/modules/get_AppData';
 
 // Top Routes
 const MAIN = () => {

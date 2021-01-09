@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import fs from 'fs';
-import { APP_SETTINGS, APP_SETTINGS_PATH } from '../get_App_Data';
+import { APP_SETTINGS, APP_SETTINGS_PATH } from '../get_AppData';
 import log from '../log';
 
 export const AppSettingsSlice = createSlice({

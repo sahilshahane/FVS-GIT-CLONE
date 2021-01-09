@@ -10,7 +10,7 @@ import {
 } from './modules/Redux/AppSettingsSlicer';
 import runScript from './modules/Run-Script';
 import log from './modules/log';
-import { CCODES } from './modules/get_App_Data';
+import { CCODES } from './modules/get_AppData';
 
 const RunLoginScript = async (
   dispatch: Dispatch<any>,

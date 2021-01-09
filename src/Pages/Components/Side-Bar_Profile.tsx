@@ -5,7 +5,7 @@ import { Row, Avatar, Typography } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import Animate from 'rc-animate';
 import { useSelector } from 'react-redux';
-import ChangeProfileImg from './changeProfileImg';
+import ChangeProfileImg from './Choose_Profile_Image';
 import log from '../modules/log';
 import { GetGoogleUsername } from '../modules/Redux/AppSettingsSlicer';
 

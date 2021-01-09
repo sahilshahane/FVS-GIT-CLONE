@@ -34,6 +34,21 @@
     "**/.DS_Store": true,
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,
-    "**/node_modules/*/**": true
+    "**/node_modules": true,
+    ".editorconfig": true,
+    ".eslintignore": true,
+    ".eslintrc.js": true,
+    ".gitattributes": true,
+    ".npmrc": true,
+    "babel.config.js": true,
+    "**/package-lock.json": true,
+    "**/yarn.lock": true,
+    "tsconfig.json": true,
+    "assets/icon.icns": true,
+    "assets/icon.ico": true,
+    "assets/icon.png": true,
+    "assets/icon.svg": true,
+    ".erb": true,
+    "src/main.prod.js.LICENSE.txt": true
   }
 }
