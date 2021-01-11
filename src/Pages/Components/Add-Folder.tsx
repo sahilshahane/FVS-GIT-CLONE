@@ -4,9 +4,18 @@ import { PlusOutlined } from '@ant-design/icons';
 import selectDir from '../modules/select_directory_dialog';
 import runPyScript from '../modules/Run-Script';
 import log from '../modules/log';
+import RepoNavInterface from '../modules/Interface';
+import { CCODES } from '../modules/get_AppData';
 
 const initFolder = async () => {
-  const Handler = (data: any) => {};
+  const Handler = (data: any) => {
+    switch (data.code) {
+      case CCODES['INIT']:
+        // RepoNavInterface.updateFolderInfo()
+        console.log(data);
+        break;
+    }
+  };
 
   let SELECTED_FOLDER = String();
 
@@ -15,7 +24,7 @@ const initFolder = async () => {
 
   runPyScript(Handler, {
     changeDirectory: SELECTED_FOLDER,
-    args: ['-init', '-dev'],
+    args: ['-init', '-clean'],
   });
 };
 

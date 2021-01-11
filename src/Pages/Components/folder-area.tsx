@@ -1,29 +1,17 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useContext } from 'react';
 import { Row, Col } from 'antd';
 import { nanoid } from '@reduxjs/toolkit';
 import fs from 'fs';
 import { File, Folder } from './folder-area-ui';
-import runPythonScript from '../modules/Run-Script';
-import { RoutingContext } from './Routing-area';
-import path from 'path';
+import { RoutingContext } from './FS_Navigation_Bar';
 
 const FolderArea = () => {
   const { route, updateRoute }: any = useContext(RoutingContext);
   const data = route;
 
-  const [folderInfo, setFolderInfo] = useState(data);
   let folderList: any[] = [];
   let fileList: any[] = [];
   let errorList: any[] = [];
-
-  useEffect(
-    () =>
-      runPythonScript(
-        (Folder_Obj) => setFolderInfo([...folderInfo, Folder_Obj]),
-        { scriptPath: path.join('assets\\pythonScripts\\delete.py') }
-      ),
-    []
-  );
 
   // console.log('Data recieved at folder-area -> ', data);
 

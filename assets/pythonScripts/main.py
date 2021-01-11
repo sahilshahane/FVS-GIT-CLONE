@@ -1,7 +1,7 @@
 # SYSTEM IMPORTS
-import os,pathlib,time,json,shutil,argparse,sys
-from log import output,output_direct
+import os,pathlib,time,json,shutil,argparse
 
+from log import output,output_direct
 from generateData import generateMetaData
 from HashGen import generateFileHash
 from DrivePart import GoogleDrive
@@ -27,6 +27,7 @@ class App():
   REPOSITORY_SETTINGS = None
   REPOSITORY_LOG_FOLDER_PATH = None
   REPOSITORY_DATA_FOLDER_PATH = None
+  REPOSITORY_DIR_DATA_PATH = None
   COMMIT_FILE_PATH = None
 
   # LOAD CLOUD_STORAGE CONFIGURATION, GID_FOLDER_PATH = GOOGLE DRIVE IDs will be stored
@@ -68,6 +69,7 @@ class App():
 
     if(args.googleUserInfo):
       self.getGoogleUserInfo()
+      exit()
 
     self.LOAD_REPOSITORY_INIT_DATA()
 
@@ -96,13 +98,15 @@ class App():
   def LOAD_REPOSITORY_INIT_DATA(self):
     # LOAD REPOSITORY SETTINGS
     self.REPOSITORY_PATH = os.path.join(self.APP_SETTINGS["repository_folderName"])
-    self.REPOSITORY_SETTINGS_PATH = os.path.join(self.REPOSITORY_PATH, self.APP_SETTINGS["repositorySettings_fileName"])
-    self.REPOSITORY_LOG_FOLDER_PATH = os.path.join(self.REPOSITORY_PATH,self.APP_SETTINGS["log_folderName"])
-    self.REPOSITORY_DATA_FOLDER_PATH = os.path.join(self.REPOSITORY_PATH,self.APP_SETTINGS["data_folderName"])
+
+    self.REPOSITORY_SETTINGS_PATH = os.path.join(self.REPOSITORY_PATH,  self.APP_SETTINGS["repositorySettings_fileName"])
+    self.REPOSITORY_LOG_FOLDER_PATH = os.path.join(self.REPOSITORY_PATH, self.APP_SETTINGS["log_folderName"])
+    self.REPOSITORY_DATA_FOLDER_PATH = os.path.join(self.REPOSITORY_PATH, self.APP_SETTINGS["data_folderName"])
+    self.REPOSITORY_DIR_DATA_PATH = os.path.join(self.REPOSITORY_PATH, self.APP_SETTINGS["repository_directoryData_fileName"])
     self.COMMIT_FILE_PATH = os.path.join(self.REPOSITORY_PATH,self.APP_SETTINGS["repository_commit_fileName"])
 
     # LOAD CLOUD_STORAGE CONFIGURATION, GID_FOLDER_PATH = GOOGLE DRIVE IDs will be stored
-    self.REPOSITORY_CLOUD_STORAGE_FOLDER_PATH = os.path.join(self.REPOSITORY_PATH,self.APP_SETTINGS["repository_cloudData_folderName"])
+    self.REPOSITORY_CLOUD_STORAGE_FOLDER_PATH = os.path.join(self.REPOSITORY_PATH, self.APP_SETTINGS["repository_cloudData_folderName"])
     self.GID_FOLDER_PATH = os.path.join(self.REPOSITORY_CLOUD_STORAGE_FOLDER_PATH, self.APP_SETTINGS["repository_googleDriveID_folderName"])
 
   def LOAD_APP_SETTINGS(self):
@@ -197,30 +201,58 @@ class App():
       MD_FILE_NAME = str(int(time.time()))+self.APP_SETTINGS["data_fileExtension"]
       MD_ = generateMetaData( EXPORT_DIRECTORY=self.REPOSITORY_DATA_FOLDER_PATH,
                               FILE_NAME=MD_FILE_NAME,
-                              APP_DATA_FOLDER=self.REPOSITORY_PATH,
-                              HASH="md5",
+                              REPOSITORY_PATH=self.REPOSITORY_PATH,
+                              HASH="xxh3_64",
                               ignore=ignores)
 
-      if showOutput:
-        for data in MD_.generate():
-            tmp = self.CCODES["FILE_DATA_CREATED"]
-            output_direct(f"{{\"code\":{tmp},\"data\":{{{data}}}}}")
-            del(tmp)
-      else:
-        for _ in MD_.generate(): continue
+      with open(os.path.join(self.REPOSITORY_DIR_DATA_PATH),'w') as RepositoryDirDataFile_:
+        if showOutput:
+          tmp = self.CCODES["FILE_DATA_CREATED"]
+          for outputData in MD_.generate(RepositoryDirDataFile_):
+              output_direct(f"{{\"code\":{tmp},\"data\":{{{outputData}}}}}")
+              # output({"code":self.CCODES["FILE_DATA_CREATED"],"data":data})
+          del tmp
+
+        else:
+          for _ in MD_.generate(RepositoryDirDataFile_): continue
 
       return MD_.getInfo()
 
   def LOAD_IGNORE_DATA(self):
-      IGNORE_FILE_PATH = os.path.join('.',self.APP_SETTINGS["repository_Ignore_fileName"])
+
+      IGNORE_FILE_PATH_OUTSIDE_REPO = ".uspignore"
+      IGNORE_FILE_PATH_INSIDE_REPO = os.path.join(self.REPOSITORY_PATH,".uspignore")
       ignores = self.APP_SETTINGS["defaultIgnores"]
 
-      if os.path.exists(IGNORE_FILE_PATH):
-          file_=  open(IGNORE_FILE_PATH,"r")
-          ignores = [line.replace("\n","") for line in file_.readlines()]
+      # JUST INCASE
+      if not ignores: ignores = []
+
+      # shut the fuck up...sry, my head is paining | it's a generator
+      def generate_ignore(path_):
+        if os.path.exists(path_):
+          file_= open(path_,"r")
+          for line in file_.readlines():
+            line = line.strip()
+
+            if line.startswith("./") or line.startswith(".\\"):
+              line = os.path.normpath(line)
+
+              if line.endswith('**'):
+                if not os.path.exists(line[:-2]): line = None
+                else: line = os.path.join('.',line)
+              else:
+                line = os.path.join(".",line)
+                if not os.path.exists(line): line = None
+
+            if line: yield line
+
           file_.close()
 
-      output({"code":self.CCODES["IGNORE_DATA_LOAD"],"msg":"Loaded Ignore Settings"})
+      ignores.extend([ignore for ignore in generate_ignore(IGNORE_FILE_PATH_INSIDE_REPO)])
+      ignores.extend([ignore for ignore in generate_ignore(IGNORE_FILE_PATH_OUTSIDE_REPO)])
+
+      if ignores: output({"code":self.CCODES["IGNORE_DATA_LOAD"],"msg":"Loaded Ignore Settings"})
+
       return ignores
 
   def Get_latest_commit_info(self):
@@ -276,33 +308,31 @@ class App():
       NEW_FILES = new_Data_FILE_PATHS.difference(old_Data_FILE_PATHS)
       DELETED_FILES = old_Data_FILE_PATHS.difference(new_Data_FILE_PATHS)
 
-      del(new_Data_FILE_PATHS)
-      del(old_Data_FILE_PATHS)
 
-      cFHfilter = new_Data
-
-      for filePath_ in NEW_FILES:
-          cFHfilter = cFHfilter - filePath_
-          yield {"code":self.CCODES["NEW_FILE_DETECTED"],"data":{"filePath":filePath_,"fileName":NEW_FILES[filePath_]["fileName"]}}
-
-      for filePath_ in DELETED_FILES:
-          cFHfilter = cFHfilter - filePath_
-          yield {"code":self.CCODES["DELETED_FILE_DETECTED"],"data":{"filePath":filePath_,"fileName":DELETED_FILES[filePath_]["fileName"]}}
+      del old_Data_FILE_PATHS
 
       # cFfilter means common File Hash Filter
-      # cFHfilter = NEW_FILES - (NEW_FILES | DELETED_FILES) # "NEW_FILES | DELETED_FILES" <--- means two sets are combined
+      # cFHfilter = new_Data_FILE_PATHS - (NEW_FILES | DELETED_FILES) # "NEW_FILES | DELETED_FILES" <--- means two sets are combined
+      cFHfilter = new_Data_FILE_PATHS - (NEW_FILES | DELETED_FILES)
+      del new_Data_FILE_PATHS
 
-      del(NEW_FILES)
-      del(DELETED_FILES)
+      for filePath_ in NEW_FILES:
+          yield {"code":self.CCODES["NEW_FILE_DETECTED"],"data":{"filePath":filePath_,"fileName":new_Data[filePath_]["fileName"]}}
+
+      for filePath_ in DELETED_FILES:
+          yield {"code":self.CCODES["DELETED_FILE_DETECTED"],"data":{"filePath":filePath_,"fileName":old_Data[filePath_]["fileName"]}}
+
+      del NEW_FILES
+      del DELETED_FILES
 
       # MODIFIED FILES
       for cHKey in cFHfilter:
           if old_Data[cHKey]["hash"] != new_Data[cHKey]["hash"]:
               yield {"code":self.CCODES["MODIFIED_FILE_DETECTED"],"data":{"filePath":cHKey,"fileName":new_Data[cHKey]["fileName"]}}
 
-      del(cFHfilter)
-      del(new_Data)
-      del(old_Data)
+      del cFHfilter
+      del new_Data
+      del old_Data
 
   def initialize(self):
       # Checks if a Folder / Repo is already Initialized
@@ -315,7 +345,10 @@ class App():
           # First Commit
           FILE_INFO = self.GEN_MetaData()
           self.commit(MD_FILE_INFO=FILE_INFO)
-          output({"code":self.CCODES["INIT"],"msg":"Repository Initialization Completed"})
+
+          currentPath = os.getcwd().replace('\\','/')
+
+          output({"code":self.CCODES["INIT"],"msg":"Repository Initialization Completed","data":{"folderName":currentPath[currentPath.rindex('/')+1:],"localPath":currentPath}})
 
   def setGDriveService(self,service):
     self.Gservice = service

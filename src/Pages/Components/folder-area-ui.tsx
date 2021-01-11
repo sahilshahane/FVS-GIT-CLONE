@@ -2,7 +2,7 @@ import React from 'react';
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~// FILE UI //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export const File = ({ fileInfo }: any) => {
   // console.log('File-UI recieved data ', fileInfo);
-  const { name, syncStatus } = fileInfo;
+  const { displayName, syncStatus } = fileInfo;
   return (
     <div
       className="file-ui"
@@ -13,7 +13,11 @@ export const File = ({ fileInfo }: any) => {
         padding: '5px',
       }}
     >
-      <h3>{name.length > 20 ? `${name.slice(0, 20)}...` : name}</h3>
+      <h3>
+        {displayName.length > 20
+          ? `${displayName.slice(0, 20)}...`
+          : displayName}
+      </h3>
       {syncStatus === true ? (
         <span className="synced-true" />
       ) : (
@@ -26,7 +30,7 @@ export const File = ({ fileInfo }: any) => {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~// FOLDER UI //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export const Folder = ({ folderInfo, updateRoute }: any) => {
   // console.log('Folder-UI recieved data ', folderInfo);
-  const { name, syncStatus } = folderInfo;
+  const { displayName, syncStatus } = folderInfo;
   return (
     <div
       onDoubleClick={() => {
@@ -40,7 +44,11 @@ export const Folder = ({ folderInfo, updateRoute }: any) => {
         padding: '5px',
       }}
     >
-      <h3>{name.length > 20 ? `${name.slice(0, 20)}...` : name}</h3>
+      <h3>
+        {displayName.length > 20
+          ? `${displayName.slice(0, 20)}...`
+          : displayName}
+      </h3>
       {syncStatus === true ? (
         <span className="synced-true" />
       ) : (

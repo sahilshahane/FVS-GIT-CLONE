@@ -1,5 +1,7 @@
 import hashlib
 import xxhash
+import json
+import os
 
 HASHES = {
         "blake2b":hashlib.blake2b,
@@ -21,15 +23,19 @@ HASHES = {
         "xxh3_64":xxhash.xxh3_64,
     }
 
-def generateHash(data,hashType="md5"):
+def generateHash(data,hashType="xxh3_64"):
     try:
         return HASHES[hashType](data).hexdigest()
     except TypeError:
         raise Exception("Only Input String Data for Hasing")
 
 # Checks a File in Chucks to make it memory efficient and faster
-def generateFileHash(filePath,hashType="md5",BYTE_SIZE=32768):
+def generateFileHash(filePath,hashType="xxh3_64",BYTE_SIZE=32768):
        with open(filePath,"rb") as file_:
+
+        if(os.path.getsize(filePath)<=BYTE_SIZE):
+          return generateHash(file_.read())
+
         file_hash = HASHES[hashType]()
         chunk = file_.read(BYTE_SIZE)
         while chunk:=file_.read(BYTE_SIZE):

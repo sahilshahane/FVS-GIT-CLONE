@@ -1,9 +1,9 @@
 import json
 
 def output(_):
+    pass
     print(json.dumps(_))
-    # pass
 
 def output_direct(_):
+    pass
     print(_)
-    # pass

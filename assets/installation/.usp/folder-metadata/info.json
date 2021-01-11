@@ -1,8 +1,7 @@
 {
   "info": [
     {
-      "id": 1,
-      "name": "Testing",
+      "displayName": "Testing",
       "syncStatus": true,
       "localLocation": "Testing"
     }
