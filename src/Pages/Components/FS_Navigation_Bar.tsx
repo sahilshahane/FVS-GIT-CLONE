@@ -1,90 +1,73 @@
 import React, { useState, useEffect } from 'react';
-import { nanoid } from '@reduxjs/toolkit';
+import { useDispatch, useSelector } from 'react-redux';
+import { Dispatch, nanoid } from '@reduxjs/toolkit';
 import { Breadcrumb } from 'antd';
-import path from 'path';
-import fs from 'fs';
-import FolderArea from './folder-area';
-import inter from '../modules/Interface';
+import {
+  RepositoryInfo,
+  goBack_From_CurrentLocation,
+} from '../modules/Redux/UserRepositorySlicer';
 
-export const RoutingContext = React.createContext({});
-
-let routeHistory = [''];
-let data = { info: [] };
-
-const Load_USER_Repositories = (
-  setRoute: React.Dispatch<React.SetStateAction<never[]>>
+const updateLocation = (
+  currentDirLocation: Array<String>,
+  selectedRepository: RepositoryInfo
 ) => {
-  inter
-    .getHomeFolderInfo()
-    .then((info: any) => JSON.parse(info))
-    .then((info: any) => {
-      data = info;
-      return setRoute(data.info);
-    })
-    .catch((err: any) => {
-      if (err) console.error(err);
-    });
+  // if selectedRepository === null then you'll be in Home
+  if (!selectedRepository) return ['Home'];
+
+  const RepositoryName =
+    selectedRepository.displayName || selectedRepository.name;
+
+  return [
+    'Home',
+    RepositoryName,
+    ...[...currentDirLocation].splice(selectedRepository.directoryLevel),
+  ];
 };
 
-const updateRoute_Outer = (newRoute: string, setRoute: any) => {
-  if (!newRoute) return setRoute(data.info);
+const change_currentLocation = async (
+  dispatch: Dispatch<any>,
+  PathIndex: number | null = null
+) => {
+  if (PathIndex != null) {
+    // Excluding ["Home"]
+    PathIndex = PathIndex - 1;
 
-  routeHistory.push(newRoute);
-
-  fs.promises
-    .readdir(newRoute)
-    .then((files: string[]) => {
-      const newData = files.map((file: string) => {
-        return {
-          displayName: path.basename(file),
-          syncStatus: false,
-          localLocation: path.join(newRoute, file),
-        };
-      });
-      setRoute(newData);
-    })
-    .catch((err: any) => {
-      if (err) return err;
-    });
+    dispatch(goBack_From_CurrentLocation(PathIndex));
+  } else dispatch(goBack_From_CurrentLocation());
 };
 
 const Routing = () => {
-  const [route, setRoute] = useState([]);
+  const [currentDirLocation, selectedRepository] = useSelector((state) => [
+    state.UserRepoData.currentDirLocation,
+    state.UserRepoData.selectedRepository,
+  ]);
+  const dispatch = useDispatch();
+
+  const [BreadCrumbPath, setBreadCrumbPath] = useState(currentDirLocation);
 
   useEffect(() => {
-    Load_USER_Repositories(setRoute);
-  }, []);
-
-  const updateRoute = (newRoute: string) =>
-    updateRoute_Outer(newRoute, setRoute);
+    // UPDATE THE LOCATION, UPDATES ONLY FS_Navigation_Bar
+    setBreadCrumbPath(() =>
+      updateLocation(currentDirLocation, selectedRepository)
+    );
+  }, [currentDirLocation]);
 
   return (
-    <RoutingContext.Provider value={{ updateRoute, route }}>
-      <div className="routing-area" style={{ width: '100%', height: '100%' }}>
-        <Breadcrumb separator="/" className="breadcrumb">
-          {routeHistory.map((r) => {
-            return (
-              <Breadcrumb.Item
-                key={nanoid()}
-                onClick={() => {
-                  routeHistory = routeHistory.slice(0, routeHistory.indexOf(r));
-                  if (routeHistory.length === 0) routeHistory.unshift('');
-                  updateRoute(r);
-                }}
-                className="breadcrumb-item"
-              >
-                {r === ''
-                  ? 'Home'
-                  : path.basename(r).length > 20
-                  ? `${path.basename(r).slice(0, 20)}...`
-                  : path.basename(r)}
-              </Breadcrumb.Item>
-            );
-          })}
-        </Breadcrumb>
-        <FolderArea />
-      </div>
-    </RoutingContext.Provider>
+    <div onDoubleClick={() => change_currentLocation(dispatch)}>
+      <Breadcrumb separator="/" className="breadcrumb">
+        {BreadCrumbPath.map((Path_Name: any, PathIndex: number) => {
+          return (
+            <Breadcrumb.Item
+              key={nanoid()}
+              className="breadcrumb-item"
+              onClick={() => change_currentLocation(dispatch, PathIndex)}
+            >
+              {Path_Name}
+            </Breadcrumb.Item>
+          );
+        })}
+      </Breadcrumb>
+    </div>
   );
 };
 

@@ -206,15 +206,9 @@ class App():
                               ignore=ignores)
 
       with open(os.path.join(self.REPOSITORY_DIR_DATA_PATH),'w') as RepositoryDirDataFile_:
-        if showOutput:
-          tmp = self.CCODES["FILE_DATA_CREATED"]
-          for outputData in MD_.generate(RepositoryDirDataFile_):
-              output_direct(f"{{\"code\":{tmp},\"data\":{{{outputData}}}}}")
+        for outputData in MD_.generate(RepositoryDirDataFile_): continue
+              # output_direct(f"{{\"code\":{tmp},\"data\":{{{outputData}}}}}")
               # output({"code":self.CCODES["FILE_DATA_CREATED"],"data":data})
-          del tmp
-
-        else:
-          for _ in MD_.generate(RepositoryDirDataFile_): continue
 
       return MD_.getInfo()
 

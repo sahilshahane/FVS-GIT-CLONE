@@ -4,7 +4,7 @@ import fs from 'fs';
 import log from './log';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const Load_APP_HOME_PATH = () => {
+const Load_APP_HOME_PATH = () => {
   try {
     return ipcRenderer.sendSync('get-home-path');
   } catch (e_) {
@@ -16,34 +16,75 @@ export const Load_APP_HOME_PATH = () => {
   return '';
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-const Load_APPSETTINGS = () => {
-  const VALUE = {
-    APP_SETTINGS: '',
-    APP_SETTINGS_PATH: '',
-  };
-  try {
-    const APP_HOME_PATH = Load_APP_HOME_PATH();
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+export const APP_HOME_PATH = Load_APP_HOME_PATH(); //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    VALUE.APP_SETTINGS_PATH = path.join(APP_HOME_PATH, 'Appsetting.json');
-    VALUE.APP_SETTINGS = JSON.parse(
-      fs.readFileSync(VALUE.APP_SETTINGS_PATH).toString()
-    );
+const Load_APPSETTINGS = () => {
+  try {
+    const APP_SETTINGS_FILE_PATH = path.join(APP_HOME_PATH, 'Appsetting.json');
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    return {
+      APP_SETTINGS: JSON.parse(
+        fs.readFileSync(APP_SETTINGS_FILE_PATH).toString()
+      ),
+      APP_SETTINGS_FILE_PATH,
+    };
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   } catch (e_) {
     log('Could not Load App Settings', e_.message);
     ipcRenderer.sendSync('quit', {
       message: `Could not Load App Settings\n\n${e_}`,
     });
   }
-
-  return VALUE;
+  return { APP_SETTINGS: '', APP_SETTINGS_FILE_PATH: '' };
 };
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const Load_CCODES = () => {
-  return ipcRenderer.sendSync('get-CCODES');
+  return ipcRenderer.sendSync('get-CCODES').CCODES;
 };
 
-export const { APP_SETTINGS, APP_SETTINGS_PATH } = Load_APPSETTINGS();
-export const { CCODES } = Load_CCODES();
-export const APP_HOME_PATH = Load_APP_HOME_PATH();
+const Load_USER_REPOSITORIES_ = () => {
+  try {
+    const USER_REPOSITORY_DATA_FILE_PATH = path.join(
+      APP_HOME_PATH,
+      'folder-metadata',
+      'info.json'
+    );
+    let USER_REPOSITORY_DATA = JSON.parse(
+      fs.readFileSync(USER_REPOSITORY_DATA_FILE_PATH).toString()
+    );
+
+    // Normalize localLocation Path
+    USER_REPOSITORY_DATA.info = USER_REPOSITORY_DATA.info.map(
+      (Repository: any) => {
+        Repository.localLocation = path.normalize(Repository.localLocation);
+        return Repository;
+      }
+    );
+
+    return {
+      USER_REPOSITORY_DATA,
+      USER_REPOSITORY_DATA_FILE_PATH,
+    };
+  } catch (e_) {
+    log('Could not Load User_Repositories', e_.message);
+    ipcRenderer.sendSync('quit', {
+      message: `Could not Load User_Repositories\n\n${e_}`,
+    });
+  }
+
+  return {
+    USER_REPOSITORY_DATA: '',
+    USER_REPOSITORY_DATA_FILE_PATH: '',
+  };
+};
+
+export const { APP_SETTINGS, APP_SETTINGS_FILE_PATH } = Load_APPSETTINGS();
+export const CCODES = Load_CCODES();
+export const {
+  USER_REPOSITORY_DATA,
+  USER_REPOSITORY_DATA_FILE_PATH,
+} = Load_USER_REPOSITORIES_();

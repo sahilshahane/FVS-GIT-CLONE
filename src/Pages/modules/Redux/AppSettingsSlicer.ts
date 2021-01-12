@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import fs from 'fs';
-import { APP_SETTINGS, APP_SETTINGS_PATH } from '../get_AppData';
+import { APP_SETTINGS, APP_SETTINGS_FILE_PATH } from '../get_AppData';
 import log from '../log';
 
 export const AppSettingsSlice = createSlice({
@@ -8,12 +8,16 @@ export const AppSettingsSlice = createSlice({
   initialState: APP_SETTINGS,
   reducers: {
     saveSettings: (state) => {
-      fs.writeFile(APP_SETTINGS_PATH, JSON.stringify(state, null, 2), (err) => {
-        if (err) log('Failed to Save App Settings', err.message);
-        else {
-          log('Saved Updated App Settings');
+      fs.writeFile(
+        APP_SETTINGS_FILE_PATH,
+        JSON.stringify(state, null, 2),
+        (err) => {
+          if (err) log('Failed to Save App Settings', err.message);
+          else {
+            log('Saved Updated App Settings');
+          }
         }
-      });
+      );
     },
     changeTheme: (state, action) => {
       // eslint-disable-next-line default-case

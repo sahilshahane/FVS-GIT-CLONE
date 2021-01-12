@@ -1,9 +1,11 @@
 {
   "info": [
     {
-      "displayName": "Testing",
-      "syncStatus": true,
-      "localLocation": "Testing"
+      "displayName": "Testing | DEV",
+      "localLocation": "Testing",
+      "syncStatus": false
     }
-  ]
+  ],
+  "currentDirLocation": ["Home"],
+  "selectedRepository": null
 }

@@ -1,8 +1,16 @@
 import React from 'react';
+import { useDispatch } from 'react-redux';
+import {
+  GoTo_Repository,
+  move_To_NextLocation,
+} from '../modules/Redux/UserRepositorySlicer';
+import { RepositoryInfo } from '../modules/Redux/UserRepositorySlicer';
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~// FILE UI //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export const File = ({ fileInfo }: any) => {
+export const File = ({ info }: any) => {
   // console.log('File-UI recieved data ', fileInfo);
-  const { displayName, syncStatus } = fileInfo;
+  const fileName = info.name;
+  const { syncStatus } = info;
+
   return (
     <div
       className="file-ui"
@@ -13,11 +21,7 @@ export const File = ({ fileInfo }: any) => {
         padding: '5px',
       }}
     >
-      <h3>
-        {displayName.length > 20
-          ? `${displayName.slice(0, 20)}...`
-          : displayName}
-      </h3>
+      <h3>{fileName.length > 20 ? `${fileName.slice(0, 20)}...` : fileName}</h3>
       {syncStatus === true ? (
         <span className="synced-true" />
       ) : (
@@ -28,14 +32,20 @@ export const File = ({ fileInfo }: any) => {
 };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~// FOLDER UI //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export const Folder = ({ folderInfo, updateRoute }: any) => {
-  // console.log('Folder-UI recieved data ', folderInfo);
-  const { displayName, syncStatus } = folderInfo;
+export const Folder = ({ info }: any) => {
+  const dispatch = useDispatch();
+
+  const { name, syncStatus } = info;
+
+  const folderName = name;
+
+  const moveInsideADir = () => {
+    dispatch(move_To_NextLocation(folderName));
+  };
+
   return (
     <div
-      onDoubleClick={() => {
-        updateRoute(folderInfo.localLocation);
-      }}
+      onDoubleClick={moveInsideADir}
       className="folder-ui"
       style={{
         background: ' rgb(27, 27, 27)',
@@ -45,11 +55,41 @@ export const Folder = ({ folderInfo, updateRoute }: any) => {
       }}
     >
       <h3>
-        {displayName.length > 20
-          ? `${displayName.slice(0, 20)}...`
-          : displayName}
+        {folderName.length > 20 ? `${folderName.slice(0, 20)}...` : folderName}
       </h3>
       {syncStatus === true ? (
+        <span className="synced-true" />
+      ) : (
+        <span className="synced-false" />
+      )}
+    </div>
+  );
+};
+
+export const Repository = ({ info }: { info: RepositoryInfo }) => {
+  const dispatch = useDispatch();
+
+  const change_Repo = () => {
+    dispatch(GoTo_Repository(info));
+  };
+
+  return (
+    <div
+      onDoubleClick={change_Repo}
+      className="folder-ui"
+      style={{
+        background: ' rgb(27, 27, 27)',
+        height: '75px',
+        borderRadius: '5px',
+        padding: '5px',
+      }}
+    >
+      <h3>
+        {info.displayName.length > 20
+          ? `${info.displayName.slice(0, 20)}...`
+          : info.displayName}
+      </h3>
+      {info.syncStatus === true ? (
         <span className="synced-true" />
       ) : (
         <span className="synced-false" />

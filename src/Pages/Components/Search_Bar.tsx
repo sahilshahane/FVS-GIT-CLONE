@@ -18,12 +18,7 @@ const NAV_BAR = () => {
         onSelect={onSelect}
         style={{ width: '100%', alignItems: 'center' }}
       >
-        <Input.Search
-          size="large"
-          placeholder="input here"
-          enterButton
-          style={{ borderRadius: '35px' }}
-        />
+        <Input.Search size="large" placeholder="input here" enterButton />
       </AutoComplete>
     </Row>
   );

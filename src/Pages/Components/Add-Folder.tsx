@@ -1,18 +1,24 @@
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { Button, Tooltip } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import selectDir from '../modules/select_directory_dialog';
 import runPyScript from '../modules/Run-Script';
 import log from '../modules/log';
-import RepoNavInterface from '../modules/Interface';
+import { addRepository } from '../modules/Redux/UserRepositorySlicer';
+
 import { CCODES } from '../modules/get_AppData';
 
-const initFolder = async () => {
+const initFolder = async (dispatch: any) => {
   const Handler = (data: any) => {
     switch (data.code) {
       case CCODES['INIT']:
-        // RepoNavInterface.updateFolderInfo()
-        console.log(data);
+        dispatch(
+          addRepository({
+            displayName: data.data.folderName,
+            localLocation: data.data.localPath,
+          })
+        );
         break;
     }
   };
@@ -30,6 +36,7 @@ const initFolder = async () => {
 
 const AddFolder = () => {
   log('Rendering AddFolder.tsx');
+  const dispatch = useDispatch();
 
   const [spinIcon, setSpinIcon] = useState(false);
   // console.log('Rendering Add-Folder.tsx');
@@ -40,7 +47,7 @@ const AddFolder = () => {
         <Button
           type="primary"
           shape="circle"
-          onClick={initFolder}
+          onClick={() => initFolder(dispatch)}
           onMouseEnter={() => setSpinIcon(true)}
           onMouseLeave={() => setSpinIcon(false)}
           icon={
