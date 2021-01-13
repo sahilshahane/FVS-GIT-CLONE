@@ -1,0 +1,6 @@
+./.gitignore
+./.git/**
+__pycache__/**
+./DrivePart/**
+*.py
+./node_modules

@@ -1,39 +1,58 @@
 import { PythonShell, PythonShellError } from 'python-shell';
-import showError from './ErrorPopup';
+import path from 'path';
+import showError from './ErrorPopup_dialog';
+
+const DEFAULT_OPTIONS = {
+  scriptPath: path.join('assets', 'pythonScripts', 'main.py'),
+  changeDirectory: process.env.NODE_ENV === 'development' ? 'Testing' : '.',
+  args: [],
+};
 
 const runPythonScript: (
-  scriptPath: string,
-  handler: (arg0: any) => void,
+  handler: (
+    arg0: { code: number; msg?: string; data?: Object | any },
+    arg1?: () => void
+  ) => void,
   options?: {
-    changeDirectory: string;
-    args: Array<string> | [];
+    scriptPath?: string;
+    changeDirectory?: string;
+    args?: Array<string>;
   },
   errorHandler?: (err: PythonShellError, code: number, signal: string) => void
-) => void = (
-  scriptPath,
-  handler,
-  options = { changeDirectory: '.', args: [] },
-  errorHandler
-) => {
-  const { changeDirectory, args } = options;
+) => () => void = (handler, options, errorHandler) => {
+  const { scriptPath, changeDirectory, args } = {
+    ...DEFAULT_OPTIONS,
+    ...options,
+  };
 
   const script = PythonShell.run(scriptPath, {
     mode: 'text',
     // pythonPath: 'path/to/python',
     pythonOptions: ['-u'], // get print results in real-time
     scriptPath: '.',
-    args: [`-cd`, `${changeDirectory}`, ...args],
+    args: [`-cd`, `${changeDirectory}`, ...args].concat(
+      process.env.NODE_ENV === 'development' ? ['-dev'] : []
+    ),
   });
 
+  const forceKill = () => {
+    script.childProcess.kill('SIGINT');
+  };
+
   script.on('message', (data) => {
-    handler(JSON.parse(data));
+    handler(JSON.parse(data), forceKill);
   });
+
   if (errorHandler) script.end(errorHandler);
   else
     script.end((err, code, signal) => {
       if (err)
         showError(String(err), `Exit Code : ${code}\nSignal : ${signal}`);
     });
+
+  return () => {
+    script.childProcess.kill('SIGINT');
+  };
 };
 
 export default runPythonScript;

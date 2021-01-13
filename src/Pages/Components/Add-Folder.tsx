@@ -1,24 +1,42 @@
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { Button, Tooltip } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import selectDir from '../modules/select-directory';
+import selectDir from '../modules/select_directory_dialog';
 import runPyScript from '../modules/Run-Script';
 import log from '../modules/log';
+import { addRepository } from '../modules/Redux/UserRepositorySlicer';
 
-const initFolder = async () => {
+import { CCODES } from '../modules/get_AppData';
+
+const initFolder = async (dispatch: any) => {
   const Handler = (data: any) => {
-    console.log(data);
+    switch (data.code) {
+      case CCODES['INIT']:
+        dispatch(
+          addRepository({
+            displayName: data.data.folderName,
+            localLocation: data.data.localPath,
+          })
+        );
+        break;
+    }
   };
 
-  const SELECTED_FOLDER = await selectDir();
-  runPyScript('assets\\python-scripts\\main.py', Handler, {
+  let SELECTED_FOLDER = String();
+
+  if (!(process.env.NODE_ENV === 'development'))
+    SELECTED_FOLDER = await selectDir();
+
+  runPyScript(Handler, {
     changeDirectory: SELECTED_FOLDER,
-    args: ['-init', '-dev'],
+    args: ['-init', '-clean'],
   });
 };
 
 const AddFolder = () => {
   log('Rendering AddFolder.tsx');
+  const dispatch = useDispatch();
 
   const [spinIcon, setSpinIcon] = useState(false);
   // console.log('Rendering Add-Folder.tsx');
@@ -29,7 +47,7 @@ const AddFolder = () => {
         <Button
           type="primary"
           shape="circle"
-          onClick={initFolder}
+          onClick={() => initFolder(dispatch)}
           onMouseEnter={() => setSpinIcon(true)}
           onMouseLeave={() => setSpinIcon(false)}
           icon={
