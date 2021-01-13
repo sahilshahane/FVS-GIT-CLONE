@@ -175,10 +175,8 @@ ipcMain.on('get-home-path', (evt) => {
   evt.returnValue = getAppHomePath();
 });
 
-ipcMain.handle('select-directory', async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
-    properties: ['openDirectory'],
-  });
+ipcMain.handle('select-dialog', async (event, options) => {
+  const result = await dialog.showOpenDialog(mainWindow, options);
 
   if (result.filePaths.length < 1) return null;
 

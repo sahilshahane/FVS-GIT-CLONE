@@ -1,7 +1,25 @@
 import { ipcRenderer } from 'electron';
 
-const selectDirectory = async () => {
-  return ipcRenderer.invoke('select-directory');
+const selectDirectory = async (defaultPath = null, multiSelections = false) => {
+  let options = {
+    properties: ['openDirectory'],
+    defaultPath,
+    multiSelections,
+  };
+  if (defaultPath) options.defaultPath = defaultPath;
+
+  return ipcRenderer.invoke('select-dialog', options);
 };
 
-export default selectDirectory;
+const selectFile = async (defaultPath = null, multiSelections = false) => {
+  let options = {
+    properties: ['openFile'],
+    defaultPath,
+    multiSelections,
+  };
+  if (defaultPath) options.defaultPath = defaultPath;
+
+  return ipcRenderer.invoke('select-dialog');
+};
+
+export { selectDirectory, selectFile };
