@@ -1,10 +1,121 @@
 import React, { useState, forwardRef, useImperativeHandle } from 'react';
-import { Modal } from 'antd';
+import { Modal, Button, Input, Space, Row , Col } from 'antd';
+import { useSelector } from 'react-redux';
+import { nanoid } from '@reduxjs/toolkit';
 import {
   selectDirectory,
   selectFile,
 } from '../modules/select_directory_dialog';
-import { nanoid } from 'nanoid';
+import { RepositoryInfo } from '../modules/Redux/UserRepositorySlicer';
+
+const chooseFile = (
+  Handler: any,
+  RepositoryPath: undefined | string = null
+) => {
+  selectFile({ multiSelections: true }).then((choosenFile) => {
+    if (choosenFile) {
+      if (RepositoryPath) Handler(choosenFile, RepositoryPath);
+      else Handler(choosenFile);
+    }
+  });
+};
+
+const chooseDirectory = async (
+  Handler: any,
+  RepositoryPath: undefined | string = null
+) => {
+  selectDirectory({ multiSelections: true, defaultPath: RepositoryPath }).then(
+    (choosenDir) => {
+      if (choosenDir) {
+        if (RepositoryPath) Handler(choosenDir, RepositoryPath);
+        else Handler(choosenDir);
+      }
+    }
+  );
+};
+
+const GLOBAL_CHOOSE_DIALOG = ({ GblChooser, setGblChooser }: any) => {
+  const AddGlobalIgnore = () => {};
+  const CheckandCloseDIalog = () => {
+    // CHECK SAVE PROGRESS THEN CLOSE
+    setGblChooser(false);
+  };
+  return (
+    <Modal
+      title="Choose Globally"
+      visible={GblChooser}
+      onCancel={CheckandCloseDIalog}
+      footer={null}
+    >
+      <Row>
+          <Col>
+            <Input type="text" placeholder="Enter File / Folder Name" required />
+          </Col>
+          <Col>
+            <Button type="primary" onClick={AddGlobalIgnore}>Add</Button>
+          </Col>
+      </Row>
+    </Modal>
+  );
+};
+
+const REPOSITORY_CHOOSE_DIALOG = ({ DirChooser, setDirChooser }: any) => {
+  const Repositories: Array<RepositoryInfo> = useSelector(
+    (state: any) => state.UserRepoData.info
+  );
+
+  const saveIgnoreDirs = (dirPaths: Array<string>, localDirectory: string) => {
+    console.log(dirPaths);
+  };
+
+  const saveIgnoreFiles = (
+    filePaths: Array<string>,
+    localDirectory: string
+  ) => {
+    console.log(filePaths);
+  };
+
+  const CheckandCloseDIalog = () => {
+    // CHECK SAVE PROGRESS THEN CLOSE
+    setDirChooser(false);
+  };
+
+  return (
+    <Modal
+      title="Choose Directory"
+      visible={DirChooser}
+      onCancel={CheckandCloseDIalog}
+      footer={null}
+    >
+      {Repositories.map(({ displayName, localLocation }) => {
+        return (
+          <div key={nanoid()}>
+            <Space>
+              <Space>
+                <span>{displayName}</span> >
+                <span>{localLocation}</span>
+              </Space>
+              <Space>
+                <Button
+                  type="primary"
+                  onClick={() => chooseDirectory(saveIgnoreDirs, localLocation)}
+                >
+                  Directory
+                </Button>
+                <Button
+                  type="primary"
+                  onClick={() => chooseFile(saveIgnoreFiles, localLocation)}
+                >
+                  File
+                </Button>
+              </Space>
+            </Space>
+          </div>
+        );
+      })}
+    </Modal>
+  );
+};
 
 const IgnoreDataSelector = forwardRef((props, ref) => {
   const [StateChooser, setStateChooser] = useState(false);
@@ -12,36 +123,10 @@ const IgnoreDataSelector = forwardRef((props, ref) => {
   const [GblChooser, setGblChooser] = useState(false);
 
   useImperativeHandle(ref, () => ({
-    showStateChooser() {
+    show: () => {
       setStateChooser(true);
     },
   }));
-
-  const chooseFile = () => {
-    selectFile().then((choosenFile) => {
-      if (choosenFile != null) {
-        console.log(chooseFile);
-      }
-    });
-  };
-
-  const chooseDirectory = () => {
-    selectDirectory().then((choosenDir) => {
-      if (choosenDir != null) {
-        // if(sahilsDummyFunction(choosenDir)){
-        //   Modal.success({content: 'Directory ignored successfully'});
-        // } else {
-        //   // Ask sahil what error message he wants.
-        //   Modal.error({title: "There was some problem in ignoring", content: "Try again"});
-        // }
-      }
-    });
-  };
-
-  const repositories: any = [
-    { displayName: 'asd', localLocation: 'Testing/' },
-    { displayName: 'asd', localLocation: 'Testing/' },
-  ];
 
   return (
     <>
@@ -52,72 +137,35 @@ const IgnoreDataSelector = forwardRef((props, ref) => {
         onCancel={() => setStateChooser(false)}
         footer={null}
       >
-        <button
-          className="ignore-btn"
-          onClick={() => {
-            setGblChooser(true);
-            setStateChooser(false);
-          }}
-        >
-          Ignore Globally
-        </button>
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => {
+              setGblChooser(true);
+              setStateChooser(false);
+            }}
+          >
+            Ignore Globally
+          </Button>
 
-        <button
-          className="ignore-btn"
-          onClick={() => {
-            setDirChooser(true);
-            setStateChooser(false);
-          }}
-        >
-          Ignore Directory
-        </button>
+          <Button
+            type="primary"
+            onClick={() => {
+              setDirChooser(true);
+              setStateChooser(false);
+            }}
+          >
+            Ignore Directory
+          </Button>
+        </Space>
       </Modal>
 
-      {/* --------------------- GLOBAL SELECTOR --------------------- */}
-      <Modal
-        title="Choose Globally"
-        visible={GblChooser}
-        onCancel={() => setGblChooser(false)}
-        footer={null}
-      >
-        Enter File/Folder name here
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            // Call sahils function here
-          }}
-        >
-          <input
-            style={{ color: 'black' }}
-            id="globalIgnore"
-            type="text"
-            required
-          />
-        </form>
-      </Modal>
-
-      {/* --------------------- [DIRECTORY / REPOSITORY] SELECTOR --------------------- */}
-      <Modal
-        title="Choose Directory"
-        visible={DirChooser}
-        onCancel={() => setDirChooser(false)}
-        footer={null}
-      >
-        {repositories.map((repo: any) => {
-          return (
-            <div key={nanoid()}>
-              <span>{repo.displayName}</span>
-              <span>{repo.localLocation}</span>
-              <button className="ignore-btn" onClick={chooseDirectory}>
-                Directory
-              </button>
-              <button className="ignore-btn" onClick={chooseFile}>
-                File
-              </button>
-            </div>
-          );
-        })}
-      </Modal>
+      {GblChooser && (
+        <GLOBAL_CHOOSE_DIALOG {...{ GblChooser, setGblChooser }} />
+      )}
+      {DirChooser && (
+        <REPOSITORY_CHOOSE_DIALOG {...{ DirChooser, setDirChooser }} />
+      )}
     </>
   );
 });

@@ -13,21 +13,7 @@
   "repository_directoryData_fileName": "repositoryDirData.json",
   "profileImage_fileName": "profile.jpg",
   "cloudLoginStatus": {
-    "googleDrive": {
-      "user": {
-        "kind": "drive#user",
-        "displayName": "sahil shahane",
-        "me": true,
-        "permissionId": "03145403697131003141",
-        "emailAddress": "sahilpshahane123@gmail.com"
-      },
-      "storageQuota": {
-        "limit": "16106127360",
-        "usage": "94255274128",
-        "usageInDrive": "91699851031",
-        "usageInDriveTrash": "4712011987"
-      }
-    }
+    "googleDrive": null
   },
   "theme": "dark",
   "globalIgnores": []

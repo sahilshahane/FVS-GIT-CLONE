@@ -11,12 +11,28 @@ export interface RepositoryInfo {
   displayName: string;
   localLocation: string;
   syncStatus?: boolean;
-  directoryLevel?: number;
 }
+
+export interface selectedRepo {
+  RepoID: number;
+  name: string;
+  syncStatus: boolean;
+  localLocation: string;
+  directoryLevel: number;
+}
+
+export interface USER_REPOSITORY_DATA_STRUCTURE {
+  info: Array<RepositoryInfo> | [];
+  currentDirLocation: Array<string>;
+  selectedRepository: selectedRepo | null;
+}
+
+const GET_INITIAL_STATE: () => USER_REPOSITORY_DATA_STRUCTURE = () =>
+  USER_REPOSITORY_DATA;
 
 export const USER_REPOSITORY_Slice = createSlice({
   name: 'UserRepoData',
-  initialState: USER_REPOSITORY_DATA,
+  initialState: GET_INITIAL_STATE(),
   reducers: {
     addRepository: (
       state,
@@ -88,12 +104,7 @@ export const USER_REPOSITORY_Slice = createSlice({
     setSelectedRepository: (
       state,
       action: {
-        payload: {
-          RepoID: number;
-          name: string;
-          syncStatus: boolean;
-          localLocation: string;
-        };
+        payload: selectedRepo;
         type: any;
       }
     ) => {
@@ -122,6 +133,14 @@ export const {
   saveUserRepository,
 } = USER_REPOSITORY_Slice.actions;
 
-export const CurrentUserRepoData = (state: any) => state.UserRepoData;
+// export const GET_currentUserRepoData = (state: any) => state.UserRepoData;
+
+// export const GET_selectedRepository = (state: any) =>
+//   state.UserRepoData.selectedRepo;
+
+// export const GET_currentDirLocation = (state: any) =>
+//   state.UserRepoData.currentDirLocation;
+
+// export const GET_AllRepositories = (state: any) => state.UserRepoData.info;
 
 export default USER_REPOSITORY_Slice.reducer;

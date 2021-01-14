@@ -7,10 +7,26 @@ import IgnoreDataSelector from './IgnoreDataSelector';
 
 const { Sider } = Layout;
 
+const IGNORE_ITEM = () => {
+  const IgnoreRef = useRef(null);
+
+  return (
+    <>
+      <Menu.Item
+        key="StateIgnore"
+        icon={<PieChartOutlined />}
+        onClick={() => IgnoreRef.current.show()}
+      >
+        Ignore Files
+        <IgnoreDataSelector ref={IgnoreRef} />
+      </Menu.Item>
+    </>
+  );
+};
+
 const SiderBar = () => {
   log('Rendering Side-Bar.tsx');
-
-  const IgnoreRef = useRef();
+  const IgnoreRef = useRef(null);
   const [collapsed, setCollapsed] = useState(true);
 
   const onCollapse = (collapsed_: boolean) => {
@@ -32,19 +48,12 @@ const SiderBar = () => {
         <Divider style={{ backgroundColor: 'inherit' }}>
           <Profile showName={collapsed} />
         </Divider>
-        <Menu
-          theme="dark"
-          mode="inline"
-          style={{ backgroundColor: 'inherit' }}
-          onClick={(obj) => {
-            switch (obj.key) {
-              case 'StateIgnore':
-                IgnoreRef.current.showStateChooser();
-                break;
-            }
-          }}
-        >
-          <Menu.Item key="StateIgnore" icon={<PieChartOutlined />}>
+        <Menu theme="dark" mode="inline" style={{ backgroundColor: 'inherit' }}>
+          <Menu.Item
+            key="StateIgnore"
+            icon={<PieChartOutlined />}
+            onClick={() => IgnoreRef.current.show()}
+          >
             Ignore Files
             <IgnoreDataSelector ref={IgnoreRef} />
           </Menu.Item>

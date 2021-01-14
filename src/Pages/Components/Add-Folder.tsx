@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Button, Tooltip } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import selectDir from '../modules/select_directory_dialog';
+import { selectDirectory } from '../modules/select_directory_dialog';
 import runPyScript from '../modules/Run-Script';
 import log from '../modules/log';
 import { addRepository } from '../modules/Redux/UserRepositorySlicer';
@@ -23,10 +23,10 @@ const initFolder = async (dispatch: any) => {
     }
   };
 
-  let SELECTED_FOLDER = String();
+  let SELECTED_FOLDER = null;
 
   if (!(process.env.NODE_ENV === 'development'))
-    SELECTED_FOLDER = await selectDir();
+    SELECTED_FOLDER = await selectDirectory({});
 
   runPyScript(Handler, {
     changeDirectory: SELECTED_FOLDER,
