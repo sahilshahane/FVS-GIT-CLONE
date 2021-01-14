@@ -13,7 +13,22 @@
   "repository_directoryData_fileName": "repositoryDirData.json",
   "profileImage_fileName": "profile.jpg",
   "cloudLoginStatus": {
-    "googleDrive": null
+    "googleDrive": {
+      "user": {
+        "kind": "drive#user",
+        "displayName": "Uttkarsh Patel",
+        "photoLink": "https://lh3.googleusercontent.com/a-/AOh14Gj3m12ZmjAr59fi8--lT640Ojov9RFUubWDZV6ajg=s64",
+        "me": true,
+        "permissionId": "18305557346009206737",
+        "emailAddress": "uttkarshpatel9@gmail.com"
+      },
+      "storageQuota": {
+        "limit": "16106127360",
+        "usage": "3587761044",
+        "usageInDrive": "3267200731",
+        "usageInDriveTrash": "86620"
+      }
+    }
   },
   "theme": "dark",
   "globalIgnores": []

@@ -7,12 +7,14 @@ import {
   selectFile,
 } from '../modules/select_directory_dialog';
 import { RepositoryInfo } from '../modules/Redux/UserRepositorySlicer';
+import { defaultApp } from 'process';
 
 const chooseFile = (
   Handler: any,
   RepositoryPath: undefined | string = null
 ) => {
-  selectFile({ multiSelections: true }).then((choosenFile) => {
+  selectFile({ multiSelections: true, defaultPath: RepositoryPath }).then((choosenFile) => {
+    console.log(RepositoryPath);
     if (choosenFile) {
       if (RepositoryPath) Handler(choosenFile, RepositoryPath);
       else Handler(choosenFile);
