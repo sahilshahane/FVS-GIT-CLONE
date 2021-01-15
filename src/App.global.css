@@ -117,3 +117,16 @@ body {
   cursor: pointer;
   background-color: black;
 }
+
+.contain-collapse {
+  width: 20vw;
+  position: absolute;
+  bottom: 0px;
+}
+#uploadPercentage {
+  display: flex;
+  justify-content: space-evenly;
+}
+.uploadCircle {
+  padding-bottom: 5px;
+}
