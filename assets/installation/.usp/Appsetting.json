@@ -13,8 +13,19 @@
   "repository_directoryData_fileName": "repositoryDirData.json",
   "profileImage_fileName": "profile.jpg",
   "cloudLoginStatus": {
-    "googleDrive": null
+    "googleDrive": true
   },
   "theme": "dark",
-  "globalIgnores": []
+  "globalIgnores": [],
+  "directorySortBy": {
+    "options": {
+      "Name": "name",
+      "Date Accessed": "atimeMs",
+      "Date Modified": "mtimeMs",
+      "Date Created": "birthtimeMs",
+      "Size": "size"
+    },
+    "current": "name",
+    "type": "ascending"
+  }
 }

@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Row, Col } from 'antd';
 import { useSelector } from 'react-redux';
 import { nanoid } from '@reduxjs/toolkit';
-import fs from 'fs-extra';
 import path from 'path';
 import { File, Folder, Repository } from './folder-area-ui';
+import LiveDirView from '../modules/Live-Directory-View';
 
 const ALL_Repositories = () => {
   const repositoryData = useSelector((state) => {
@@ -34,6 +34,11 @@ const Selected_Repository_Directory = () => {
     return state.UserRepoData.currentDirLocation;
   });
 
+  const [sortBy, sortByType] = useSelector((state) => [
+    state.AppSettings.directorySortBy.current,
+    state.AppSettings.directorySortBy.type,
+  ]);
+
   const [FILES, set_FILES] = useState([]);
   const [FOLDERS, set_FOLDERS] = useState([]);
 
@@ -41,35 +46,15 @@ const Selected_Repository_Directory = () => {
     set_FILES([]);
     set_FOLDERS([]);
 
-    const LOCATION = currentDirLocation.join(path.sep);
-
-    fs.promises
-      .readdir(LOCATION)
-      .then((DIR_DATA: string[]) => {
-        DIR_DATA.forEach((fileName) => {
-          const filePath = path.join(LOCATION, fileName);
-          const stats = fs.statSync(filePath);
-
-          const DATA = {
-            name: path.basename(fileName),
-            syncStatus: false,
-            localLocation: filePath,
-          };
-
-          switch (stats.isFile()) {
-            case true:
-              set_FILES((prev) => [...prev, DATA]);
-              break;
-            case false:
-              set_FOLDERS((prev) => [...prev, DATA]);
-              break;
-          }
-        });
-      })
-      .catch((err: any) => {
-        console.error(err);
-      });
-  }, [currentDirLocation]);
+    // LIVE RELOAD
+    LiveDirView(
+      currentDirLocation.join(path.sep), // 'currentDirLocation.join(path.sep)' = current directory path
+      set_FILES,
+      set_FOLDERS,
+      sortBy,
+      sortByType
+    );
+  }, [currentDirLocation, sortBy, sortByType]);
 
   return (
     <Row gutter={[5, 5]} className="folder-area">
