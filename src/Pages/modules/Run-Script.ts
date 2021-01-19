@@ -26,7 +26,7 @@ const runPythonScript: (
   };
 
   const script = PythonShell.run(scriptPath, {
-    mode: 'text',
+    mode: 'json',
     // pythonPath: 'path/to/python',
     pythonOptions: ['-u'], // get print results in real-time
     scriptPath: '.',
@@ -40,7 +40,7 @@ const runPythonScript: (
   };
 
   script.on('message', (data) => {
-    handler(JSON.parse(data), forceKill);
+    handler(data, forceKill);
   });
 
   if (errorHandler) script.end(errorHandler);

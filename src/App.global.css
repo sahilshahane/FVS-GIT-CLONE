@@ -130,3 +130,28 @@ body {
 .uploadCircle {
   padding-bottom: 5px;
 }
+.uploadCircle:hover{
+  cursor: pointer;
+}
+
+.uploadingCollapse{
+  background-color: transparent;
+}
+.uploadingPanel{
+  background-color: rgb(20, 20, 20);
+  margin-bottom: 15px;
+  border-radius: 3px solid white;
+  overflow: hidden;
+}
+.uploadingCollapse .uploadingPanel{
+  border: 0px;
+}
+
+.fileInfo{
+  display: flex;
+}
+.fileStatus{
+}
+.fileName{
+  padding-left: 10px;
+}
