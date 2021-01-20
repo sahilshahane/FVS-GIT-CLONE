@@ -21,6 +21,7 @@ import path from 'path';
 import fs from 'fs';
 import MenuBuilder from './menu';
 import logApp from './Pages/modules/log';
+import { PythonShell } from 'python-shell';
 
 export default class AppUpdater {
   constructor() {
@@ -61,9 +62,75 @@ const Load_CCODES = () => {
   return VALUE;
 };
 
+const Error_Dialog = (title: string, message: string) => {
+  dialog.showErrorBox(title, message);
+};
+
+export const Create_PythonScheduler = () => {
+  const scriptPath = path.join('assets', 'pythonScripts', 'scheduler.py');
+
+  let OPTIONS = {
+    mode: 'json',
+    // pythonPath: 'path/to/python',
+    pythonOptions: ['-u'], // get print results in real-time
+    scriptPath: __dirname,
+    args: [''],
+  };
+
+  if (process.env.NODE_ENV === 'development') {
+    OPTIONS = { ...OPTIONS, scriptPath: '.', args: ['-dev'] };
+  }
+
+  const serverScript = new PythonShell(scriptPath, OPTIONS);
+
+  serverScript.on('error', (err) => {
+    Error_Dialog('Error', String(err));
+  });
+
+  serverScript.on('message', (data) => {
+    console.log(data);
+  });
+
+  serverScript.on('stderr', (err) => {
+    Error_Dialog('STD-ERROR', String(err));
+  });
+
+  return serverScript;
+};
+
+// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 let mainWindow: BrowserWindow | null = null;
 const CCODES = Load_CCODES();
+const Scheduler = Create_PythonScheduler();
+const APP_HOME_PATH = getAppHomePath();
 
+Object.defineProperty(global, 'CCODES', {
+  get() {
+    return CCODES;
+  },
+});
+
+Object.defineProperty(global, 'PyScheduler', {
+  get() {
+    return Scheduler;
+  },
+});
+
+Object.defineProperty(global, 'APP_HOME_PATH', {
+  get() {
+    return APP_HOME_PATH;
+  },
+});
+
+// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
@@ -114,6 +181,7 @@ const createWindow = async () => {
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
+      enableRemoteModule: true,
     },
   });
 
@@ -148,7 +216,7 @@ const createWindow = async () => {
 
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
-  new AppUpdater();
+  // new AppUpdater();
 };
 
 /**

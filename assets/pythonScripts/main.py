@@ -1,5 +1,6 @@
 # SYSTEM IMPORTS
 import os,pathlib,time,json,shutil,argparse
+import orjson
 
 from log import output,output_direct
 from generateData import generateMetaData
@@ -36,7 +37,7 @@ class App():
 
   Gservice = None
 
-  def __init__(self):
+  def __init__(self,APP_SETTINGS, CCODES, REPOSITORY_PATH):
     args_const = argparse.ArgumentParser(description='A File Handing System with Multiple Cloud Storage Support, Build for People by Programmers [i know its cringy]')
     args_const.add_argument('-cd',"--change-directory", metavar='directory', type=str, help='Please Specify a Directory')
     args_const.add_argument('-init',"--initialize", help='Initillizes the Current Working Directory', action="store_true")
@@ -363,6 +364,131 @@ class App():
     output({"code":self.CCODES["GOOGLE_USER_INFO"],"msg":"Google User Data","data":userInfo})
     return userInfo
 
-if __name__ == "__main__":
-  App()
 
+
+
+
+
+def createLOG(CCODES,DIR_PATH,MD_FILE_INFO):
+    FILE_NAME = MD_FILE_INFO["fileName"] + ".json"
+    FILE_PATH = os.path.join(DIR_PATH, os.environ["DEFAULT_REPO_LOG_FOLDER_PATH"], FILE_NAME)
+
+    with open(FILE_PATH,"w") as file_:
+        file_.write(orjson.dumps(MD_FILE_INFO).decode('utf-8'))
+
+    output({"code":CCODES["LOG_CREATED"],"data":{"filePath":FILE_PATH},"msg":"Log Created Successfully"})
+
+    return FILE_PATH
+
+def commit(CCODES,DIR_PATH, MD_FILE_INFO):
+  COMMIT = None
+  COMMIT_FILE_PATH = os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_COMMIT_FILE_PATH"])
+  with open(COMMIT_FILE_PATH,"rb") as file_:
+      COMMIT = orjson.loads(file_.read())
+
+  # CHECK IF LATEST COMMIT EXIST , IF YES THEN MAKE IT PREVIOUS COMMIT INORDER TO MAKE CURRENT COMMIT the LATEST COMMIT, SRY IF MY GRAMMER IS SAD
+  try:
+      COMMIT["previous"] += [COMMIT["latest"]]
+  except KeyError:
+      pass
+
+  createLOG(CCODES,DIR_PATH,MD_FILE_INFO=MD_FILE_INFO)
+
+  # UPDATE THE COMMIT DICT
+  COMMIT["latest"] = {
+                      "filePath":MD_FILE_INFO["filePath"],
+                      "fileName":MD_FILE_INFO["fileName"],
+                      "commitTime":str(int(time.time()))
+                     }
+  COMMIT["total"] += 1
+
+  # WRITE THE LATEST COMMIT IN THE FILE
+  with open(COMMIT_FILE_PATH,'w') as file_:
+      file_.write(orjson.dumps(COMMIT).decode('utf-8'))
+
+  output({"code":CCODES["COMMIT_DONE"],"data":COMMIT,"msg":"Commited Data Successfully"})
+
+def LOAD_IGNORE_DATA(CCODES,APP_SETTINGS,DIR_PATH):
+
+  IGNORE_FILE_PATH_OUTSIDE_REPO = os.path.join(DIR_PATH,".uspignore")
+  IGNORE_FILE_PATH_INSIDE_REPO = os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_FOLDER_PATH"],".uspignore")
+
+  ignores = APP_SETTINGS["defaultIgnores"]
+
+  # JUST INCASE
+  if not ignores: ignores = []
+
+  # shut the fuck up...sry, my head is paining | it's a generator
+  def generate_ignore(path_):
+    if os.path.exists(path_):
+      file_= open(path_,"r")
+      for line in file_.readlines():
+        line = line.strip()
+
+        if line.startswith("./") or line.startswith(".\\"):
+          line = os.path.normpath(line)
+
+          if line.endswith('**'):
+            if not os.path.exists(line[:-2]): line = None
+            else: line = os.path.join('.',line)
+          else:
+            line = os.path.join(".",line)
+            if not os.path.exists(line): line = None
+
+        if line: yield line
+
+      file_.close()
+
+  ignores.extend([ignore for ignore in generate_ignore(IGNORE_FILE_PATH_INSIDE_REPO)])
+  ignores.extend([ignore for ignore in generate_ignore(IGNORE_FILE_PATH_OUTSIDE_REPO)])
+
+  return ignores
+
+def GEN_MetaData(CCODES,APP_SETTINGS,DIR_PATH,):
+  ignores = LOAD_IGNORE_DATA(CCODES,APP_SETTINGS,DIR_PATH)
+
+  MD_FILE_NAME = str(int(time.time()))+'.json'
+
+  MD_ = generateMetaData( DIR_PATH,
+                          FILE_NAME=MD_FILE_NAME,
+                          HASH="xxh3_64",
+                          ignore=ignores)
+
+  # for outputData in MD_.generate(CCODES):
+        # output_direct(f"{{\"code\":{tmp},\"data\":{{{outputData}}}}}")
+        # output({"code":self.CCODES["FILE_DATA_CREATED"],"data":data})
+
+  MD_.generate(CCODES)
+
+  return MD_.getInfo()
+
+def PRE_initialize_repository(CCODES,DIR_PATH):
+    try:
+        os.mkdir(os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_FOLDER_PATH"]))
+        os.mkdir(os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_DATA_FOLDER_PATH"]))
+        os.mkdir(os.path.join(DIR_PATH, os.environ["DEFAULT_REPO_LOG_FOLDER_PATH"]))
+        os.mkdir(os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH"]))
+
+        with open(os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_SETTINGS_FILE_PATH"]),"w") as file_:
+            file_.write(orjson.dumps({'abs_path':os.getcwd()}).decode('utf-8'))
+
+        with open(os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_COMMIT_FILE_PATH"]),"w") as file_:
+            file_.write(orjson.dumps({"total":0}).decode('utf-8'))
+
+    except Exception as e:
+        return {"code":CCODES["REPO_EXISTS"],"msg":str(e)}
+
+    return {"code":CCODES["PRE_INIT_DONE"], "msg":"Created Necessary Files and Folders inorder to run the App"}
+
+def initialize(CCODES, APP_SETTINGS, DIR_PATH, force):
+    # Checks if a Folder / Repo is already Initialized
+
+    result = PRE_initialize_repository(CCODES,DIR_PATH)
+
+    if(result["code"] == CCODES["REPO_EXISTS"] and not force):
+        output(result)
+    else:
+        # First Commit
+        FILE_INFO = GEN_MetaData(CCODES,APP_SETTINGS,DIR_PATH)
+        commit(CCODES,DIR_PATH,MD_FILE_INFO=FILE_INFO)
+        output({"code":CCODES["INIT_DONE"],"msg":"Repository Initialization Completed","data":{"folderName":os.path.basename(DIR_PATH),"localPath":DIR_PATH}})

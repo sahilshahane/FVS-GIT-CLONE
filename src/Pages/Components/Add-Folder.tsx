@@ -1,36 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { Button, Tooltip } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { selectDirectory } from '../modules/select_directory_dialog';
-import runPyScript from '../modules/Run-Script';
 import log from '../modules/log';
 import { addRepository } from '../modules/Redux/UserRepositorySlicer';
+import {
+  CCODES,
+  setSchedulerHandler,
+  sendSchedulerTask,
+} from '../modules/get_AppData';
 
-import { CCODES } from '../modules/get_AppData';
-
-const initFolder = async (dispatch: any) => {
-  const Handler = (data: any) => {
-    switch (data.code) {
-      case CCODES['INIT']:
-        dispatch(
-          addRepository({
-            displayName: data.data.folderName,
-            localLocation: data.data.localPath,
-          })
-        );
-        break;
-    }
-  };
-
+const initFolder = async () => {
   let SELECTED_FOLDER = null;
 
   if (!(process.env.NODE_ENV === 'development'))
     SELECTED_FOLDER = await selectDirectory({});
+  else SELECTED_FOLDER = 'Testing';
 
-  runPyScript(Handler, {
-    changeDirectory: SELECTED_FOLDER,
-    args: ['-init', '-clean'],
+  sendSchedulerTask({
+    code: CCODES['INIT_DIR'],
+    data: { path: SELECTED_FOLDER },
   });
 };
 
@@ -41,13 +31,31 @@ const AddFolder = () => {
   const [spinIcon, setSpinIcon] = useState(false);
   // console.log('Rendering Add-Folder.tsx');
 
+  const Handler = (data: any) => {
+    console.log(data);
+    switch (data.code) {
+      case CCODES['INIT_DONE']:
+        dispatch(
+          addRepository({
+            displayName: data.data.folderName,
+            localLocation: data.data.localPath,
+          })
+        );
+        break;
+    }
+  };
+
+  useEffect(() => {
+    setSchedulerHandler(Handler);
+  }, []);
+
   return (
     <div style={{ position: 'absolute', bottom: 0, right: 0, margin: '2rem' }}>
       <Tooltip placement="top" title="Add Folder">
         <Button
           type="primary"
           shape="circle"
-          onClick={() => initFolder(dispatch)}
+          onClick={initFolder}
           onMouseEnter={() => setSpinIcon(true)}
           onMouseLeave={() => setSpinIcon(false)}
           icon={

@@ -25,7 +25,12 @@ const temp = [
 ];
 
 let update = Object();
-export const updateFileList = (newList: any) => {
+
+export const updateFileList = (uploadedFile: any) => {
+  update(uploadedFile);
+}
+
+export const setUploadingFiles = (newList) => {
   update(newList);
 }
 

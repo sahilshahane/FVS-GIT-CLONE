@@ -6,6 +6,7 @@ const selectDirectory = async ({
 }) => {
   let options = {
     properties: ['openDirectory'],
+    defaultPath,
   };
   if (defaultPath) options.defaultPath = defaultPath;
   if (multiSelections) options.properties.push('multiSelections');
@@ -15,10 +16,11 @@ const selectDirectory = async ({
 const selectFile = async ({ defaultPath = null, multiSelections = false }) => {
   let options = {
     properties: ['openFile'],
+    defaultPath,
   };
   if (defaultPath) options.defaultPath = defaultPath;
   if (multiSelections) options.properties.push('multiSelections');
-  return ipcRenderer.invoke('select-dialog', options);
+  return ipcRenderer.invoke('select-dialog');
 };
 
 export { selectDirectory, selectFile };
