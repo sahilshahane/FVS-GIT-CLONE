@@ -50,5 +50,6 @@
     "assets/icon.svg": true,
     ".erb": false,
     "src/main.prod.js.LICENSE.txt": true
-  }
+  },
+  "python.pythonPath": "c:\\Users\\void\\.virtualenvs\\pythonScripts-r1-r8vBX\\Scripts\\python.exe"
 }

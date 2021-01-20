@@ -1,4 +1,3 @@
-import json
 import pickle,os,socket
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -50,7 +49,7 @@ class NoGoogleIDFound(Exception):
 
 def get_gdrive_service(CCODES):
     creds = None
-    TOKEN_FILE_PATH = str(os.path.join(os.environ["APP_FOLDER_PATH"],"token.pickle"))
+    TOKEN_FILE_PATH = str(os.path.join(os.environ["APP_HOME_PATH"],"token.pickle"))
 
     try:
       socket.create_connection(("Google.com", 80))
@@ -73,22 +72,22 @@ def get_gdrive_service(CCODES):
           with open(TOKEN_FILE_PATH, 'wb') as token:
               pickle.dump(creds, token)
 
-      output({"code":CCODES["GOOGLE_ID_FOUND"],'msg':"Found an Google Account"})
+      # output({"code":CCODES["GOOGLE_ID_FOUND"],'msg':"Found an Google Account"})
       # return Google Drive API service
       return build('drive', 'v3', credentials=creds)  #This the drive service object which will be used to carry out all the tasks
 
     except OSError as e:
-      output({"code":CCODES["INTERNET_CONNECTION_ERROR"],"msg":str(e)})
+      output({"code": CCODES["INTERNET_CONNECTION_ERROR"],"msg":str(e)})
     except NoGoogleIDFound as e:
-      output({"code":CCODES["GOOGLE_ID_NOT_FOUND"],"msg":str(e)})
+      output({"code": CCODES["GOOGLE_ID_NOT_FOUND"],"msg":str(e)})
 
 def startLogin(CCODES):
-  output({"code":CCODES["GOOGLE_LOGIN_STARTED"],"msg":"Google Login Started"})
+  output({"code": CCODES["GOOGLE_LOGIN_STARTED"],"msg":"Google Login Started"})
 
   try:
     SCOPES = ["https://www.googleapis.com/auth/drive","https://www.googleapis.com/auth/drive.appdata"]
-    CREDS_FILE_PATH = str(os.path.join(os.environ["APP_FOLDER_PATH"],"credentials.json"))
-    TOKEN_FILE_PATH = str(os.path.join(os.environ["APP_FOLDER_PATH"],"token.pickle"))
+    CREDS_FILE_PATH = str(os.path.join(os.environ["APP_HOME_PATH"],"credentials.json"))
+    TOKEN_FILE_PATH = str(os.path.join(os.environ["APP_HOME_PATH"],"token.pickle"))
 
     host = "localhost"
     port = 8000
@@ -106,37 +105,34 @@ def startLogin(CCODES):
     )
 
     webbrowser.open(auth_url, new=1, autoraise=True)
-    output({"code":CCODES["OPEN_BROWSER"],"msg":"Open your Browser, For Google Login"})
+    # output({"code":CCODES["OPEN_BROWSER"],"msg":"Open your Browser, For Google Login"})
 
-    output({"code":CCODES["LOCAL_SERVER_STARTED"],"msg":f"Local Server Started at http://{host}:{port}","data":{"host":host,"port":port}})
+    # output({"code":CCODES["LOCAL_SERVER_STARTED"],"msg":f"Local Server Started at http://{host}:{port}","data":{"host":host,"port":port}})
     local_server.handle_request()
 
-    output({"code":CCODES["LOCAL_SERVER_CLOSED"],"msg":"Local Server Closed"})
+    # output({"code":CCODES["LOCAL_SERVER_CLOSED"],"msg":"Local Server Closed"})
     local_server.server_close()
 
     # Note: using https here because oauthlib is very picky that
     # OAuth 2.0 should only occur over https.
     authorization_response = wsgi_app.last_request_uri.replace('http','https')
-    output({"code":CCODES["GOOGLE_LOGIN_URL"],"msg":"Google Login URL","data":{"url":authorization_response}})
+    # output({"code":CCODES["GOOGLE_LOGIN_URL"],"msg":"Google Login URL","data":{"url":authorization_response}})
 
     flow.fetch_token(authorization_response=authorization_response)
 
     creds = flow.credentials
-
-    output({"code":CCODES["GOOGLE_LOGIN_SUCCESS"],"msg":"Google Login Was Successfull!"})
 
     with open(TOKEN_FILE_PATH, 'wb') as token:
       pickle.dump(creds, token)
 
     return build('drive', 'v3', credentials=creds)
   except OSError as e:
-    output({"code":CCODES["INTERNET_CONNECTION_ERROR"],"msg":str(e)})
-    output({"code":CCODES["GOOGLE_LOGIN_FAILED"],"msg":str(e)})
+    output({"code": CCODES["INTERNET_CONNECTION_ERROR"],"msg":str(e)})
+    output({"code": CCODES["GOOGLE_LOGIN_FAILED"],"msg":str(e)})
   except Exception as e:
-    output({"code":CCODES["GOOGLE_LOGIN_FAILED"],"msg":str(e)})
+    output({"code": CCODES["GOOGLE_LOGIN_FAILED"],"msg":str(e)})
 
-def getUSERInfo(CCODES,service = None):
+def getUSERInfo(CCODES, service = None):
   if(not service): service = get_gdrive_service(CCODES)
   userInfo = service.about().get(fields="user,storageQuota").execute()
-
   return userInfo

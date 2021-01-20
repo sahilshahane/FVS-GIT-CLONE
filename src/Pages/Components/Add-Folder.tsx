@@ -3,16 +3,19 @@ import { useDispatch } from 'react-redux';
 import { Button, Tooltip } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { selectDirectory } from '../modules/select_directory_dialog';
-import runPyScript from '../modules/Run-Script';
 import log from '../modules/log';
 import { addRepository } from '../modules/Redux/UserRepositorySlicer';
-
-import { CCODES } from '../modules/get_AppData';
+import {
+  CCODES,
+  setSchedulerHandler,
+  sendSchedulerTask,
+} from '../modules/get_AppData';
 
 const initFolder = async (dispatch: any) => {
   const Handler = (data: any) => {
+    console.log(data);
     switch (data.code) {
-      case CCODES['INIT']:
+      case CCODES['INIT_DONE']:
         dispatch(
           addRepository({
             displayName: data.data.folderName,
@@ -27,10 +30,11 @@ const initFolder = async (dispatch: any) => {
 
   if (!(process.env.NODE_ENV === 'development'))
     SELECTED_FOLDER = await selectDirectory({});
-
-  runPyScript(Handler, {
-    changeDirectory: SELECTED_FOLDER,
-    args: ['-init', '-clean'],
+  else SELECTED_FOLDER = 'Testing';
+  setSchedulerHandler(Handler);
+  sendSchedulerTask({
+    code: CCODES['INIT_DIR'],
+    data: { path: SELECTED_FOLDER },
   });
 };
 

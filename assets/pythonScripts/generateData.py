@@ -1,20 +1,23 @@
 import os,json
+
+import orjson
 from HashGen import generateFileHash
 
 class generateMetaData():
     ignore = None
     totalFiles = 0
+    totalFolders = 0
     FILE_NAME = None
     FILE_PATH = None
     HASH = None
-    REPOSITORY_PATH = None
+    DIR_PATH = None
 
-    def __init__(self,EXPORT_DIRECTORY,FILE_NAME,REPOSITORY_PATH,HASH="md5",ignore=None):
+    def __init__(self,DIR_PATH,FILE_NAME,HASH="md5",ignore=None):
         self.FILE_NAME = FILE_NAME
-        self.FILE_PATH = os.path.join(EXPORT_DIRECTORY,FILE_NAME)
+        self.FILE_PATH = os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_DATA_FOLDER_PATH"],FILE_NAME)
         self.ignore = ignore
-        self.REPOSITORY_PATH = os.path.join('.',os.path.normpath(REPOSITORY_PATH))
         self.HASH = HASH
+        self.DIR_PATH = DIR_PATH
 
     def ignoreFunc(self,folderDirectory,folderName=None,fileName=None):
       if self.ignore:
@@ -33,22 +36,24 @@ class generateMetaData():
               else:
                   if(folderName):
                     folderPath = os.path.join(folderDirectory,folderName)
-                    if(folderPath == ignore) or (folderName == ignore) or (folderName in self.REPOSITORY_PATH):
+                    if(folderPath == ignore) or (folderName == ignore) or (folderName in os.environ["DEFAULT_REPO_FOLDER_PATH"]):
                       return True
                   elif ignore.endswith("**") & (ignore[:-2] in folderDirectory):
                       return True
-                  elif (folderDirectory == ignore) or (folderDirectory.startswith(self.REPOSITORY_PATH)):
+                  elif (folderDirectory == ignore) or (folderDirectory.startswith(os.environ["DEFAULT_REPO_FOLDER_PATH"])):
                       return True
 
       return False
 
-    def generate(self,RepositoryDirDataFile_,indent=None):
+    def generate(self,CCODES,indent=None):
+      AlternateData = open(os.path.join(self.DIR_PATH,os.environ["DEFAULT_REPO_FOLDER_PATH"],'AlternateData.json'),'w')
+
       with open(self.FILE_PATH,'w') as file_:
           file_.write("{")
           DATA = dict()
           DirData = dict()
 
-          for directory,folders,files in os.walk('.'):
+          for directory,folders,files in os.walk(self.DIR_PATH):
 
               if self.ignoreFunc(directory): continue
 
@@ -75,13 +80,17 @@ class generateMetaData():
                   DATA = json.dumps(DATA,indent=indent)[1:-1]
 
                   file_.write(DATA+",")
+
+                  del DATA
+
                   self.totalFiles+=1
 
-                  yield DirData
+          AlternateData.write(orjson.dumps(DirData).decode('utf-8'))
 
-          json.dump(DirData, RepositoryDirDataFile_)
+          self.totalFolders = len(DirData)
 
           del DirData
+          AlternateData.close()
 
           file_.seek(file_.tell() - 1, os.SEEK_SET)
           file_.write("}")
@@ -92,6 +101,7 @@ class generateMetaData():
             "fileName":self.FILE_NAME,
             "filePath":self.FILE_PATH,
             "totalFiles":self.totalFiles,
+            "totalFolders":self.totalFolders,
             "fileHash":generateFileHash(self.FILE_PATH),
             "hashType":self.HASH
         }

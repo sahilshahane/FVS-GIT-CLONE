@@ -1,55 +1,20 @@
-import React from 'react';
+import electron from 'electron';
+import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { Modal, Col, Button, Space } from 'antd';
-import { Dispatch } from 'redux';
-import { History } from 'history';
 import {
   saveGoogleLogin,
   saveSettings,
 } from './modules/Redux/AppSettingsSlicer';
-import runScript from './modules/Run-Script';
 import log from './modules/log';
-import { CCODES } from './modules/get_AppData';
+import {
+  CCODES,
+  setSchedulerHandler,
+  sendSchedulerTask,
+} from './modules/get_AppData';
 
-const RunLoginScript = async (
-  dispatch: Dispatch<any>,
-  history: string[] | History<any>
-) => {
-  const SaveLoginInfo = (INFO_OBJ: any) => {
-    dispatch(saveGoogleLogin(INFO_OBJ));
-    dispatch(saveSettings());
-    history.push('/');
-  };
-
-  const handler = (data: any) => {
-    switch (data.code) {
-      case CCODES.GOOGLE_LOGIN_STARTED:
-        break;
-      case CCODES.GOOGLE_LOGIN_FAILED:
-        break;
-      case CCODES.GOOGLE_LOGIN_SUCCESS:
-        Modal.destroyAll();
-        break;
-      case CCODES.GOOGLE_LOGIN_URL:
-        break;
-      case CCODES.GOOGLE_ID_FOUND:
-        break;
-      case CCODES.GOOGLE_USER_INFO:
-        // eslint-disable-next-line no-case-declarations
-        const USER_INFO = data.data;
-        SaveLoginInfo(USER_INFO);
-        break;
-
-      default:
-        break;
-    }
-  };
-
-  const forceKill = runScript(handler, {
-    args: ['-glogin', '-guserinfo'],
-  });
-
+const showWarning = async () => {
   Modal.info({
     title: 'App will now Open your Browser for Google login',
     content: (
@@ -63,7 +28,6 @@ const RunLoginScript = async (
     ),
     okText: 'Abort Login',
     onOk: () => {
-      forceKill();
       Modal.destroyAll();
     },
   });
@@ -73,6 +37,33 @@ const Login = () => {
   log('Rendering Login.tsx');
   const dispatch = useDispatch();
   const history = useHistory();
+
+  const SaveLoginInfo = (INFO_OBJ: any) => {
+    dispatch(saveGoogleLogin(INFO_OBJ));
+    dispatch(saveSettings());
+    history.push('/');
+  };
+
+  const SCRIPT_HANDLER = (data: any) => {
+    switch (data.code) {
+      case CCODES.GOOGLE_LOGIN_SUCCESS:
+        const USER_INFO = data.data;
+        SaveLoginInfo(USER_INFO);
+        Modal.destroyAll();
+        break;
+      case CCODES.GOOGLE_LOGIN_FAILED:
+        break;
+    }
+  };
+
+  const startLogin = () => {
+    showWarning();
+    sendSchedulerTask({ code: CCODES.START_GOOGLE_LOGIN });
+  };
+
+  useEffect(() => {
+    setSchedulerHandler(SCRIPT_HANDLER);
+  }, []);
 
   return (
     <div
@@ -93,9 +84,7 @@ const Login = () => {
         }}
       >
         <Space align="center" style={{ margin: 'auto' }}>
-          <Button onClick={() => RunLoginScript(dispatch, history)}>
-            Connect : Google Drive
-          </Button>
+          <Button onClick={startLogin}>Connect : Google Drive</Button>
         </Space>
       </Col>
     </div>

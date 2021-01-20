@@ -1,4 +1,4 @@
-import { ipcRenderer } from 'electron';
+import electron, { ipcRenderer } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import log from './log';
@@ -6,7 +6,7 @@ import log from './log';
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const Load_APP_HOME_PATH = () => {
   try {
-    return ipcRenderer.sendSync('get-home-path');
+    return electron.remote.getGlobal('APP_HOME_PATH');
   } catch (e_) {
     log('Could Not Load App Home Path', e_.message);
     ipcRenderer.sendSync('quit', {
@@ -43,7 +43,7 @@ const Load_APPSETTINGS = () => {
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const Load_CCODES = () => {
-  return ipcRenderer.sendSync('get-CCODES').CCODES;
+  return electron.remote.getGlobal('CCODES').CCODES;
 };
 
 const Load_USER_REPOSITORIES_ = () => {
@@ -81,6 +81,20 @@ const Load_USER_REPOSITORIES_ = () => {
     USER_REPOSITORY_DATA_FILE_PATH: '',
   };
 };
+
+const getScheduler = () => {
+  return electron.remote.getGlobal('PyScheduler');
+};
+
+export const setSchedulerHandler = (Handler: any) => {
+  getScheduler().on('message', (data: any) => Handler(data));
+};
+
+export const sendSchedulerTask = (task: any) => {
+  getScheduler().send(task);
+};
+
+export const Scheduler = getScheduler();
 
 export const { APP_SETTINGS, APP_SETTINGS_FILE_PATH } = Load_APPSETTINGS();
 export const CCODES = Load_CCODES();

@@ -13,7 +13,7 @@
   "repository_directoryData_fileName": "repositoryDirData.json",
   "profileImage_fileName": "profile.jpg",
   "cloudLoginStatus": {
-    "googleDrive": true
+    "googleDrive": null
   },
   "theme": "dark",
   "globalIgnores": [],

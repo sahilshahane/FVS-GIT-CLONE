@@ -1,41 +1,35 @@
-const chokidar = require('chokidar');
-let prevRepoPath = undefined;
+const { PythonShell, PythonShellError } = require('python-shell');
+const path = require('path');
 
-const filewatcher = chokidar.watch('Testing', {
-  persistent: true,
-  ignoreInitial: false,
-  followSymlinks: false,
-  disableGlobbing: false,
-  usePolling: false,
-  interval: 100,
-  binaryInterval: 300,
-  alwaysStat: false,
-  depth: 0,
-  awaitWriteFinish: {
-    stabilityThreshold: 2000,
-    pollInterval: 100,
-  },
+const Run_PythonScheduler = () => {
+  const scriptPath = path.join('assets', 'pythonScripts', 'scheduler.py');
 
-  ignorePermissionErrors: false,
-  atomic: true, // or a custom 'atomicity delay', in milliseconds (default 100)
-});
+  let OPTIONS = {
+    mode: 'json',
+    // pythonPath: 'path/to/python',
+    pythonOptions: ['-u'], // get print results in real-time
+    scriptPath: __dirname,
+  };
 
-// WHEN A FILE IS ADDED/DETECTED
-filewatcher.on('add', (path, stats) => {
-  console.log(path, stats);
-});
+  if (process.env.NODE_ENV === 'development') {
+    OPTIONS.args = ['-dev'];
+  }
 
-// WHEN A FOLDER IS ADDED/DETECTED
-filewatcher.on('addDir', (path, stats) => {
-  // folders.push(path, stats);
-});
+  const serverScript = new PythonShell(scriptPath, OPTIONS);
 
-// WHEN A FILE IS DELETED
-filewatcher.on('unlink', (path, stats) => {
-  // folders.push(path, stats);
-});
+  serverScript.on('message', (data) => {
+    console.log(data);
+  });
 
-// WHEN A FOLDER IS DELETED
-filewatcher.on('unlinkDir', (path, stats) => {
-  // folders.push(path, stats);
-});
+  serverScript.on('error', (err) => {
+    // console.log(err);
+  });
+
+  serverScript.on('stderr', (err) => {
+    // console.log(err);
+  });
+
+  return serverScript;
+};
+
+const serverScript = Run_PythonScheduler();
