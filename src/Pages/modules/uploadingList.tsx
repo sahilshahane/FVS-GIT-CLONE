@@ -2,55 +2,36 @@ import React, { useState } from "react";
 import { Collapse } from 'antd';
 import { nanoid } from "@reduxjs/toolkit";
 import { LoadingOutlined, CheckCircleTwoTone } from "@ant-design/icons";
-
 const { Panel } = Collapse;
 
-let link:any;
-// let link = Object(); //Try this too 
+const temp = [
+  {
+    "RepoName": "Testing | DEV",
+    "UploadingFiles": [
+      {
+        "FileName": "FILE 1",
+        "Status": true,
+      },
+      {
+        "FileName": "FILE 2",
+        "Status": false,
+      },
+      {
+        "FileName": "FILE 3",
+        "Status": true,
+      }, 
+    ]
+  }
+];
 
-export const updateFileList = (newList: any) => {     //use Immer to update the list.
-  link(newList);
+let update = Object();
+export const updateFileList = (newList: any) => {
+  update(newList);
 }
 
 const UploadingList = () => {
-  const temp = [
-    {
-      "RepoName": "Testing | DEV",
-      "UploadingFiles": [
-        {
-          "Status": true,
-          "FileName": "FILE 1"
-        },
-        {
-          "Status": false,
-          "FileName": "FILE 2"
-        },
-        {
-          "Status": true,
-          "FileName": "FILE 3"
-        }, 
-      ]
-    },
-    {
-      "RepoName": "Testing | DEV",
-      "UploadingFiles": [
-        {
-          "Status": true,
-          "FileName": "FILE 1"
-        },
-        {
-          "Status": false,
-          "FileName": "FILE 2"
-        },
-        {
-          "Status": true,
-          "FileName": "FILE 3"
-        }, 
-      ]
-    },
-  ];
   const [uploadingFiles, setUploadingFiles] = useState(temp);
-  link = setUploadingFiles;
+  update = setUploadingFiles;
 
   return (
     <Collapse 
@@ -70,9 +51,9 @@ const UploadingList = () => {
                 {
                   repo.UploadingFiles.map((file) => {
                     return (
-                      <div className="fileInfo">
-                        <div className="fileStatus">{file.Status ? <LoadingOutlined /> : <CheckCircleTwoTone />}</div>
-                        <div className="fileName">{file.FileName}</div>
+                      <div className="fileInfo-fileList">
+                        <div className="fileStatus-fileList">{file.Status ? <LoadingOutlined /> : <CheckCircleTwoTone />}</div>
+                        <div className="fileName-fileList">{file.FileName}</div>
                       </div>
                     )
                   })

@@ -8,6 +8,7 @@ import {
 } from '../modules/select_directory_dialog';
 import { RepositoryInfo } from '../modules/Redux/UserRepositorySlicer';
 import { defaultApp } from 'process';
+import { relative } from 'path';
 
 const chooseFile = (
   Handler: any,
@@ -35,7 +36,7 @@ const chooseDirectory = async (
     }
   );
 };
-
+// -------------------------------------------- GLOBAL CHOOSE --------------------------------------------
 const GLOBAL_CHOOSE_DIALOG = ({ GblChooser, setGblChooser }: any) => {
   const AddGlobalIgnore = () => {};
   const CheckandCloseDIalog = () => {
@@ -61,6 +62,7 @@ const GLOBAL_CHOOSE_DIALOG = ({ GblChooser, setGblChooser }: any) => {
   );
 };
 
+// -------------------------------------------- REPOSITORY CHOOSE --------------------------------------------
 const REPOSITORY_CHOOSE_DIALOG = ({ DirChooser, setDirChooser }: any) => {
   const Repositories: Array<RepositoryInfo> = useSelector(
     (state: any) => state.UserRepoData.info
@@ -91,27 +93,39 @@ const REPOSITORY_CHOOSE_DIALOG = ({ DirChooser, setDirChooser }: any) => {
     >
       {Repositories.map(({ displayName, localLocation }) => {
         return (
-          <div key={nanoid()}>
-            <Space>
-              <Space>
-                <span>{displayName}</span> >
-                <span>{localLocation}</span>
-              </Space>
-              <Space>
-                <Button
-                  type="primary"
-                  onClick={() => chooseDirectory(saveIgnoreDirs, localLocation)}
-                >
-                  Directory
-                </Button>
-                <Button
-                  type="primary"
-                  onClick={() => chooseFile(saveIgnoreFiles, localLocation)}
-                >
-                  File
-                </Button>
-              </Space>
-            </Space>
+          <div 
+            key={nanoid()}
+            style={{
+              width: "100%",
+              display: "flex",
+              position: "relative",
+              margin: "5px auto"
+            }}
+          >
+            <span style={{fontSize: "17px", marginRight: "10px"}}>{displayName}</span> 
+            > 
+            <span style={{fontSize: "15px", marginLeft: "10px", color: "grey"}}>{localLocation}</span>
+          
+            <div 
+              style={{position: "absolute", right: "10px", top: "-0px"}}
+            >
+              <Button
+                type="primary"
+                size="small"
+                onClick={() => chooseDirectory(saveIgnoreDirs, localLocation)}
+                style={{marginRight: "5px"}}
+              >
+                Directory
+              </Button>
+              <Button
+                type="primary"
+                size="small"
+                onClick={() => chooseFile(saveIgnoreFiles, localLocation)}
+              >
+                File
+              </Button>
+            </div>
+
           </div>
         );
       })}

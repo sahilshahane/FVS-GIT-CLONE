@@ -27,6 +27,7 @@ Light Theme */
   user-select: none;
   margin: 0px;
   padding: 0px;
+  font-family: 'Ubuntu', sans-serif;
 }
 
 body {
@@ -61,7 +62,7 @@ body {
   margin-top: 5px;
   background-color: rgb(27, 27, 27);
 }
-.folder-bubble h3 {
+.file-name-folderArea .folder-name-folderArea{
   font-family: 'Ubuntu', sans-serif;
   position: absolute;
   left: 15px;
@@ -74,8 +75,8 @@ body {
 
 .synced-true,
 .synced-false {
-  height: 17px;
-  width: 17px;
+  height: 15px;
+  width: 15px;
   border-radius: 50%;
   display: inline-block;
   position: absolute;
@@ -147,11 +148,11 @@ body {
   border: 0px;
 }
 
-.fileInfo{
+.fileInfo-fileList{
   display: flex;
 }
-.fileStatus{
+.fileStatus-fileList{
 }
-.fileName{
+.fileName-fileList{
   padding-left: 10px;
 }

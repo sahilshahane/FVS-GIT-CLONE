@@ -5,6 +5,7 @@ import {
   move_To_NextLocation,
 } from '../modules/Redux/UserRepositorySlicer';
 import { RepositoryInfo } from '../modules/Redux/UserRepositorySlicer';
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~// FILE UI //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export const File = ({ info }: any) => {
   // console.log('File-UI recieved data ', fileInfo);
@@ -21,7 +22,7 @@ export const File = ({ info }: any) => {
         padding: '5px',
       }}
     >
-      <h3>{fileName.length > 20 ? `${fileName.slice(0, 20)}...` : fileName}</h3>
+      <h3 className="file-name-folderArea">{fileName.length > 20 ? `${fileName.slice(0, 20)}...` : fileName}</h3>
       {syncStatus === true ? (
         <span className="synced-true" />
       ) : (
@@ -54,7 +55,7 @@ export const Folder = ({ info }: any) => {
         padding: '5px',
       }}
     >
-      <h3>
+      <h3 className="folder-name-folderArea">
         {folderName.length > 20 ? `${folderName.slice(0, 20)}...` : folderName}
       </h3>
       {syncStatus === true ? (
