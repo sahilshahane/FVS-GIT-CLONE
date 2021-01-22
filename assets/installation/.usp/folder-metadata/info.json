@@ -1,11 +1,1 @@
-{
-  "info": [
-    {
-      "displayName": "Testing | DEV",
-      "localLocation": "Testing",
-      "syncStatus": false
-    }
-  ],
-  "currentDirLocation": ["Home"],
-  "selectedRepository": null
-}
+{"info":[{"displayName":"Testing","localLocation":"D:\\Major Project\\fhs\\Testing","syncStatus":false}],"currentDirLocation":["Home"],"selectedRepository":null}

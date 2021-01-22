@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-/* eslint-disable import/first */
 /* eslint global-require: off, no-console: off */
 
 /**
@@ -10,18 +8,16 @@
  * When running `yarn build` or `yarn build-main`, this file is compiled to
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
-// require('v8-compile-cache');
-
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
+import path from 'path';
 import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-import path from 'path';
 import fs from 'fs';
+import { PythonShell } from 'python-shell';
 import MenuBuilder from './menu';
 import logApp from './Pages/modules/log';
-import { PythonShell } from 'python-shell';
 
 export default class AppUpdater {
   constructor() {
@@ -88,7 +84,11 @@ export const Create_PythonScheduler = () => {
   });
 
   serverScript.on('message', (data) => {
-    console.log(data);
+    fs.appendFile(
+      'scheduler-logs.txt',
+      JSON.stringify(data, null) + '\n\n\n',
+      () => {}
+    );
   });
 
   serverScript.on('stderr', (err) => {
@@ -126,11 +126,6 @@ Object.defineProperty(global, 'APP_HOME_PATH', {
   },
 });
 
-// ---------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
@@ -157,8 +152,6 @@ const installExtensions = async () => {
 };
 
 const createWindow = async () => {
-  process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
-
   if (
     process.env.NODE_ENV === 'development' ||
     process.env.DEBUG_PROD === 'true'
@@ -176,8 +169,8 @@ const createWindow = async () => {
 
   mainWindow = new BrowserWindow({
     show: false,
-    width: 1366,
-    height: 768,
+    width: 1024,
+    height: 728,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
@@ -216,7 +209,7 @@ const createWindow = async () => {
 
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
-  // new AppUpdater();
+  new AppUpdater();
 };
 
 /**

@@ -34,10 +34,9 @@ GDRIVE_SERVICE = None
 
 def getGDriveService():
   global GDRIVE_SERVICE
-  global CCODES
 
   if not GDRIVE_SERVICE:
-    GDRIVE_SERVICE = GoogleDrive.get_gdrive_service(CCODES=CCODES)
+    GDRIVE_SERVICE = GoogleDrive.get_gdrive_service(CCODES)
 
   return GDRIVE_SERVICE
 

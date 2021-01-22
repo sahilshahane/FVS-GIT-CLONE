@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { Button, Tooltip } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
@@ -10,8 +10,28 @@ import {
   setSchedulerHandler,
   sendSchedulerTask,
 } from '../modules/get_AppData';
+import path from 'path';
 
-const initFolder = async (dispatch: any) => {
+const initFolder = async () => {
+  let SELECTED_FOLDER = null;
+
+  if (!(process.env.NODE_ENV === 'development'))
+    SELECTED_FOLDER = await selectDirectory({});
+  else SELECTED_FOLDER = path.resolve('Testing');
+
+  sendSchedulerTask({
+    code: CCODES['INIT_DIR'],
+    data: { path: SELECTED_FOLDER },
+  });
+};
+
+const AddFolder = () => {
+  log('Rendering AddFolder.tsx');
+  const dispatch = useDispatch();
+
+  const [spinIcon, setSpinIcon] = useState(false);
+  // console.log('Rendering Add-Folder.tsx');
+
   const Handler = (data: any) => {
     console.log(data);
     switch (data.code) {
@@ -26,24 +46,9 @@ const initFolder = async (dispatch: any) => {
     }
   };
 
-  let SELECTED_FOLDER = null;
-
-  if (!(process.env.NODE_ENV === 'development'))
-    SELECTED_FOLDER = await selectDirectory({});
-  else SELECTED_FOLDER = 'Testing';
-  setSchedulerHandler(Handler);
-  sendSchedulerTask({
-    code: CCODES['INIT_DIR'],
-    data: { path: SELECTED_FOLDER },
-  });
-};
-
-const AddFolder = () => {
-  log('Rendering AddFolder.tsx');
-  const dispatch = useDispatch();
-
-  const [spinIcon, setSpinIcon] = useState(false);
-  // console.log('Rendering Add-Folder.tsx');
+  useEffect(() => {
+    setSchedulerHandler(Handler);
+  }, []);
 
   return (
     <div style={{ position: 'absolute', bottom: 0, right: 0, margin: '2rem' }}>
@@ -51,7 +56,7 @@ const AddFolder = () => {
         <Button
           type="primary"
           shape="circle"
-          onClick={() => initFolder(dispatch)}
+          onClick={initFolder}
           onMouseEnter={() => setSpinIcon(true)}
           onMouseLeave={() => setSpinIcon(false)}
           icon={

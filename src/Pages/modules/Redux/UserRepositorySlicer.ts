@@ -30,6 +30,14 @@ export interface USER_REPOSITORY_DATA_STRUCTURE {
 const GET_INITIAL_STATE: () => USER_REPOSITORY_DATA_STRUCTURE = () =>
   USER_REPOSITORY_DATA;
 
+const SAVE_DATA = async (data) => {
+  fs.promises
+    .writeFile(USER_REPOSITORY_DATA_FILE_PATH, JSON.stringify(data))
+    .catch((err) => {
+      log('There was an error while updating the info.txt file', err);
+    });
+};
+
 export const USER_REPOSITORY_Slice = createSlice({
   name: 'UserRepoData',
   initialState: GET_INITIAL_STATE(),
@@ -47,6 +55,8 @@ export const USER_REPOSITORY_Slice = createSlice({
       if (!action.payload.syncStatus) DATA.syncStatus = false;
 
       state.info = [...state.info, DATA];
+
+      SAVE_DATA(state);
     },
 
     saveCurrentLocation: (state) => {
@@ -112,12 +122,7 @@ export const USER_REPOSITORY_Slice = createSlice({
       state.selectedRepository = action.payload;
     },
     saveUserRepository: (state) => {
-      fs.promises
-        .writeFile(USER_REPOSITORY_DATA_FILE_PATH, JSON.stringify(state))
-        .then(() => {})
-        .catch((err) => {
-          log('There was an error while updating the info.txt file', err);
-        });
+      SAVE_DATA(state);
     },
   },
 });
