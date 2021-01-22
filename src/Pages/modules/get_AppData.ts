@@ -1,6 +1,8 @@
+/* eslint-disable no-underscore-dangle */
+/* eslint-disable @typescript-eslint/naming-convention */
 import electron, { ipcRenderer } from 'electron';
 import path from 'path';
-import fs from 'fs';
+import fs from 'fs-extra';
 import log from './log';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -17,7 +19,7 @@ const Load_APP_HOME_PATH = () => {
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export const APP_HOME_PATH = Load_APP_HOME_PATH(); //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+export const APP_HOME_PATH = Load_APP_HOME_PATH(); // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 const Load_APPSETTINGS = () => {
@@ -53,7 +55,7 @@ const Load_USER_REPOSITORIES_ = () => {
       'folder-metadata',
       'info.json'
     );
-    let USER_REPOSITORY_DATA = JSON.parse(
+    const USER_REPOSITORY_DATA = JSON.parse(
       fs.readFileSync(USER_REPOSITORY_DATA_FILE_PATH).toString()
     );
 
@@ -82,6 +84,28 @@ const Load_USER_REPOSITORIES_ = () => {
   };
 };
 
+const LOAD_SYNC_FILE = () => {
+  try {
+    const SYNC_DATA_FILE_PATH = path.join(APP_HOME_PATH, 'Sync.json');
+    const SYNC_DATA = JSON.parse(
+      fs.readFileSync(SYNC_DATA_FILE_PATH, { encoding: 'utf-8' })
+    );
+    return {
+      SYNC_DATA,
+      SYNC_DATA_FILE_PATH,
+    };
+  } catch (e_) {
+    log('Could not Load Sync Data', e_.message);
+    ipcRenderer.sendSync('quit', {
+      message: `Could not Load Sync Data\n\n${e_}`,
+    });
+  }
+  return {
+    SYNC_DATA: '',
+    SYNC_DATA_FILE_PATH: '',
+  };
+};
+
 const getScheduler = () => {
   return electron.remote.getGlobal('PyScheduler');
 };
@@ -102,3 +126,4 @@ export const {
   USER_REPOSITORY_DATA,
   USER_REPOSITORY_DATA_FILE_PATH,
 } = Load_USER_REPOSITORIES_();
+export const { SYNC_DATA, SYNC_DATA_FILE_PATH } = LOAD_SYNC_FILE();

@@ -1,44 +1,33 @@
 import React, { useState, useRef } from 'react';
+import { useDispatch } from 'react-redux';
 import { Layout, Menu, Divider } from 'antd';
-import { PieChartOutlined } from '@ant-design/icons';
+import {
+  PieChartOutlined,
+  CloudUploadOutlined,
+  CloudDownloadOutlined,
+} from '@ant-design/icons';
 import log from '../modules/log';
 import Profile from './Side-Bar_Profile';
 import IgnoreDataSelector from './IgnoreDataSelector';
+import {
+  showDownloadsDrawer,
+  showUploadsDrawer,
+} from '../modules/Redux/SynchronizationSlicer';
 
 const { Sider } = Layout;
-
-const IGNORE_ITEM = () => {
-  const IgnoreRef = useRef(null);
-
-  return (
-    <>
-      <Menu.Item
-        key="StateIgnore"
-        icon={<PieChartOutlined />}
-        onClick={() => IgnoreRef.current.show()}
-      >
-        Ignore Files
-        <IgnoreDataSelector ref={IgnoreRef} />
-      </Menu.Item>
-    </>
-  );
-};
 
 const SiderBar = () => {
   log('Rendering Side-Bar.tsx');
   const IgnoreRef = useRef(null);
   const [collapsed, setCollapsed] = useState(true);
-
-  const onCollapse = (collapsed_: boolean) => {
-    setCollapsed(collapsed_);
-  };
+  const dispatch = useDispatch();
 
   return (
     <>
       <Sider
         collapsible
         collapsed={collapsed}
-        onCollapse={onCollapse}
+        onCollapse={setCollapsed}
         style={{
           overflow: 'auto',
           height: '100vh',
@@ -56,6 +45,20 @@ const SiderBar = () => {
           >
             Ignore Files
             <IgnoreDataSelector ref={IgnoreRef} />
+          </Menu.Item>
+
+          <Menu.Item
+            icon={<CloudUploadOutlined />}
+            onClick={() => dispatch(showUploadsDrawer())}
+          >
+            Uploads
+          </Menu.Item>
+
+          <Menu.Item
+            icon={<CloudDownloadOutlined />}
+            onClick={() => dispatch(showDownloadsDrawer())}
+          >
+            Downloads
           </Menu.Item>
         </Menu>
       </Sider>

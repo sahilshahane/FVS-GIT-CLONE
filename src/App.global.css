@@ -27,6 +27,7 @@ Light Theme */
   user-select: none;
   margin: 0px;
   padding: 0px;
+  font-family: 'Ubuntu', sans-serif;
 }
 
 body {
@@ -61,7 +62,7 @@ body {
   margin-top: 5px;
   background-color: rgb(27, 27, 27);
 }
-.folder-bubble h3 {
+.file-name-folderArea .folder-name-folderArea{
   font-family: 'Ubuntu', sans-serif;
   position: absolute;
   left: 15px;
@@ -74,8 +75,8 @@ body {
 
 .synced-true,
 .synced-false {
-  height: 17px;
-  width: 17px;
+  height: 15px;
+  width: 15px;
   border-radius: 50%;
   display: inline-block;
   position: absolute;
@@ -116,4 +117,42 @@ body {
 .ignore-btn:hover {
   cursor: pointer;
   background-color: black;
+}
+
+.contain-collapse {
+  width: 20vw;
+  position: absolute;
+  bottom: 0px;
+}
+#uploadPercentage {
+  display: flex;
+  justify-content: space-evenly;
+}
+.uploadCircle {
+  padding-bottom: 5px;
+}
+.uploadCircle:hover{
+  cursor: pointer;
+}
+
+.uploadingCollapse{
+  background-color: transparent;
+}
+.uploadingPanel{
+  background-color: rgb(20, 20, 20);
+  margin-bottom: 15px;
+  border-radius: 3px solid white;
+  overflow: hidden;
+}
+.uploadingCollapse .uploadingPanel{
+  border: 0px;
+}
+
+.fileInfo-fileList{
+  display: flex;
+}
+.fileStatus-fileList{
+}
+.fileName-fileList{
+  padding-left: 10px;
 }

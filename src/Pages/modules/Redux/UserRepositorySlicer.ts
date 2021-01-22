@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { createSlice } from '@reduxjs/toolkit';
 import fs from 'fs-extra';
 import path from 'path';
@@ -11,10 +12,11 @@ export interface RepositoryInfo {
   displayName: string;
   localLocation: string;
   syncStatus?: boolean;
+  id: number;
 }
 
 export interface selectedRepo {
-  RepoID: number;
+  id: number;
   name: string;
   syncStatus: boolean;
   localLocation: string;
@@ -49,8 +51,9 @@ export const USER_REPOSITORY_Slice = createSlice({
         type: any;
       }
     ) => {
-      let DATA: RepositoryInfo = action.payload;
+      const DATA: RepositoryInfo = action.payload;
       DATA.localLocation = path.normalize(DATA.localLocation);
+      DATA.id = state.info[state.info.length - 1].id + 1;
 
       if (!action.payload.syncStatus) DATA.syncStatus = false;
 
