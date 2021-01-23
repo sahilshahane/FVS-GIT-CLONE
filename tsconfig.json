@@ -4,7 +4,7 @@
     "module": "CommonJS",
     "lib": ["dom", "esnext"],
     "declaration": true,
-    "declarationMap": true,
+    "declarationMap": false,
     "noEmit": true,
     "jsx": "react",
     "strict": true,

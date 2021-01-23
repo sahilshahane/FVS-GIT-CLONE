@@ -19,29 +19,25 @@ class generateMetaData():
         self.HASH = HASH
         self.DIR_PATH = DIR_PATH
 
-    def ignoreFunc(self,folderDirectory,folderName=None,fileName=None):
+    def ignoreFunc(self,ParentDirectory,folderName=None,fileName=None):
       if self.ignore:
           for ignore in self.ignore:
               if fileName:
-                  filePath = os.path.join(folderDirectory,fileName)
-                  if("*." in ignore) and filePath.count('.')>0 :
+                  filePath = os.path.join(ParentDirectory,fileName)
+                  if ignore.startswith("*.") and filePath.rfind('.')>0:
                       fileExtension = filePath[filePath.rindex(".")+1:]
                       if(fileExtension==ignore[2:]):
                           return True
-                  elif ignore.endswith("**") & (ignore[:-2] in filePath):
-                      return True
-                  elif (filePath==ignore) or (fileName==ignore) or (fileName == ".uspignore"):
+                  elif (filePath==ignore) or (fileName==ignore):
                       return True
 
               else:
-                  if(folderName):
-                    folderPath = os.path.join(folderDirectory,folderName)
-                    if(folderPath == ignore) or (folderName == ignore) or (folderName in os.environ["DEFAULT_REPO_FOLDER_PATH"]):
-                      return True
-                  elif ignore.endswith("**") & (ignore[:-2] in folderDirectory):
-                      return True
-                  elif (folderDirectory == ignore) or (folderDirectory.startswith(os.environ["DEFAULT_REPO_FOLDER_PATH"])):
-                      return True
+                folderPath = os.path.join(ParentDirectory,folderName)
+
+                if(folderPath == ignore) or (folderName == ignore):
+                  return True
+                elif ignore.endswith("**") & (ignore[:-2] in ParentDirectory):
+                    return True
 
       return False
 
@@ -55,7 +51,7 @@ class generateMetaData():
 
           for directory,folders,files in os.walk(self.DIR_PATH):
 
-              if self.ignoreFunc(directory): continue
+              if self.ignoreFunc(directory,folderName=os.path.basename(directory)): continue
 
               # FILTER FOLDERS WITH IGNORE DATA [data input = .uspignore file]
               folders = [folderName for folderName in folders if not self.ignoreFunc(directory,folderName=folderName)]

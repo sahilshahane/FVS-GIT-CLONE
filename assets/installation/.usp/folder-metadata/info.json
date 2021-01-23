@@ -1,9 +1,10 @@
 {
   "info": [
     {
-      "displayName": "Testing | DEV",
-      "localLocation": "Testing",
-      "syncStatus": false
+      "displayName": "Testing",
+      "localLocation": "D:\\Major Project\\fhs\\Testing",
+      "syncStatus": false,
+      "id": 1
     }
   ],
   "currentDirLocation": ["Home"],

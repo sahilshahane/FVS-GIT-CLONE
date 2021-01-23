@@ -10,13 +10,14 @@ import {
   setSchedulerHandler,
   sendSchedulerTask,
 } from '../modules/get_AppData';
+import path from 'path';
 
 const initFolder = async () => {
   let SELECTED_FOLDER = null;
 
   if (!(process.env.NODE_ENV === 'development'))
     SELECTED_FOLDER = await selectDirectory({});
-  else SELECTED_FOLDER = 'Testing';
+  else SELECTED_FOLDER = path.resolve('Testing');
 
   sendSchedulerTask({
     code: CCODES['INIT_DIR'],

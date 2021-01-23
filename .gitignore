@@ -48,6 +48,3 @@ npm-debug.log.*
 *.css.d.ts
 *.sass.d.ts
 *.scss.d.ts
-token.pickle
-__pycache__/*
-

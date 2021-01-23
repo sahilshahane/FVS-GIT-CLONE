@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { createSlice } from '@reduxjs/toolkit';
 import fs from 'fs-extra';
 import path from 'path';
@@ -11,10 +12,11 @@ export interface RepositoryInfo {
   displayName: string;
   localLocation: string;
   syncStatus?: boolean;
+  id: number;
 }
 
 export interface selectedRepo {
-  RepoID: number;
+  id: number;
   name: string;
   syncStatus: boolean;
   localLocation: string;
@@ -30,6 +32,14 @@ export interface USER_REPOSITORY_DATA_STRUCTURE {
 const GET_INITIAL_STATE: () => USER_REPOSITORY_DATA_STRUCTURE = () =>
   USER_REPOSITORY_DATA;
 
+const SAVE_DATA = async (data) => {
+  fs.promises
+    .writeFile(USER_REPOSITORY_DATA_FILE_PATH, JSON.stringify(data))
+    .catch((err) => {
+      log('There was an error while updating the info.txt file', err);
+    });
+};
+
 export const USER_REPOSITORY_Slice = createSlice({
   name: 'UserRepoData',
   initialState: GET_INITIAL_STATE(),
@@ -41,12 +51,15 @@ export const USER_REPOSITORY_Slice = createSlice({
         type: any;
       }
     ) => {
-      let DATA: RepositoryInfo = action.payload;
+      const DATA: RepositoryInfo = action.payload;
       DATA.localLocation = path.normalize(DATA.localLocation);
+      DATA.id = state.info[state.info.length - 1].id + 1;
 
       if (!action.payload.syncStatus) DATA.syncStatus = false;
 
       state.info = [...state.info, DATA];
+
+      SAVE_DATA(state);
     },
 
     saveCurrentLocation: (state) => {
@@ -112,12 +125,7 @@ export const USER_REPOSITORY_Slice = createSlice({
       state.selectedRepository = action.payload;
     },
     saveUserRepository: (state) => {
-      fs.promises
-        .writeFile(USER_REPOSITORY_DATA_FILE_PATH, JSON.stringify(state))
-        .then(() => {})
-        .catch((err) => {
-          log('There was an error while updating the info.txt file', err);
-        });
+      SAVE_DATA(state);
     },
   },
 });

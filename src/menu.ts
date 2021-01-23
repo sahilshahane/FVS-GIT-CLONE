@@ -5,6 +5,7 @@ import {
   BrowserWindow,
   MenuItemConstructorOptions,
 } from 'electron';
+import fs from 'fs-extra';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   selector?: string;
@@ -221,6 +222,16 @@ export default class MenuBuilder {
                   accelerator: 'Ctrl+R',
                   click: () => {
                     this.mainWindow.webContents.reload();
+                    fs.unlinkSync('scheduler-logs.txt');
+                    global.PyScheduler.removeAllListeners('message');
+                    global.PyScheduler.on('message', (data) => {
+                      fs.appendFile(
+                        'scheduler-logs.txt',
+                        JSON.stringify(data, null, 2) + '\n\n\n',
+                        'utf-8',
+                        () => {}
+                      );
+                    });
                   },
                 },
                 {
