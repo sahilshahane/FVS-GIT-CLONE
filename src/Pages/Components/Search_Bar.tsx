@@ -1,59 +1,64 @@
 import React, { useState, useEffect } from 'react';
 import { Input, AutoComplete, Row } from 'antd';
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  GoTo_Repository,
+  move_To_NextLocation,
+} from '../modules/Redux/UserRepositorySlicer';
+import { Load_IgnoreGlobalPaths } from '../modules/get_AppData';
 import log from '../modules/log';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-// Add a path which doesnt have many files/folders in it
-// The problem is that the allFiles variable on line [46] is not updating after the useEffect line[49]
-// Hence in the filterOptions functions' else part line[55], allFiles is still an empty array.
-// Once that is done the list will be updated and a relative path from the home directory will be displayed.
-
-const repoInfo = [
-  {
-    localLocation: "/home/uttkarsh/Programming/JavaScript/NodeJs/TestingPythonShell"
-  }
-]
+let allFiles:object[] = [];
 
 const getAllData = (repoInfo:any) => {
   let folderList:any = [];
   let fileList:any = [];
   const home = os.homedir();
 
+  const ignoreData:string[] = Load_IgnoreGlobalPaths().GloballyIgnoredData.paths;
+
   repoInfo.map((repo:any) => {
-    //Recursive function to get all the file and folders withing a repository
     const getAllFiles = (dir:any) => {
       let files = fs.readdirSync(dir);
       for(let file of files){
-        let next = path.join(dir, file);
+        let next = path.join(dir, file);                              // next - is the next to be traversed if it is a folder.
         if(fs.lstatSync(next).isDirectory()==true){
-          folderList.push({value: path.relative(home, next)});
-          getAllFiles(next);
+          if(!ignoreData.includes(path.basename(next))){
+            folderList.push({value: path.relative(home, next)});      // This implementation shows the relative path from the home directory.
+            getAllFiles(next);
+          }
         } else {
-          fileList.push({value: path.relative(home, next)});
+          if(!ignoreData.includes(path.basename(next))){
+            fileList.push({value: path.relative(home, next)});
+          }
         }
       }
     }
     getAllFiles(repo.localLocation);
   })
-  return [...folderList, ...fileList]; 
-}
+  return [...folderList, ...fileList];                                // The only reason behind having 2 lists is to have the 
+}                                                                     // matched folder's name appear before the file names.
 
 const NAV_BAR = () => {
-  log('Rendering NAV_BAR.tsx');
   const [options, setOptions] = useState([]);
-  let allFiles:any = [];
+  const repositoryData = useSelector((state:any)=>{
+    return state.UserRepoData.info;
+  });
+  const dispatch = useDispatch();
+
+  log('Rendering NAV_BAR.tsx');
 
   useEffect(()=>{
-    allFiles = getAllData(repoInfo);   
-  }, []);
+    allFiles = getAllData(repositoryData);
+  }, [repositoryData]);
   
   const filterOptions = (enteredText:any) => {
     if(!enteredText)  {
       setOptions([]);
     } else {
-      // allFiles = getAllData(repoInfo);   
       let filesToShow:any = [];
       allFiles.map((file:any) => {
         if( path.basename(file.value).indexOf(enteredText) > -1 ){
@@ -63,6 +68,10 @@ const NAV_BAR = () => {
       setOptions(filesToShow);
     }
   }
+  
+  const updateFolderArea = (newLocation:string) => {
+    dispatch(move_To_NextLocation(path.basename(newLocation)));
+  }
 
   return (
     <Row>
@@ -70,11 +79,27 @@ const NAV_BAR = () => {
         onSearch={filterOptions}
         options={options}
         style={{ width: '100%', alignItems: 'center' }}
+        onSelect={updateFolderArea}
       >
-        <Input.Search size="large" placeholder="input here" enterButton />
+        <Input.Search size="large" placeholder="Search File/Folder" enterButton />
       </AutoComplete>
     </Row>
   );
 };
 
 export default NAV_BAR;
+
+
+
+
+// Added searching functionality
+// When the application starts all the files/folders in the repo are traversed excluding the files/folders from global ignore.
+// Things mentioned above are done in getAllData function on line [16] 
+
+// Added Methods in get_AppData to insert the globally ignored files.
+// Completed the empty AddGlobalIgnore function in IgnoreDataSelector
+// The global ignores are stored in assets > installation > .usp > folder-metadata > globallyIgnoredFiles.json
+
+// Cons of the current implementation are
+// 1) The ignore list is not reloaded after adding a new ignore. Changes take effect from the next reload.
+// 2) ALl the files and folders are synchronously traversed, hence slowing the loading time when starting.

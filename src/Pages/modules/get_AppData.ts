@@ -22,6 +22,18 @@ const Load_APP_HOME_PATH = () => {
 export const APP_HOME_PATH = Load_APP_HOME_PATH(); // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+export const Load_IgnoreGlobalPaths = () => {
+  try{
+    const ignoreGlobalFilePath = path.join(APP_HOME_PATH, 'folder-metadata', 'globallyIgnoredFiles.json');
+    return {
+      GloballyIgnoredData: JSON.parse(fs.readFileSync(ignoreGlobalFilePath).toString())
+    }
+  } catch (err) {
+    log('Could not Load Global Ignore Data');
+  }
+  return {GloballyIgnoredData: ''}
+}
+
 const Load_APPSETTINGS = () => {
   try {
     const APP_SETTINGS_FILE_PATH = path.join(APP_HOME_PATH, 'Appsetting.json');

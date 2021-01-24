@@ -7,6 +7,9 @@ import {
   selectFile,
 } from '../modules/select_directory_dialog';
 import { RepositoryInfo } from '../modules/Redux/UserRepositorySlicer';
+import { Load_IgnoreGlobalPaths, APP_HOME_PATH } from '../modules/get_AppData';
+import fs from 'fs';
+import path from 'path';
 
 const chooseFile = (
   Handler: any,
@@ -35,7 +38,22 @@ const chooseDirectory = async (
 };
 
 const GLOBAL_CHOOSE_DIALOG = ({ GblChooser, setGblChooser }: any) => {
-  const AddGlobalIgnore = () => {};
+  const [globalFileName, setGlobalFileName] = useState("");
+
+  const AddGlobalIgnore = () => {
+    if(globalFileName !== ""){
+      try{
+        let updatedPaths = Load_IgnoreGlobalPaths().GloballyIgnoredData;
+        updatedPaths.paths.push(globalFileName);
+        const globalIgnoreFileLocation = path.join(APP_HOME_PATH, 'folder-metadata', 'globallyIgnoredFiles.json');
+        fs.writeFileSync(globalIgnoreFileLocation, JSON.stringify(updatedPaths));
+      } catch {
+        console.log("There was some error while updating the golbal ignore File");
+      }
+      setGlobalFileName("");
+    }
+  };
+
   const CheckandCloseDIalog = () => {
     // CHECK SAVE PROGRESS THEN CLOSE
     setGblChooser(false);
@@ -49,7 +67,12 @@ const GLOBAL_CHOOSE_DIALOG = ({ GblChooser, setGblChooser }: any) => {
     >
       <Row>
           <Col>
-            <Input type="text" placeholder="Enter File / Folder Name" required />
+            <Input 
+              type="text"
+              onChange={(e)=>{setGlobalFileName(e.target.value)}} 
+              value={globalFileName} 
+              placeholder="Enter File / Folder Name" 
+              required />
           </Col>
           <Col>
             <Button type="primary" onClick={AddGlobalIgnore}>Add</Button>
