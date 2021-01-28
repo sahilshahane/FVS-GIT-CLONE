@@ -67,7 +67,7 @@ const DownloadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
       style={{ fontSize: '10px', textAlign: 'center' }}
     >
       <Progress
-        strokeColor="green"
+        strokeColor="red"
         type="circle"
         percent={percentage}
         width={45}

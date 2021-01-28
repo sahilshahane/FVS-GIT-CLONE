@@ -24,10 +24,10 @@ const getAllData = (repoInfo:any) => {
     const getAllFiles = (dir:any) => {
       let files = fs.readdirSync(dir);
       for(let file of files){
-        let next = path.join(dir, file);                              // next - is the next to be traversed if it is a folder.
+        let next = path.join(dir, file);                              
         if(fs.lstatSync(next).isDirectory()==true){
           if(!ignoreData.includes(path.basename(next))){
-            folderList.push({value: path.relative(home, next)});      // This implementation shows the relative path from the home directory.
+            folderList.push({value: path.relative(home, next)});      
             getAllFiles(next);
           }
         } else {
@@ -39,8 +39,8 @@ const getAllData = (repoInfo:any) => {
     }
     getAllFiles(repo.localLocation);
   })
-  return [...folderList, ...fileList];                                // The only reason behind having 2 lists is to have the 
-}                                                                     // matched folder's name appear before the file names.
+  return [...folderList, ...fileList];                                
+}                                                                     
 
 const NAV_BAR = () => {
   const [options, setOptions] = useState([]);

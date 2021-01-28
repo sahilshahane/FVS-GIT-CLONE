@@ -38,7 +38,9 @@ body {
     inset 0px 60px 50px -30px rgba(0, 0, 0, 0.5);
 }
 .app-bg {
-  background-color: var(--app-bg-color);
+  /* background-color: var(--app-bg-color); */
+  background: rgb(51,65,101);
+  background: linear-gradient(163deg, rgba(51,65,101,1) 0%, rgba(55,40,40,1) 100%);
 }
 .component-bg {
   background-color: var(--component-bg-color);
@@ -75,13 +77,20 @@ body {
 
 .synced-true,
 .synced-false {
-  height: 15px;
+  /* height: 15px;
   width: 15px;
   border-radius: 50%;
   display: inline-block;
   position: absolute;
   top: 10px;
-  right: 10px;
+  right: 10px; */
+
+  height: 100%;
+  width: 15px;
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  border-radius: 5px;
 }
 .synced-true {
   background-color: #17a736;
@@ -90,10 +99,33 @@ body {
   background-color: var(--fire-brick);
 }
 
-.file-ui:hover,
 .folder-ui:hover,
 .breadcrumb-item:hover {
   cursor: pointer;
+}
+
+.file-ui{
+  backdrop-filter: blur(51px);
+  background-color: rgba(0, 0, 0, 0.225);
+  height: 75px;
+  border-radius: 5px;
+  /* border: 1px solid white; */
+  padding-left: 10px;
+  padding-top: 7px;
+  margin: 2px;
+}
+
+.folder-ui{
+  backdrop-filter: blur(51px);
+  background: rgb(27, 27, 27);
+  height: 75px;
+  border-radius: 5px;
+  padding-left: 10px;
+  padding-top: 7px;
+  margin: 2px;
+}
+.folder-ui:hover{
+  background-color: rgb(18, 18, 18);
 }
 
 .breadcrumb {

@@ -47,7 +47,7 @@ const Profile = ({ showName }: any) => {
       >
         <Avatar
           src={profileImg.imgURL}
-          shape="square"
+          // shape="square"
           size="large"
           icon={<UserOutlined />}
         />

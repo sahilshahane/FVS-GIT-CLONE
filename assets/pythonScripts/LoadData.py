@@ -7,7 +7,7 @@ def GET_APP_FOLDER_PATH():
   isDev = os.environ.get("development",False)
 
   if(isDev):
-    return os.path.normpath("assets\installation\.usp")
+    return os.path.normpath(os.path.join("assets","installation",".usp"))
   else:
     return os.path.join(Path.home(),".usp")
 

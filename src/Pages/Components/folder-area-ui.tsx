@@ -5,6 +5,7 @@ import {
   move_To_NextLocation,
 } from '../modules/Redux/UserRepositorySlicer';
 import { RepositoryInfo } from '../modules/Redux/UserRepositorySlicer';
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~// FILE UI //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export const File = ({ info }: any) => {
   // console.log('File-UI recieved data ', fileInfo);
@@ -14,12 +15,6 @@ export const File = ({ info }: any) => {
   return (
     <div
       className="file-ui"
-      style={{
-        background: 'rgb(100, 0, 0)',
-        height: '75px',
-        borderRadius: '5px',
-        padding: '5px',
-      }}
     >
       <h3>{fileName.length > 20 ? `${fileName.slice(0, 20)}...` : fileName}</h3>
       {syncStatus === true ? (
@@ -47,16 +42,8 @@ export const Folder = ({ info }: any) => {
     <div
       onDoubleClick={moveInsideADir}
       className="folder-ui"
-      style={{
-        background: ' rgb(27, 27, 27)',
-        height: '75px',
-        borderRadius: '5px',
-        padding: '5px',
-      }}
     >
-      <h3>
-        {folderName.length > 20 ? `${folderName.slice(0, 20)}...` : folderName}
-      </h3>
+      <h3>{folderName.length > 20 ? `${folderName.slice(0, 20)}...` : folderName}</h3>
       {syncStatus === true ? (
         <span className="synced-true" />
       ) : (
@@ -77,12 +64,6 @@ export const Repository = ({ info }: { info: RepositoryInfo }) => {
     <div
       onDoubleClick={change_Repo}
       className="folder-ui"
-      style={{
-        background: ' rgb(27, 27, 27)',
-        height: '75px',
-        borderRadius: '5px',
-        padding: '5px',
-      }}
     >
       <h3>
         {info.displayName.length > 20

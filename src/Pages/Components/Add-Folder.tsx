@@ -11,6 +11,7 @@ import {
   sendSchedulerTask,
 } from '../modules/get_AppData';
 import path from 'path';
+import { shouldIgnoreRepositorySpecificGlobal } from '../modules/ignore';
 
 const initFolder = async () => {
   let SELECTED_FOLDER = null;
@@ -51,7 +52,12 @@ const AddFolder = () => {
   }, []);
 
   return (
-    <div style={{ position: 'absolute', bottom: 0, right: 0, margin: '2rem' }}>
+    <div style={{ 
+      position: 'absolute', 
+      bottom: 0, 
+      right: 0, 
+      margin: '2rem'
+    }}>
       <Tooltip placement="top" title="Add Folder">
         <Button
           type="primary"
