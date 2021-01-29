@@ -32,7 +32,7 @@ export interface USER_REPOSITORY_DATA_STRUCTURE {
 const GET_INITIAL_STATE: () => USER_REPOSITORY_DATA_STRUCTURE = () =>
   USER_REPOSITORY_DATA;
 
-const SAVE_DATA = async (data) => {
+const SAVE_DATA = async (data: USER_REPOSITORY_DATA_STRUCTURE) => {
   fs.promises
     .writeFile(USER_REPOSITORY_DATA_FILE_PATH, JSON.stringify(data))
     .catch((err) => {
@@ -47,13 +47,18 @@ export const USER_REPOSITORY_Slice = createSlice({
     addRepository: (
       state,
       action: {
-        payload: RepositoryInfo;
+        payload: {
+          displayName: string;
+          localLocation: string;
+        };
         type: any;
       }
     ) => {
       const DATA: RepositoryInfo = action.payload;
       DATA.localLocation = path.normalize(DATA.localLocation);
-      DATA.id = state.info[state.info.length - 1].id + 1;
+
+      if (state.info.length) DATA.id = state.info[state.info.length - 1].id + 1;
+      else DATA.id = 1;
 
       if (!action.payload.syncStatus) DATA.syncStatus = false;
 

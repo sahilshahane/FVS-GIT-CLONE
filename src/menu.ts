@@ -222,7 +222,9 @@ export default class MenuBuilder {
                   accelerator: 'Ctrl+R',
                   click: () => {
                     this.mainWindow.webContents.reload();
-                    fs.unlinkSync('scheduler-logs.txt');
+                    try {
+                      fs.unlinkSync('scheduler-logs.txt');
+                    } catch (err) {}
                     global.PyScheduler.removeAllListeners('message');
                     global.PyScheduler.on('message', (data) => {
                       fs.appendFile(

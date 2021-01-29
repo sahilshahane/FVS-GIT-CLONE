@@ -1,5 +1,5 @@
 /* eslint-disable import/no-named-as-default */
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
 import AppSettingsReducer from './AppSettingsSlicer';
 import User_Repository_Reducer from './UserRepositorySlicer';
 import SynchronizationSlice from './SynchronizationSlicer';
@@ -10,4 +10,5 @@ export default configureStore({
     UserRepoData: User_Repository_Reducer,
     Sync: SynchronizationSlice,
   },
+  middleware: [...getDefaultMiddleware({ immutableCheck: false })],
 });

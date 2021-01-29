@@ -1,10 +1,4 @@
 {
-  "uploads": [
-    { "fileName": "asd.zip", "status": "RUNNING" },
-    { "fileName": "Temp.txt", "status": "WAITING" },
-    { "fileName": "1.data", "status": "PAUSED" },
-    { "fileName": "animalPorn.xxx", "status": "FAILED" },
-    { "fileName": "saxyIndian.zip", "status": "FINISHED" }
-  ],
+  "uploads": [],
   "downloads": []
 }

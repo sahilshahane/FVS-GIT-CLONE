@@ -1,0 +1,32 @@
+{
+  "D:\\Major Project\\fhs\\Testing": {
+    "files": [
+      {
+        "name": "asd.zip",
+        "id": "1PhneafCz9zfMqS_ElXpPf4SWAm2Efijo",
+        "isUploaded": true
+      }
+    ],
+    "folders": ["asd22"],
+    "id": "1Q1gkndvGKGzCBZUJQ9KcN1ler5x1CFZ8"
+  },
+  "D:\\Major Project\\fhs\\Testing\\asd22": {
+    "files": [
+      { "name": "3.txt", "id": "1DhL5r3iN8XvkQKPTHK0oXieYQdAvIO2-" },
+      { "name": "43.txt", "id": "1bnzGqWhQi4fWJ6Q7OjiltOoekeqkHSAF" },
+      { "name": "44.txt", "id": "17hzQ_Km2-u6N0mmhUthYoYINtA8YbZJq" },
+      { "name": "45.txt", "id": "14jLqgcGT7SSVenJXP7RSgt1sHVcv0BNu" }
+    ],
+    "folders": ["asd"],
+    "id": "1VVLEYNOaER6M4EI-9ZVSz82zCjBuRQGT"
+  },
+  "D:\\Major Project\\fhs\\Testing\\asd22\\asd": {
+    "files": [
+      { "name": "1.txt", "id": "1VjhJ4sMwFof-Yb3zRIWdyQAZ7Ki7nJml" },
+      { "name": "2.txt", "id": "18WlwzIH1QGm6aCJEUl1pllXI_rqTaOxT" },
+      { "name": "3.txt", "id": "1_RRed-fNaVmqvaYMiayCdpCMuLVodj-9" }
+    ],
+    "folders": [],
+    "id": "1xlWwgLILmkcTvgA-VncWmJv_HeqC9okh"
+  }
+}

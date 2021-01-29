@@ -1,4 +1,4 @@
-import electron from 'electron';
+/* eslint-disable default-case */
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
@@ -12,6 +12,7 @@ import {
   CCODES,
   setSchedulerHandler,
   sendSchedulerTask,
+  Scheduler,
 } from './modules/get_AppData';
 
 const showWarning = async () => {
@@ -47,9 +48,11 @@ const Login = () => {
   const SCRIPT_HANDLER = (data: any) => {
     switch (data.code) {
       case CCODES.GOOGLE_LOGIN_SUCCESS:
+        // eslint-disable-next-line no-case-declarations
         const USER_INFO = data.data;
         SaveLoginInfo(USER_INFO);
         Modal.destroyAll();
+        Scheduler.removeAllListeners('message');
         break;
       case CCODES.GOOGLE_LOGIN_FAILED:
         break;

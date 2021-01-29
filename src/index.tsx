@@ -38,8 +38,6 @@ const MAIN = () => {
   );
 };
 
-console.log(CCODES);
-
 render(
   <Provider store={store}>
     <Router>

@@ -70,11 +70,11 @@ export const Create_PythonScheduler = () => {
     // pythonPath: 'path/to/python',
     pythonOptions: ['-u'], // get print results in real-time
     scriptPath: __dirname,
-    args: [''],
+    args: ['-node'],
   };
 
   if (process.env.NODE_ENV === 'development') {
-    OPTIONS = { ...OPTIONS, scriptPath: '.', args: ['-dev'] };
+    OPTIONS = { ...OPTIONS, scriptPath: '.', args: [...OPTIONS.args, '-dev'] };
   }
 
   const serverScript = new PythonShell(scriptPath, OPTIONS);

@@ -1,0 +1,56 @@
+{
+  "code": 36,
+  "msg": "[WinError 183] Cannot create a file when that file already exists: 'D:\\\\Major Project\\\\fhs\\\\Testing\\\\.usp'",
+  "msg2": "An .usp/ folder Already Exists"
+}
+
+
+{
+  "code": 13,
+  "data": [
+    "node_modules",
+    "DrivePart\\**",
+    ".gitignore",
+    "__pycache__\\**",
+    ".uspignore",
+    ".git\\**",
+    "*.py",
+    ".usp"
+  ],
+  "msg": "Ignore Data Loaded"
+}
+
+
+{
+  "code": 18,
+  "msg": "Changes Detected"
+}
+
+
+{
+  "code": 8,
+  "data": {
+    "total": 2,
+    "latest": {
+      "fileName": "1611923025.json",
+      "RepositoryPath": "D:\\Major Project\\fhs\\Testing",
+      "totalFiles": 9,
+      "totalFolders": 3,
+      "fileHash": "5ddbbd62587fab5f",
+      "hashType": "xxh3_64"
+    }
+  },
+  "msg": "Commited Data Successfully"
+}
+
+
+{
+  "code": 15,
+  "data": {
+    "filePath": "D:\\Major Project\\fhs\\Testing\\FVS-GIT-CLONE.7z",
+    "fileName": "FVS-GIT-CLONE.7z"
+  },
+  "msg": "Detected New File"
+}
+
+

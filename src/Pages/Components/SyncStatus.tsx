@@ -6,24 +6,50 @@ import { Dispatch } from '@reduxjs/toolkit';
 import {
   showUploadsDrawer,
   showDownloadsDrawer,
-  SYNC_INPUT,
+  SYNC_DATA_STRUCTURE,
 } from '../modules/Redux/SynchronizationSlicer';
 
 const UploadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
-  const UPLOAD_LIST: Array<SYNC_INPUT> = useSelector(
-    (state) => state.Sync.uploads
+  const uploadFinishedQueue = useSelector(
+    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.uploadFinishedQueue
   );
+  const totalSessionUploads = useSelector(
+    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.totalSessionUploads
+  );
+
+  const uploadWatingQueue = useSelector(
+    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.uploadWatingQueue
+  );
+
+  const uploadingQueue = useSelector(
+    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.uploadingQueue
+  );
+
   const [percentage, setPercentage] = useState(0);
   useEffect(() => {
+    let totalFinished = 0;
+    let totalWaiting = 0;
+
     (async () => {
-      // FINISED UPLOAD PERCENTAGE IS CALCULATED HERE
-      setPercentage(
-        (UPLOAD_LIST.filter((val) => val.status === 'FINISHED').length /
-          UPLOAD_LIST.length) *
-          100
-      );
+      Object.keys(uploadWatingQueue).forEach((RepoID: any) => {
+        totalWaiting += uploadWatingQueue[RepoID].length;
+      });
+
+      if (!totalWaiting && !uploadingQueue.length) {
+        setPercentage(100);
+      } else {
+        Object.keys(uploadFinishedQueue).forEach((RepoID: any) => {
+          totalFinished += uploadFinishedQueue[RepoID].length;
+        });
+        setPercentage((totalFinished / totalSessionUploads) * 100);
+      }
     })();
-  }, [UPLOAD_LIST]);
+  }, [
+    uploadFinishedQueue,
+    totalSessionUploads,
+    uploadingQueue.length,
+    uploadWatingQueue,
+  ]);
   return (
     <div
       aria-hidden
@@ -44,22 +70,46 @@ const UploadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
 };
 
 const DownloadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
-  const DOWNLOAD_LIST: Array<SYNC_INPUT> = useSelector(
-    (state) => state.Sync.downloads
+  const downloadFinishedQueue = useSelector(
+    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.downloadFinishedQueue
   );
+  const totalSessionDownloads = useSelector(
+    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.totalSessionDownloads
+  );
+
+  const downloadWatingQueue = useSelector(
+    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.downloadWatingQueue
+  );
+
+  const downloadingQueue = useSelector(
+    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.downloadingQueue
+  );
+
   const [percentage, setPercentage] = useState(0);
-
   useEffect(() => {
-    (async () => {
-      // FINISED DOWNLOAD PERCENTAGE IS CALCULATED HERE
-      setPercentage(
-        (DOWNLOAD_LIST.filter((val) => val.status === 'FINISHED').length /
-          DOWNLOAD_LIST.length) *
-          100
-      );
-    })();
-  }, [DOWNLOAD_LIST]);
+    let totalFinished = 0;
+    let totalWaiting = 0;
 
+    (async () => {
+      Object.keys(downloadWatingQueue).forEach((RepoID: any) => {
+        totalWaiting += downloadWatingQueue[RepoID].length;
+      });
+
+      if (!totalWaiting && !downloadingQueue.length) {
+        setPercentage(100);
+      } else {
+        Object.keys(downloadFinishedQueue).forEach((RepoID: any) => {
+          totalFinished += downloadFinishedQueue[RepoID].length;
+        });
+        setPercentage((totalFinished / totalSessionDownloads) * 100);
+      }
+    })();
+  }, [
+    downloadFinishedQueue,
+    totalSessionDownloads,
+    downloadWatingQueue,
+    downloadingQueue,
+  ]);
   return (
     <div
       aria-hidden
