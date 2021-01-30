@@ -1,4 +1,5 @@
 import os,json
+from typing import Dict
 
 import orjson
 from HashGen import generateFileHash
@@ -11,6 +12,7 @@ class generateMetaData():
     FILE_PATH = None
     HASH = None
     DIR_PATH = None
+    GFID_DATA = None
 
     def __init__(self,DIR_PATH,FILE_NAME,HASH="md5",ignore=None):
         self.FILE_NAME = FILE_NAME
@@ -20,6 +22,8 @@ class generateMetaData():
         self.DIR_PATH = DIR_PATH
 
     def ignoreFunc(self,ParentDirectory,folderName=None,fileName=None):
+      uspFolderPath = os.path.join(self.DIR_PATH,os.environ["DEFAULT_REPO_FOLDER_PATH"])
+
       if self.ignore:
           for ignore in self.ignore:
               if fileName:
@@ -34,7 +38,7 @@ class generateMetaData():
               else:
                 folderPath = os.path.join(ParentDirectory,folderName)
 
-                if(folderPath == ignore) or (folderName == ignore):
+                if(folderPath == ignore) or (folderName == ignore) or (not folderPath.find(uspFolderPath)):
                   return True
                 elif ignore.endswith("**") & (ignore[:-2] in ParentDirectory):
                     return True
@@ -42,12 +46,10 @@ class generateMetaData():
       return False
 
     def generate(self,CCODES,indent=None):
-      AlternateData = open(os.path.join(self.DIR_PATH,os.environ["DEFAULT_REPO_FOLDER_PATH"],'AlternateData.json'),'w')
-
       with open(self.FILE_PATH,'w') as file_:
           file_.write("{")
           DATA = dict()
-          DirData = dict()
+          self.GFID_DATA = dict()
 
           for directory,folders,files in os.walk(self.DIR_PATH):
 
@@ -59,7 +61,7 @@ class generateMetaData():
               # FILTER FILES WITH IGNORE DATA [data input = .uspignore file]
               files = [fileName for fileName in files if not (self.ignoreFunc(directory,fileName=fileName))]
 
-              DirData[directory] = {"files":files, "folders": folders}
+              self.GFID_DATA[directory] = {"files":files, "folders": folders}
 
               for fileName in files:
                   filePath = os.path.join(directory, fileName)
@@ -81,13 +83,7 @@ class generateMetaData():
 
                   self.totalFiles+=1
 
-          AlternateData.write(orjson.dumps(DirData).decode('utf-8'))
-
-          self.totalFolders = len(DirData)
-
-          del DirData
-          AlternateData.close()
-
+          self.totalFolders = len(self.GFID_DATA)
           file_.seek(file_.tell() - 1, os.SEEK_SET)
           file_.write("}")
           file_.close()
@@ -95,9 +91,36 @@ class generateMetaData():
     def getInfo(self):
         return {
             "fileName":self.FILE_NAME,
-            "filePath":self.FILE_PATH,
+            "RepositoryPath":self.DIR_PATH,
             "totalFiles":self.totalFiles,
             "totalFolders":self.totalFolders,
             "fileHash":generateFileHash(self.FILE_PATH),
             "hashType":self.HASH
         }
+
+    def convertToGFID_data(self):
+
+      for (ParentDir,valueDict) in self.GFID_DATA.items():
+        valueDict["id"] = None
+        valueDict["isCreated"] = False
+
+        for (index, fileName) in enumerate(valueDict["files"]):
+          valueDict["files"][index] = {
+            "name": fileName,
+            "id": None,
+            "isUploaded": False,
+            "iDownloaded": False
+          }
+
+        # NO NEED FOR FOLDERS BECAUSE, OUR MAIN KEY / PROPERTY IS FOLDER PATH
+        # for (index, folderName) in enumerate(valueDict["folders"]):
+        #   valueDict["folders"][index] = {
+        #     "name": folderName,
+        #     "isUpdated": False
+        #   }
+
+        self.GFID_DATA[ParentDir] = valueDict
+
+
+      return self.GFID_DATA
+

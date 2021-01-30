@@ -1,17 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useState } from 'react';
 import { Button, Tooltip } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
+import path from 'path';
 import { selectDirectory } from '../modules/select_directory_dialog';
 import log from '../modules/log';
-import { addRepository } from '../modules/Redux/UserRepositorySlicer';
-import {
-  CCODES,
-  setSchedulerHandler,
-  sendSchedulerTask,
-} from '../modules/get_AppData';
-import path from 'path';
-import { shouldIgnoreRepositorySpecificGlobal } from '../modules/ignore';
+import { CCODES, sendSchedulerTask } from '../modules/get_AppData';
 
 const initFolder = async () => {
   let SELECTED_FOLDER = null;
@@ -21,43 +14,19 @@ const initFolder = async () => {
   else SELECTED_FOLDER = path.resolve('Testing');
 
   sendSchedulerTask({
-    code: CCODES['INIT_DIR'],
+    code: CCODES.INIT_DIR,
     data: { path: SELECTED_FOLDER },
   });
 };
 
 const AddFolder = () => {
   log('Rendering AddFolder.tsx');
-  const dispatch = useDispatch();
 
   const [spinIcon, setSpinIcon] = useState(false);
   // console.log('Rendering Add-Folder.tsx');
 
-  const Handler = (data: any) => {
-    console.log(data);
-    switch (data.code) {
-      case CCODES['INIT_DONE']:
-        dispatch(
-          addRepository({
-            displayName: data.data.folderName,
-            localLocation: data.data.localPath,
-          })
-        );
-        break;
-    }
-  };
-
-  useEffect(() => {
-    setSchedulerHandler(Handler);
-  }, []);
-
   return (
-    <div style={{ 
-      position: 'absolute', 
-      bottom: 0, 
-      right: 0, 
-      margin: '2rem'
-    }}>
+    <div style={{ position: 'fixed', bottom: 0, right: 0, margin: '2rem' }}>
       <Tooltip placement="top" title="Add Folder">
         <Button
           type="primary"

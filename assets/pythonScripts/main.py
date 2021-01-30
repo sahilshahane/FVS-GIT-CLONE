@@ -2,8 +2,9 @@
 import os
 import time
 import orjson
-
-from log import output
+import io
+from utils import output
+from utils import loadJSON, saveJSON
 from generateData import generateMetaData
 
 # AVAILABLE HASHES, DEFAULT = xxh64
@@ -15,7 +16,6 @@ from generateData import generateMetaData
 
 # .GDFID is a file extention to store Google Drive Folder IDs
 # ummmm
-
 def Get_log(DIR_PATH,FILE_NAME):
     LOG_FILE_PATH = os.path.join(DIR_PATH,FILE_NAME,'.json')
 
@@ -25,9 +25,8 @@ def Get_log(DIR_PATH,FILE_NAME):
     return LOG_FILE_INFO
 
 def Get_latest_commit_info(DIR_PATH):
-    with open(os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_COMMIT_FILE_PATH"]),"rb") as file_:
-        COMMIT = orjson.loads(file_.read())
-
+    COMMIT_FILE_PATH = os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_COMMIT_FILE_PATH"])
+    COMMIT = loadJSON(COMMIT_FILE_PATH)
     return COMMIT["latest"]
 
 def createLOG(CCODES,DIR_PATH,MD_FILE_INFO):
@@ -54,14 +53,8 @@ def commit(CCODES,DIR_PATH, MD_FILE_INFO):
       pass
 
   # UPDATE THE COMMIT DICT
-  COMMIT["latest"] = {
-                      "filePath":MD_FILE_INFO["filePath"],
-                      "fileName":MD_FILE_INFO["fileName"],
-                      "fileHash":MD_FILE_INFO["fileHash"],
-                      "totalFiles":MD_FILE_INFO["totalFiles"],
-                      "totalFolders":MD_FILE_INFO["totalFolders"],
-                      "commitTime":str(int(time.time()))
-                     }
+  COMMIT["latest"] = MD_FILE_INFO
+
   COMMIT["total"] += 1
 
   # WRITE THE LATEST COMMIT IN THE FILE
@@ -122,8 +115,20 @@ def GEN_MetaData(CCODES,APP_SETTINGS,DIR_PATH,):
         # output({"code":self.CCODES["FILE_DATA_CREATED"],"data":data})
 
   MD_.generate(CCODES)
+  FILE_INFO = MD_.getInfo()
+  GFID_DATA = MD_.convertToGFID_data()
 
-  return MD_.getInfo()
+  del MD_
+
+  GFID_FILE_PATH = os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH"],FILE_INFO["fileName"])
+
+  # SAVE THE GENERATED DATA
+  with open(GFID_FILE_PATH,"w") as file_:
+    file_.write(orjson.dumps(GFID_DATA).decode('utf-8'))
+    file_.close()
+
+
+  return (FILE_INFO,GFID_DATA)
 
 def PRE_initialize_repository(CCODES,DIR_PATH):
     try:
@@ -138,7 +143,7 @@ def PRE_initialize_repository(CCODES,DIR_PATH):
             file_.write(orjson.dumps({"total":0}).decode('utf-8'))
 
     except Exception as e:
-        return {"code":CCODES["REPO_EXISTS"],"msg":str(e)}
+        return {"code":CCODES["REPO_EXISTS"],"msg":str(e),"msg2":"An .usp/ folder Already Exists"}
 
     return {"code":CCODES["PRE_INIT_DONE"], "msg":"Created Necessary Files and Folders inorder to run the App"}
 
@@ -183,15 +188,20 @@ def detectChange(CCODES,NEW_MD_FILE_PATH,OLD_MD_FILE_PATH):
 def update_locally(CCODES, APP_SETTINGS, DIR_PATH, force=False):
 
     # GENERATE NEW META DATA
-    NEW_FILE_INFO = GEN_MetaData(CCODES,APP_SETTINGS,DIR_PATH)
+    NEW_FILE_INFO = GEN_MetaData(CCODES,APP_SETTINGS,DIR_PATH)[0]
 
     # GET THE LATEST COMMIT, BEFORE NEW COMMIT
     LATEST_FILE_INFO = Get_latest_commit_info(DIR_PATH)
 
+    LATEST_FILE_FILE_PATH = os.path.join(LATEST_FILE_INFO["RepositoryPath"],os.environ["DEFAULT_REPO_DATA_FOLDER_PATH"],LATEST_FILE_INFO["fileName"])
+    NEW_FILE_FILE_PATH = os.path.join(NEW_FILE_INFO["RepositoryPath"],os.environ["DEFAULT_REPO_DATA_FOLDER_PATH"],NEW_FILE_INFO["fileName"])
+
     # IF BOTH HASHES ARE SIMILAR THEN REMOVE THE NEW GENERATED META DATA
     if(not force) and (NEW_FILE_INFO["fileHash"] == LATEST_FILE_INFO["fileHash"]):
       output({"code":CCODES["NO_CHANGE"],"msg":"No Changes are Detected"})
-      os.remove(NEW_FILE_INFO["filePath"])
+      os.remove(NEW_FILE_FILE_PATH)
+      NEW_GFID_DATA_FILE_PATH = os.path.join(NEW_FILE_INFO["RepositoryPath"],os.environ["DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH"],NEW_FILE_INFO["fileName"])
+      os.remove(NEW_GFID_DATA_FILE_PATH)
     else:
         output({"code":CCODES["CHANGE_DETECTED"],"msg":"Changes Detected"})
 
@@ -199,7 +209,7 @@ def update_locally(CCODES, APP_SETTINGS, DIR_PATH, force=False):
         commit(CCODES,DIR_PATH,MD_FILE_INFO=NEW_FILE_INFO)
 
         # CHANGES ARE DETECTED, NOW LATEST_COMMIT_FILE BECOMES OLD DATA AND NEWLY GENERATED META DATA BECOMES UPDATED DATA (use NEW_FILE_INFO["filePath"] to get new metadata file path)
-        for CHANGES in detectChange(CCODES,NEW_MD_FILE_PATH=NEW_FILE_INFO["filePath"],OLD_MD_FILE_PATH=LATEST_FILE_INFO["filePath"]):
+        for CHANGES in detectChange(CCODES,NEW_MD_FILE_PATH=NEW_FILE_FILE_PATH,OLD_MD_FILE_PATH=LATEST_FILE_FILE_PATH):
             output(CHANGES)
 
 def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
@@ -213,7 +223,26 @@ def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
         update_locally(CCODES,APP_SETTINGS,DIR_PATH)
     else:
         # First Commit
-        FILE_INFO = GEN_MetaData(CCODES,APP_SETTINGS,DIR_PATH)
+        (FILE_INFO , GFID_DATA) = GEN_MetaData(CCODES,APP_SETTINGS,DIR_PATH)
         output({"code":CCODES["INIT_DONE"],"msg":"Repository Initialization Completed","data":{"folderName":os.path.basename(DIR_PATH),"localPath":DIR_PATH}})
         commit(CCODES,DIR_PATH,MD_FILE_INFO=FILE_INFO)
+
         # createLOG(CCODES,DIR_PATH,MD_FILE_INFO=FILE_INFO)
+
+def getGFID_FILE_DATA(DIR_PATH : str , fileName : str):
+  GFID_FILE_PATH = os.path.join(DIR_PATH, os.environ["DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH"], fileName)
+  GFID_FILE = loadJSON(GFID_FILE_PATH)
+  return GFID_FILE
+
+def showUploads(CCODES,DIR_PATH, REPO_ID):
+    LATEST_COMMIT_INFO = Get_latest_commit_info(DIR_PATH)
+    GFID_DATA = getGFID_FILE_DATA(DIR_PATH, fileName=LATEST_COMMIT_INFO["fileName"])
+
+    for parentDirPath in GFID_DATA:
+      if GFID_DATA[parentDirPath]["id"]:
+        for index in range(len(GFID_DATA[parentDirPath]["files"])):
+          if GFID_DATA[parentDirPath]["files"][index]["id"]:
+            filePath = os.path.join(parentDirPath,GFID_DATA[parentDirPath]["files"][index]["name"])
+            parentID = GFID_DATA[parentDirPath]["id"]
+            fileID = GFID_DATA[parentDirPath]["files"][index]["id"]
+            output({"code": CCODES["ADD_UPLOAD"],"data":{"RepoId" : REPO_ID,"filePath": filePath, "parentID" : parentID, "driveID" : fileID, "fileName": GFID_DATA[parentDirPath]["files"][index]["name"]}})

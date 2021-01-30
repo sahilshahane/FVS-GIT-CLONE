@@ -1,10 +1,10 @@
 {
   "info": [
     {
-      "displayName": "Testing",
-      "localLocation": "/home/uttkarsh/Programming/MajorProject/Newest/FVS-GIT-CLONE/Testing",
-      "syncStatus": false,
-      "id": 1
+      "displayName": "MajorProject",
+      "localLocation": "/home/uttkarsh/Programming/MajorProject/sahilNew/FVS-GIT-CLONE/Testing",
+      "id": 1,
+      "syncStatus": false
     }
   ],
   "currentDirLocation": ["Home"],

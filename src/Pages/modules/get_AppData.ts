@@ -4,6 +4,7 @@ import electron, { ipcRenderer } from 'electron';
 import path from 'path';
 import fs from 'fs-extra';
 import log from './log';
+import { SYNC_DATA_STRUCTURE } from './Redux/SynchronizationSlicer';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const Load_APP_HOME_PATH = () => {
@@ -21,18 +22,6 @@ const Load_APP_HOME_PATH = () => {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export const APP_HOME_PATH = Load_APP_HOME_PATH(); // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-export const Load_IgnoreGlobalPaths = () => {
-  try{
-    const ignoreGlobalFilePath = path.join(APP_HOME_PATH, 'folder-metadata', 'globallyIgnoredFiles.json');
-    return {
-      GloballyIgnoredData: JSON.parse(fs.readFileSync(ignoreGlobalFilePath).toString())
-    }
-  } catch (err) {
-    log('Could not Load Global Ignore Data');
-  }
-  return {GloballyIgnoredData: ''}
-}
 
 const Load_APPSETTINGS = () => {
   try {
@@ -96,12 +85,16 @@ const Load_USER_REPOSITORIES_ = () => {
   };
 };
 
-const LOAD_SYNC_FILE = () => {
+const LOAD_SYNC_FILE: () => {
+  SYNC_DATA: SYNC_DATA_STRUCTURE;
+  SYNC_DATA_FILE_PATH: string;
+} = () => {
   try {
     const SYNC_DATA_FILE_PATH = path.join(APP_HOME_PATH, 'Sync.json');
     const SYNC_DATA = JSON.parse(
       fs.readFileSync(SYNC_DATA_FILE_PATH, { encoding: 'utf-8' })
     );
+
     return {
       SYNC_DATA,
       SYNC_DATA_FILE_PATH,
@@ -139,3 +132,25 @@ export const {
   USER_REPOSITORY_DATA_FILE_PATH,
 } = Load_USER_REPOSITORIES_();
 export const { SYNC_DATA, SYNC_DATA_FILE_PATH } = LOAD_SYNC_FILE();
+
+export const DEFAULT_REPO_FOLDER_PATH = '.usp';
+export const DEFAULT_REPO_DATA_FOLDER_PATH = path.join(
+  DEFAULT_REPO_FOLDER_PATH,
+  'data'
+);
+export const DEFAULT_REPO_LOG_FOLDER_PATH = path.join(
+  DEFAULT_REPO_FOLDER_PATH,
+  'logs'
+);
+export const DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH = path.join(
+  DEFAULT_REPO_FOLDER_PATH,
+  'c_storage'
+);
+export const DEFAULT_REPO_SETTINGS_FILE_PATH = path.join(
+  DEFAULT_REPO_FOLDER_PATH,
+  'repositorySettings.json'
+);
+export const DEFAULT_REPO_COMMIT_FILE_PATH = path.join(
+  DEFAULT_REPO_FOLDER_PATH,
+  'commit.json'
+);

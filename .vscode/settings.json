@@ -51,5 +51,6 @@
     ".erb": false,
     "src/main.prod.js.LICENSE.txt": true
   },
-  "python.pythonPath": "c:\\Users\\void\\.virtualenvs\\pythonScripts-r1-r8vBX\\Scripts\\python.exe"
+  "python.pythonPath": "c:\\Users\\void\\.virtualenvs\\pythonScripts-r1-r8vBX\\Scripts\\python.exe",
+  "python.formatting.provider": "autopep8"
 }

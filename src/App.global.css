@@ -38,9 +38,10 @@ body {
     inset 0px 60px 50px -30px rgba(0, 0, 0, 0.5);
 }
 .app-bg {
-  /* background-color: var(--app-bg-color); */
   background: rgb(51,65,101);
   background: linear-gradient(163deg, rgba(51,65,101,1) 0%, rgba(55,40,40,1) 100%);
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 .component-bg {
   background-color: var(--component-bg-color);
@@ -130,7 +131,7 @@ body {
 
 .breadcrumb {
   /* border: 1px solid red; */
-  border-radius: 10px;
+  border-radius: 5px;
   padding: 3px 4px;
   margin: 5px 2px;
   font-family: 'Ubuntu', sans-serif;
@@ -153,9 +154,11 @@ body {
 
 .contain-collapse {
   width: 20vw;
-  position: absolute;
+  position: fixed;
   bottom: 0px;
+  background-color: rgba(0, 0, 0, 0.8);
 }
+
 #uploadPercentage {
   display: flex;
   justify-content: space-evenly;
@@ -187,4 +190,30 @@ body {
 }
 .fileName-fileList{
   padding-left: 10px;
+}
+
+.choose-repo{
+  display: flex;
+  /* border: 1px solid red; */
+  margin-bottom: 5px;
+  position: relative;
+}
+
+.repo-info{
+  /* border: 1px solid yellow; */
+  align-self: center;
+}
+.display-name{
+  margin-right: 5px;
+}
+
+.repo-select-buttons{
+  /* border: 1px solid white; */
+  position: absolute;
+  right: 0;
+  transform: translate(0, -16%);
+}
+.repo-select-buttons button{
+  border-radius: 5px;
+  margin-left: 3px;
 }

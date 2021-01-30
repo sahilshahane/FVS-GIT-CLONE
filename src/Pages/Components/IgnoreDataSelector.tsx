@@ -7,9 +7,6 @@ import {
   selectFile,
 } from '../modules/select_directory_dialog';
 import { RepositoryInfo } from '../modules/Redux/UserRepositorySlicer';
-import { Load_IgnoreGlobalPaths, APP_HOME_PATH } from '../modules/get_AppData';
-import fs from 'fs';
-import path from 'path';
 
 const chooseFile = (
   Handler: any,
@@ -38,22 +35,7 @@ const chooseDirectory = async (
 };
 
 const GLOBAL_CHOOSE_DIALOG = ({ GblChooser, setGblChooser }: any) => {
-  const [globalFileName, setGlobalFileName] = useState("");
-
-  const AddGlobalIgnore = () => {
-    if(globalFileName !== ""){
-      try{
-        let updatedPaths = Load_IgnoreGlobalPaths().GloballyIgnoredData;
-        updatedPaths.paths.push(globalFileName);
-        const globalIgnoreFileLocation = path.join(APP_HOME_PATH, 'folder-metadata', 'globallyIgnoredFiles.json');
-        fs.writeFileSync(globalIgnoreFileLocation, JSON.stringify(updatedPaths));
-      } catch {
-        console.log("There was some error while updating the golbal ignore File");
-      }
-      setGlobalFileName("");
-    }
-  };
-
+  const AddGlobalIgnore = () => {};
   const CheckandCloseDIalog = () => {
     // CHECK SAVE PROGRESS THEN CLOSE
     setGblChooser(false);
@@ -67,12 +49,7 @@ const GLOBAL_CHOOSE_DIALOG = ({ GblChooser, setGblChooser }: any) => {
     >
       <Row>
           <Col>
-            <Input 
-              type="text"
-              onChange={(e)=>{setGlobalFileName(e.target.value)}} 
-              value={globalFileName} 
-              placeholder="Enter File / Folder Name" 
-              required />
+            <Input type="text" placeholder="Enter File / Folder Name" required />
           </Col>
           <Col>
             <Button type="primary" onClick={AddGlobalIgnore}>Add</Button>
@@ -112,27 +89,26 @@ const REPOSITORY_CHOOSE_DIALOG = ({ DirChooser, setDirChooser }: any) => {
     >
       {Repositories.map(({ displayName, localLocation }) => {
         return (
-          <div key={nanoid()}>
-            <Space>
-              <Space>
-                <span>{displayName}</span> >
-                <span>{localLocation}</span>
-              </Space>
-              <Space>
-                <Button
-                  type="primary"
-                  onClick={() => chooseDirectory(saveIgnoreDirs, localLocation)}
-                >
-                  Directory
-                </Button>
-                <Button
-                  type="primary"
-                  onClick={() => chooseFile(saveIgnoreFiles, localLocation)}
-                >
-                  File
-                </Button>
-              </Space>
-            </Space>
+          <div className="choose-repo" key={nanoid()}>
+            <div className="repo-info">
+              <span className="display-name">{displayName}</span>
+              <span style={{margin: "0px 6px"}}>&gt;</span>
+              <span className="local-location">{localLocation}</span>
+            </div>
+            <div className="repo-select-buttons">
+              <Button
+                type="primary"
+                onClick={() => chooseDirectory(saveIgnoreDirs, localLocation)}
+              >
+                Directory
+              </Button>
+              <Button
+                type="primary"
+                onClick={() => chooseFile(saveIgnoreFiles, localLocation)}
+              >
+                File
+              </Button>
+            </div>
           </div>
         );
       })}

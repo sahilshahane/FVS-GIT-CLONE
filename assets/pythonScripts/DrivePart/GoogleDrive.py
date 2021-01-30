@@ -1,35 +1,21 @@
-import pickle,os,socket
+import pickle,os,socket,sys
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from googleapiclient.http import MediaFileUpload
+import orjson
 
-from log import output
+from utils import output
 import webbrowser
 import wsgiref.simple_server
 import wsgiref.util
-# WHENEVER THE SCOPE CHANGES THE YOU HAVE TO RECREATE THE tocken.pickle FILE SO MAKE SURE YOU DELETE THE FILE AND THEN RUN THE
-# CODE AGAIN WITH THE NEW SCOPE
-#
-# https://www.googleapis.com/auth/drive.metadata.readonly - Allows read-only access to file metadata
-#                                                           (excluding downloadUrl and contentHints.thumbnail), but does not allow
-#                                                           any access to read or download file content.
-# https://www.googleapis.com/auth/drive - Full, permissive scope to access all of a user's files, excluding the Application Data
-#                                         folder.
-#
-# https://www.googleapis.com/auth/drive.file - Per-file access to files created or opened by the app. File authorization is granted
-#                                              on a per-user basis and is revoked when the user deauthorizes the app.
-#
-#   So create the tocken.pickle file with the proper Scope which gives you the proper access
-#   And you can chain the tockens like a listp["", ""]
-#   Different scope means different privileges, you need to delete token.pickle file in your working directory and run again the code to authenticate with the new scope.
-# class Server(BaseHTTPRequestHandler):
+import main
 
 class _WSGIRequestHandler(wsgiref.simple_server.WSGIRequestHandler):
     def log_message(self, format, *args):
         # pylint: disable=redefined-builtin
         # (format is the argument name defined in the superclass.)
         pass
-
 
 class _RedirectWSGIApp(object):
     def __init__(self, success_message):
@@ -136,3 +122,158 @@ def getUSERInfo(CCODES, service = None):
   if(not service): service = get_gdrive_service(CCODES)
   userInfo = service.about().get(fields="user,storageQuota").execute()
   return userInfo
+
+def generateIDs(CCODES, count=1, service = None):
+  if(not service): service = get_gdrive_service(CCODES)
+  ids = []
+  if(count <= 1000):
+    ids.extend(service.files().generateIds(count=count).execute().get("ids"))
+  else:
+    def addIds(req_id, resp, exception):
+      ids.extend(resp["ids"])
+
+    batch = service.new_batch_http_request()
+    while(count > 0):
+      if(count >= 1000):
+        batch.add(service.files().generateIds(count=1000),callback=addIds)
+      else:
+        batch.add(service.files().generateIds(count=count),callback=addIds)
+
+      count = count - 1000
+
+    batch.execute()
+  return ids
+
+def allocateGFID(CCODES, DIR_PATH, service = None):
+  if(not service): service = get_gdrive_service(CCODES)
+
+  MD_FILE_INFO = main.Get_latest_commit_info(DIR_PATH)
+
+  GFID_FILE_PATH = os.path.join(MD_FILE_INFO["RepositoryPath"],os.environ["DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH"],MD_FILE_INFO["fileName"])
+  file_ = open(GFID_FILE_PATH,'r+')
+
+  GFID_DATA = orjson.loads(file_.read())
+
+  generate_count = 0
+  UNALLOCATED = set()
+
+  for ParentFolder, VALUE in GFID_DATA.items():
+    if not VALUE["id"]:
+      generate_count+=1
+      UNALLOCATED.add(ParentFolder)
+
+    for index, _ in enumerate(VALUE["files"]):
+      if not VALUE["files"][index]["id"]:
+        generate_count+=1
+        UNALLOCATED.add(ParentFolder)
+  if(generate_count>0):
+    GDRIVE_IDs = iter(generateIDs(CCODES,count=generate_count,service=service))
+
+    for ParentFolder in UNALLOCATED:
+      # ALLOCATE ID TO FOLDERS
+      if not GFID_DATA[ParentFolder]["id"]:
+        GFID_DATA[ParentFolder]["id"] = next(GDRIVE_IDs)
+
+      # ALLOCATE ID TO FILES
+      for index, _ in enumerate(GFID_DATA[ParentFolder]["files"]):
+        if not GFID_DATA[ParentFolder]["files"][index]["id"]:
+          GFID_DATA[ParentFolder]["files"][index]["id"] = next(GDRIVE_IDs)
+
+    # RE-SAVE THE DATA
+    file_.seek(0,0)
+    file_.write(orjson.dumps(GFID_DATA).decode('utf-8'))
+
+  file_.close()
+  return (GFID_DATA, MD_FILE_INFO)
+
+def createFolder(CCODES, folderName, GdriveID, parentID = None ,service = None):
+  try:
+    if(not service): service = get_gdrive_service(CCODES)
+
+    folder_metadata = {
+      "id": GdriveID,
+      "name": folderName,
+      "mimeType": "application/vnd.google-apps.folder",       #If the user wants to upload gsuit files(docs, spreadsheet etc) then there is another mimeType for that https://developers.google.com/drive/api/v3/manage-uploads#multipart
+    }                                                         # In the first case the parent can be empty in order to add the main folder in "MyDrive"
+
+    if parentID: folder_metadata["parents"] = [parentID]
+
+    service.files().create(body=folder_metadata).execute()
+    return True
+
+  except Exception as e: pass
+
+  return False
+
+def uploadFile(CCODES, fileName, filePath, GdriveID, parentID, service = None):
+  try:
+    if(not service): service = get_gdrive_service(CCODES)
+
+    output({"code":CCODES["UPLOAD_STARTED"], "data" : { "RepoId": 'unknown', "filePath": filePath}})
+
+    media = MediaFileUpload(filePath,resumable=True,chunksize=1024*1024)
+    metaData = {"name": fileName,
+                "id": GdriveID,
+                "parents":[parentID]}
+
+    request = service.files().create(body=metaData, media_body=media)
+    response = None
+    while response is None:
+      status, response = request.next_chunk()
+      if status: output({"code":CCODES["UPLOAD_PROGRESS"], "data" : {  "percent" : int(status.progress() * 100)}, "RepoID": 'unknown', "filePath": filePath})
+
+    output({"code":CCODES["UPLOAD_SUCCESS"], "data" : { "RepoID": 'unknown', "filePath": filePath}})
+
+    return True
+  except Exception as e:
+    output({"code":CCODES["UPLOAD_FAILED"], "data" : { "RepoID": 'unknown', "filePath": filePath}, "msg": str(e)})
+
+  return False
+
+def uploadRepository(CCODES,DIR_PATH, service = None):
+  if(not service): service = get_gdrive_service(CCODES)
+
+  # CHECK AND ALLOCATE FILE IDs
+  GFID_DATA, MD_FILE_INFO = allocateGFID(CCODES, DIR_PATH, service)
+
+  # CHECK IF ROOT FOLDER CREATED OR NOT, btw MD_FILE_INFO["RepositoryPath"] === Root Path of Drive Space
+  RootFolderPresent = GFID_DATA[DIR_PATH]["isCreated"]
+  # totalFiles = MD_FILE_INFO["totalFiles"]
+  # totalFolders = MD_FILE_INFO["totalFolders"]
+
+  try:
+    if not RootFolderPresent:
+        RepositoryFolderName = os.path.basename(DIR_PATH)
+        createFolder(CCODES, RepositoryFolderName, GFID_DATA[DIR_PATH]["id"], service=service)
+        GFID_DATA[DIR_PATH]["isCreated"] = True
+  except Exception as e:
+    pass
+
+  for ParentDir, _ in GFID_DATA.items():
+
+    # THIS IS CREATING EMPTY FOLDERS
+    for folderName in GFID_DATA[ParentDir]["folders"]:
+      folderPath = os.path.join(ParentDir,folderName)
+
+      if GFID_DATA[folderPath]["isCreated"]: continue
+      folderID = GFID_DATA[folderPath]["id"]
+
+      isCreated = createFolder(CCODES, folderName, folderID,parentID=GFID_DATA[ParentDir]["id"], service=service)
+      if isCreated : GFID_DATA[ParentDir]["isCreated"] = True
+
+
+    # THIS IS UPLOADING FILES
+    for index, fileData in enumerate(GFID_DATA[ParentDir]["files"]):
+      if not GFID_DATA[ParentDir]["isCreated"]: continue
+      if GFID_DATA[ParentDir]["files"][index]["isUpdated"]: continue
+
+      filePath = os.path.join(ParentDir,fileData["name"])
+
+      isUploaded = uploadFile(CCODES, fileData["name"], filePath, fileData["id"], GFID_DATA[ParentDir]["id"],service=service)
+      if(isUploaded): GFID_DATA[ParentDir]["files"][index]["isUpdated"] = True
+
+
+  GFID_FILE_PATH = os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH"],MD_FILE_INFO["fileName"])
+
+  with open(GFID_FILE_PATH,"w") as file_:
+    file_.write(orjson.dumps(GFID_DATA).decode('utf-8'))
