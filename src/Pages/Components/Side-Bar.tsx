@@ -5,6 +5,7 @@ import {
   PieChartOutlined,
   CloudUploadOutlined,
   CloudDownloadOutlined,
+  RadiusBottomrightOutlined,
 } from '@ant-design/icons';
 import log from '../modules/log';
 import Profile from './Side-Bar_Profile';
@@ -23,14 +24,15 @@ const SiderBar = () => {
   const dispatch = useDispatch();
 
   return (
-    <>
+    <div style={{background: "rgb(27, 27, 27)"}}>
       <Sider
         collapsible
         collapsed={collapsed}
         onCollapse={setCollapsed}
         style={{
-          overflow: 'auto',
+          // overflow: 'auto',
           height: '100vh',
+          position: "sticky"
         }}
         className="component-bg"
       >
@@ -62,7 +64,7 @@ const SiderBar = () => {
           </Menu.Item>
         </Menu>
       </Sider>
-    </>
+    </div>
   );
 };
 export default SiderBar;

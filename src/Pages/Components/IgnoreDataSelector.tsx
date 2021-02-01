@@ -89,27 +89,26 @@ const REPOSITORY_CHOOSE_DIALOG = ({ DirChooser, setDirChooser }: any) => {
     >
       {Repositories.map(({ displayName, localLocation }) => {
         return (
-          <div key={nanoid()}>
-            <Space>
-              <Space>
-                <span>{displayName}</span> >
-                <span>{localLocation}</span>
-              </Space>
-              <Space>
-                <Button
-                  type="primary"
-                  onClick={() => chooseDirectory(saveIgnoreDirs, localLocation)}
-                >
-                  Directory
-                </Button>
-                <Button
-                  type="primary"
-                  onClick={() => chooseFile(saveIgnoreFiles, localLocation)}
-                >
-                  File
-                </Button>
-              </Space>
-            </Space>
+          <div className="choose-repo" key={nanoid()}>
+            <div className="repo-info">
+              <span className="display-name">{displayName}</span>
+              <span style={{margin: "0px 6px"}}>&gt;</span>
+              <span className="local-location">{localLocation}</span>
+            </div>
+            <div className="repo-select-buttons">
+              <Button
+                type="primary"
+                onClick={() => chooseDirectory(saveIgnoreDirs, localLocation)}
+              >
+                Directory
+              </Button>
+              <Button
+                type="primary"
+                onClick={() => chooseFile(saveIgnoreFiles, localLocation)}
+              >
+                File
+              </Button>
+            </div>
           </div>
         );
       })}

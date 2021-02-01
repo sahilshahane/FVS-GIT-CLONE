@@ -26,7 +26,7 @@ const AddFolder = () => {
   // console.log('Rendering Add-Folder.tsx');
 
   return (
-    <div style={{ position: 'absolute', bottom: 0, right: 0, margin: '2rem' }}>
+    <div style={{ position: 'fixed', bottom: 0, right: 0, margin: '2rem' }}>
       <Tooltip placement="top" title="Add Folder">
         <Button
           type="primary"
