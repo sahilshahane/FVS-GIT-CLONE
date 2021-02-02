@@ -12,7 +12,6 @@ export interface RepositoryInfo {
   displayName: string;
   localLocation: string;
   syncStatus?: boolean;
-  id: number;
 }
 
 export interface selectedRepo {
@@ -22,57 +21,49 @@ export interface selectedRepo {
   localLocation: string;
   directoryLevel: number;
 }
-
+export interface selectedRepoInterface {
+  payload: selectedRepo;
+  type: any;
+}
 export interface USER_REPOSITORY_DATA_STRUCTURE {
-  info: Array<RepositoryInfo> | [];
+  info: {
+    [RepoID: string]: RepositoryInfo;
+  };
   currentDirLocation: Array<string>;
   selectedRepository: selectedRepo | null;
 }
 
-const GET_INITIAL_STATE: () => USER_REPOSITORY_DATA_STRUCTURE = () =>
-  USER_REPOSITORY_DATA;
+interface addRepositoryinterface {
+  payload: {
+    displayName: string;
+    localLocation: string;
+  };
+  type: any;
+}
 
-const SAVE_DATA = async (data: USER_REPOSITORY_DATA_STRUCTURE) => {
-  fs.promises
-    .writeFile(USER_REPOSITORY_DATA_FILE_PATH, JSON.stringify(data))
-    .catch((err) => {
-      log('There was an error while updating the info.txt file', err);
-    });
+const GET_INITIAL_STATE: () => USER_REPOSITORY_DATA_STRUCTURE = () => {
+  const data: USER_REPOSITORY_DATA_STRUCTURE = USER_REPOSITORY_DATA;
+
+  if (!(data.info && Object.keys(data.info).length)) data.info = {};
+  if (!data.currentDirLocation) data.currentDirLocation = ['Home'];
+
+  return { ...USER_REPOSITORY_DATA, ...data };
 };
-
+const SAVE = async (state: USER_REPOSITORY_DATA_STRUCTURE) => {
+  fs.promises.writeFile(USER_REPOSITORY_DATA_FILE_PATH, JSON.stringify(state));
+};
 export const USER_REPOSITORY_Slice = createSlice({
   name: 'UserRepoData',
   initialState: GET_INITIAL_STATE(),
   reducers: {
-    addRepository: (
-      state,
-      action: {
-        payload: {
-          displayName: string;
-          localLocation: string;
-        };
-        type: any;
-      }
-    ) => {
+    addRepository: (state, action: addRepositoryinterface) => {
       const DATA: RepositoryInfo = action.payload;
       DATA.localLocation = path.normalize(DATA.localLocation);
+      const id = Object.keys(state.info).length + 1;
 
-      if (state.info.length) DATA.id = state.info[state.info.length - 1].id + 1;
-      else DATA.id = 1;
+      state.info[id] = DATA;
 
-      if (!action.payload.syncStatus) DATA.syncStatus = false;
-
-      state.info = [...state.info, DATA];
-
-      SAVE_DATA(state);
-    },
-
-    saveCurrentLocation: (state) => {
-      fs.promises
-        .writeFile(USER_REPOSITORY_DATA_FILE_PATH, JSON.stringify(state))
-        .catch((err) => {
-          log('There was an error while updating the info.txt file', err);
-        });
+      SAVE(state);
     },
     setCurrentDirLocation: (state, action) => {
       if (action.payload.length > 0) state.currentDirLocation = action.payload;
@@ -119,41 +110,24 @@ export const USER_REPOSITORY_Slice = createSlice({
         directoryLevel: state.currentDirLocation.length,
       };
     },
-    setSelectedRepository: (
-      state,
-      action: {
-        payload: selectedRepo;
-        type: any;
-      }
-    ) => {
+    setSelectedRepository: (state, action: selectedRepoInterface) => {
       // NOTE
       state.selectedRepository = action.payload;
     },
-    saveUserRepository: (state) => {
-      SAVE_DATA(state);
+    saveUserRepositoryDataSync: (state) => {
+      SAVE(state);
     },
   },
 });
 
 export const {
   addRepository,
-  saveCurrentLocation,
   setCurrentDirLocation,
   move_To_NextLocation,
   goBack_From_CurrentLocation,
   GoTo_Repository,
   setSelectedRepository,
-  saveUserRepository,
+  saveUserRepositoryDataSync,
 } = USER_REPOSITORY_Slice.actions;
-
-// export const GET_currentUserRepoData = (state: any) => state.UserRepoData;
-
-// export const GET_selectedRepository = (state: any) =>
-//   state.UserRepoData.selectedRepo;
-
-// export const GET_currentDirLocation = (state: any) =>
-//   state.UserRepoData.currentDirLocation;
-
-// export const GET_AllRepositories = (state: any) => state.UserRepoData.info;
 
 export default USER_REPOSITORY_Slice.reducer;

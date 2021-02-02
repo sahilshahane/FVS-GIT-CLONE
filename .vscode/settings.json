@@ -23,7 +23,8 @@
     "npm-debug.log.*": true,
     "test/**/__snapshots__": true,
     "yarn.lock": true,
-    "*.{css,sass,scss}.d.ts": true
+    "*.{css,sass,scss}.d.ts": true,
+    "**/__pycache__": true
   },
   "git.ignoreLimitWarning": true,
   "files.exclude": {
@@ -49,7 +50,8 @@
     "assets/icon.png": true,
     "assets/icon.svg": true,
     ".erb": false,
-    "src/main.prod.js.LICENSE.txt": true
+    "src/main.prod.js.LICENSE.txt": true,
+    "**/__pycache__": true
   },
   "python.pythonPath": "c:\\Users\\void\\.virtualenvs\\pythonScripts-r1-r8vBX\\Scripts\\python.exe",
   "python.formatting.provider": "autopep8"

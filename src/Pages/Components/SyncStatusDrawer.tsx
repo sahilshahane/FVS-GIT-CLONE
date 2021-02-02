@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Drawer, List, Collapse } from 'antd';
+import { Drawer, List, Collapse, Spin, Empty } from 'antd';
 import { nanoid } from '@reduxjs/toolkit';
 import {
   LoadingOutlined,
@@ -15,6 +15,7 @@ import {
   SYNC_INPUT,
   SYNC_DATA_STRUCTURE,
 } from '../modules/Redux/SynchronizationSlicer';
+import { store } from '../modules/Redux/store';
 
 // ////////////////////////////////////////////////////////////////////////////////////
 const getStatusIcon = (
@@ -113,59 +114,86 @@ const DownloadsDrawer = () => {
 // ////////////////////////////////////////////////////////////////////////////////////
 
 const UploadsDrawer = () => {
-  const uploadWatingQueue: {
-    [RepoID: string]: Array<SYNC_INPUT>;
-  } = useSelector(
-    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.uploadWatingQueue
+  const uploadWatingQueue = useSelector(
+    (state: store) => state.Sync.uploadWatingQueue
   );
 
   const uploadingQueue = useSelector(
-    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.uploadingQueue
+    (state: store) => state.Sync.uploadingQueue
   );
 
-  const uploadFinishedQueue: {
-    [RepoID: string]: Array<SYNC_INPUT>;
-  } = useSelector(
-    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.uploadFinishedQueue
+  const uploadFinishedQueue = useSelector(
+    (state: store) => state.Sync.uploadFinishedQueue
   );
 
-  const RepoData = useSelector(
-    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.RepoData
-  );
+  const RepoData = useSelector((state: store) => state.Sync.RepoData);
 
   return (
     <Collapse bordered={false}>
       {Object.keys(RepoData).map((RepoID: any) => (
         <Collapse.Panel header={RepoData[RepoID].RepoName} key={nanoid()}>
-          <List
-            dataSource={uploadingQueue}
-            renderItem={(data: any) => (
-              <List.Item.Meta
-                avatar={getStatusIcon(data.status)}
-                title={data.fileName}
+          <Spin
+            spinning={
+              !(
+                !uploadingQueue.length &&
+                !(
+                  uploadWatingQueue[RepoID] && uploadWatingQueue[RepoID].length
+                ) &&
+                !(
+                  uploadFinishedQueue[RepoID] &&
+                  uploadFinishedQueue[RepoID].length
+                )
+              ) && !RepoData[RepoID].areFoldersAllocated
+            }
+            tip="Allocating Folders..."
+          >
+            {uploadingQueue.length ? (
+              <List
+                dataSource={uploadingQueue}
+                renderItem={(data: any) => (
+                  <List.Item.Meta
+                    avatar={getStatusIcon(data.status)}
+                    title={data.fileName}
+                  />
+                )}
+              />
+            ) : null}
+
+            {/* <Divider /> */}
+            {uploadWatingQueue[RepoID] && uploadWatingQueue[RepoID].length && (
+              <List
+                dataSource={uploadWatingQueue[RepoID]}
+                renderItem={(data) => (
+                  <List.Item.Meta
+                    avatar={getStatusIcon(data.status)}
+                    title={data.fileName}
+                  />
+                )}
               />
             )}
-          />
-          {/* <Divider /> */}
-          <List
-            dataSource={uploadWatingQueue[RepoID]}
-            renderItem={(data) => (
-              <List.Item.Meta
-                avatar={getStatusIcon(data.status)}
-                title={data.fileName}
-              />
-            )}
-          />
-          {/* <Divider /> */}
-          <List
-            dataSource={uploadFinishedQueue[RepoID]}
-            renderItem={(data) => (
-              <List.Item.Meta
-                avatar={getStatusIcon(data.status)}
-                title={data.fileName}
-              />
-            )}
-          />
+            {/* <Divider /> */}
+            {uploadFinishedQueue[RepoID] &&
+              uploadFinishedQueue[RepoID].length && (
+                <List
+                  dataSource={uploadFinishedQueue[RepoID]}
+                  renderItem={(data) => (
+                    <List.Item.Meta
+                      avatar={getStatusIcon(data.status)}
+                      title={data.fileName}
+                    />
+                  )}
+                />
+              )}
+
+            {!uploadingQueue.length &&
+              !(
+                uploadWatingQueue[RepoID] && uploadWatingQueue[RepoID].length
+              ) &&
+              !(
+                uploadFinishedQueue[RepoID] &&
+                uploadFinishedQueue[RepoID].length
+              ) && <Empty description="Uploads are completed..." />}
+          </Spin>
         </Collapse.Panel>
       ))}
     </Collapse>
@@ -175,11 +203,11 @@ const UploadsDrawer = () => {
 // ////////////////////////////////////////////////////////////////////////////////////
 const SliderDrawer = () => {
   const isUploadsDrawerVisible = useSelector(
-    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.showUploadsDrawer
+    (state: store) => state.Sync.showUploadsDrawer
   );
 
   const isDownloadsDrawerVisible = useSelector(
-    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.showDownloadsDrawer
+    (state: store) => state.Sync.showDownloadsDrawer
   );
 
   const dispatch = useDispatch();

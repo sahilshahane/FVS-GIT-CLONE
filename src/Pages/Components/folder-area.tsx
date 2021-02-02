@@ -7,15 +7,16 @@ import { nanoid } from '@reduxjs/toolkit';
 import path from 'path';
 import { File, Folder, Repository } from './folder-area-ui';
 import LiveDirView from '../modules/Live-Directory-View';
+import { store } from '../modules/Redux/store';
 
 const ALL_Repositories = () => {
-  const repositoryData = useSelector((state) => {
+  const repositoryData = useSelector((state: store) => {
     return state.UserRepoData.info;
   });
 
   return (
     <Row gutter={[5, 5]} className="folder-area">
-      {repositoryData.map((Repository_INFO: any) => {
+      {Object.keys(repositoryData).map((repoID) => {
         return (
           <Col
             xs={{ span: 24 }}
@@ -23,7 +24,7 @@ const ALL_Repositories = () => {
             md={{ span: 6 }}
             key={nanoid()}
           >
-            <Repository id={nanoid()} info={Repository_INFO} />
+            <Repository key={nanoid()} info={repositoryData[repoID]} />
           </Col>
         );
       })}
@@ -32,11 +33,11 @@ const ALL_Repositories = () => {
 };
 
 const Selected_Repository_Directory = () => {
-  const currentDirLocation = useSelector((state) => {
+  const currentDirLocation = useSelector((state: store) => {
     return state.UserRepoData.currentDirLocation;
   });
 
-  const [sortBy, sortByType] = useSelector((state) => [
+  const [sortBy, sortByType] = useSelector((state: store) => [
     state.AppSettings.directorySortBy.current,
     state.AppSettings.directorySortBy.type,
   ]);
@@ -92,16 +93,16 @@ const Selected_Repository_Directory = () => {
 };
 
 const DisplayArea = () => {
-  const isRepositorySelected = useSelector((state) => {
+  const isRepositorySelected = useSelector((state: store) => {
     return state.UserRepoData.selectedRepository;
   });
 
   return (
     <div>
-      {!isRepositorySelected ? (
-        <ALL_Repositories />
-      ) : (
+      {isRepositorySelected ? (
         <Selected_Repository_Directory />
+      ) : (
+        <ALL_Repositories />
       )}
     </div>
   );

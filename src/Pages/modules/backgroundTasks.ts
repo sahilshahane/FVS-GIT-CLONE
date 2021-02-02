@@ -2,6 +2,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { batch } from 'react-redux';
+import { remote } from 'electron';
 import {
   DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH,
   DEFAULT_REPO_COMMIT_FILE_PATH,
@@ -13,24 +14,31 @@ import {
   updateDownloadingQueue,
   setUploadWatingQueue,
   setDownloadWatingQueue,
+  saveSyncData,
 } from './Redux/SynchronizationSlicer';
+import { saveUserRepositoryDataSync } from './Redux/UserRepositorySlicer';
+import { saveRepositorySettings } from './Redux/AppSettingsSlicer';
 import showError from './ErrorPopup_dialog';
-
+import {
+  APP_SETTINGS_FILE_PATH,
+  SYNC_DATA_FILE_PATH,
+  USER_REPOSITORY_DATA_FILE_PATH,
+} from './get_AppData';
 const { dispatch } = Reduxstore;
 
 const LOAD_UPLOADS_FROM_REPOSITORY = async () => {
   const RepoINFO = Reduxstore.getState().UserRepoData.info;
 
-  RepoINFO.forEach(async (repo) => {
+  Object.keys(RepoINFO).forEach(async (RepoID) => {
     try {
       const CommitFilePath = path.join(
-        repo.localLocation,
+        RepoINFO[RepoID].localLocation,
         DEFAULT_REPO_COMMIT_FILE_PATH
       );
       const commitFile = await fs.readJson(CommitFilePath);
 
       const SyncfilePath = path.join(
-        repo.localLocation,
+        RepoINFO[RepoID].localLocation,
         DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH,
         commitFile.latest.fileName
       );
@@ -66,16 +74,16 @@ const LOAD_UPLOADS_FROM_REPOSITORY = async () => {
       batch(() => {
         dispatch(
           setRepositoryData({
-            RepoID: repo.id,
+            RepoID: Number(RepoID),
             folderData,
-            RepoName: repo.displayName,
+            RepoName: RepoINFO[RepoID].displayName,
           })
         );
 
         if (filesToUpload.length)
           dispatch(
             setUploadWatingQueue({
-              RepoID: repo.id,
+              RepoID: Number(RepoID),
               data: filesToUpload,
             })
           );
@@ -83,7 +91,7 @@ const LOAD_UPLOADS_FROM_REPOSITORY = async () => {
         if (filesToDownload.length)
           dispatch(
             setDownloadWatingQueue({
-              RepoID: repo.id,
+              RepoID: Number(RepoID),
               data: filesToDownload,
             })
           );
@@ -105,49 +113,51 @@ const MAX_PARALLEL_DOWNLOAD = 4;
 
 const SYNC_CHECK_TIMEOUT = 2000; // values in ms
 
-const RegisterSyncWroker = async () => {
-  Reduxstore.subscribe(async () => {
-    try {
-      const {
-        uploadingQueue,
-        downloadingQueue,
-        uploadWatingQueue,
-        downloadWatingQueue,
-      } = Reduxstore.getState().Sync;
+export const updateSync = async () => {
+  try {
+    const {
+      uploadingQueue,
+      downloadingQueue,
+      uploadWatingQueue,
+      downloadWatingQueue,
+    } = Reduxstore.getState().Sync;
 
-      const uploadWaitingList = Object.keys(uploadWatingQueue);
-      const downloadWaitingList = Object.keys(downloadWatingQueue);
+    const uploadWaitingList = Object.keys(uploadWatingQueue);
+    const downloadWaitingList = Object.keys(downloadWatingQueue);
 
-      if (
-        uploadingQueue.length < MAX_PARALLEL_UPLOAD &&
-        uploadWaitingList.length
-      ) {
-        if (uploadServiceTimeoutID) clearTimeout(uploadServiceTimeoutID);
+    if (
+      uploadingQueue.length < MAX_PARALLEL_UPLOAD &&
+      uploadWaitingList.length
+    ) {
+      if (uploadServiceTimeoutID) clearTimeout(uploadServiceTimeoutID);
 
-        uploadServiceTimeoutID = setTimeout(
-          () => Reduxstore.dispatch(updateUploadingQueue()),
-          SYNC_CHECK_TIMEOUT
-        );
-      }
-
-      if (
-        downloadingQueue.length < MAX_PARALLEL_DOWNLOAD &&
-        downloadWaitingList.length
-      ) {
-        if (downloadServiceTimeoutID) clearTimeout(downloadServiceTimeoutID);
-
-        downloadServiceTimeoutID = setTimeout(
-          () => Reduxstore.dispatch(updateDownloadingQueue()),
-          SYNC_CHECK_TIMEOUT
-        );
-      }
-    } catch (Err) {
-      showError(
-        'Sync Worker Error',
-        `Something Went Wrong While Running Sync Service Worker`
+      uploadServiceTimeoutID = setTimeout(
+        () => Reduxstore.dispatch(updateUploadingQueue()),
+        SYNC_CHECK_TIMEOUT
       );
     }
-  });
+
+    if (
+      downloadingQueue.length < MAX_PARALLEL_DOWNLOAD &&
+      downloadWaitingList.length
+    ) {
+      if (downloadServiceTimeoutID) clearTimeout(downloadServiceTimeoutID);
+
+      downloadServiceTimeoutID = setTimeout(
+        () => Reduxstore.dispatch(updateDownloadingQueue()),
+        SYNC_CHECK_TIMEOUT
+      );
+    }
+  } catch (Err) {
+    showError(
+      'Sync Worker Error',
+      `Something Went Wrong While Running Sync Service Worker`
+    );
+  }
+};
+
+const RegisterSyncWroker = async () => {
+  Reduxstore.subscribe(updateSync);
 };
 
 // eslint-disable-next-line import/prefer-default-export
@@ -157,3 +167,12 @@ export const LOAD_ONCE_AFTER_APP_READY = () => {
 
   console.log('Background Service Started!');
 };
+
+remote.getCurrentWindow().on('close', () => {
+  // dispatch(saveSyncData());
+  const { AppSettings, UserRepoData, Sync } = Reduxstore.getState();
+
+  fs.writeJsonSync(APP_SETTINGS_FILE_PATH, AppSettings);
+  fs.writeJsonSync(USER_REPOSITORY_DATA_FILE_PATH, UserRepoData);
+  // fs.writeJsonSync(SYNC_DATA_FILE_PATH, Sync);
+});

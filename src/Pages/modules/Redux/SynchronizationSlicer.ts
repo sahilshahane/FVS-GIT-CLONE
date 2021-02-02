@@ -39,6 +39,7 @@ export interface SYNC_DATA_STRUCTURE {
         driveID?: string;
       }>;
       driveID?: string;
+      areFoldersAllocated: boolean;
     };
   };
 
@@ -140,7 +141,7 @@ export const SynchronizationSlice = createSlice({
   name: 'Synchronization',
   initialState: GET(),
   reducers: {
-    save: (state) => {
+    saveSyncData: (state) => {
       SAVE(state);
     },
     setRepositoryData: (state, action: setRepositoryDataInterface) => {

@@ -4,7 +4,6 @@ import electron, { ipcRenderer } from 'electron';
 import path from 'path';
 import fs from 'fs-extra';
 import log from './log';
-import { SYNC_DATA_STRUCTURE } from './Redux/SynchronizationSlicer';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const Load_APP_HOME_PATH = () => {
@@ -20,20 +19,29 @@ const Load_APP_HOME_PATH = () => {
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export const APP_HOME_PATH = Load_APP_HOME_PATH(); // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+export const APP_HOME_PATH = Load_APP_HOME_PATH();
+
+export const APP_SETTINGS_FILE_PATH = path.join(
+  APP_HOME_PATH,
+  'Appsetting.json'
+);
+
+export const USER_REPOSITORY_DATA_FILE_PATH = path.join(
+  APP_HOME_PATH,
+  'info.json'
+);
+export const SYNC_DATA_FILE_PATH = path.join(APP_HOME_PATH, 'Sync.json');
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 const Load_APPSETTINGS = () => {
   try {
-    const APP_SETTINGS_FILE_PATH = path.join(APP_HOME_PATH, 'Appsetting.json');
-
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    return {
-      APP_SETTINGS: JSON.parse(
-        fs.readFileSync(APP_SETTINGS_FILE_PATH).toString()
-      ),
-      APP_SETTINGS_FILE_PATH,
-    };
+    return JSON.parse(fs.readFileSync(APP_SETTINGS_FILE_PATH).toString());
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   } catch (e_) {
     log('Could not Load App Settings', e_.message);
@@ -51,64 +59,36 @@ const Load_CCODES = () => {
 
 const Load_USER_REPOSITORIES_ = () => {
   try {
-    const USER_REPOSITORY_DATA_FILE_PATH = path.join(
-      APP_HOME_PATH,
-      'folder-metadata',
-      'info.json'
-    );
-    const USER_REPOSITORY_DATA = JSON.parse(
-      fs.readFileSync(USER_REPOSITORY_DATA_FILE_PATH).toString()
-    );
+    const USER_REPOSITORY_DATA = fs.pathExistsSync(
+      USER_REPOSITORY_DATA_FILE_PATH
+    )
+      ? JSON.parse(
+          fs.readFileSync(USER_REPOSITORY_DATA_FILE_PATH, { encoding: 'utf-8' })
+        )
+      : {};
 
-    // Normalize localLocation Path
-    USER_REPOSITORY_DATA.info = USER_REPOSITORY_DATA.info.map(
-      (Repository: any) => {
-        Repository.localLocation = path.normalize(Repository.localLocation);
-        return Repository;
-      }
-    );
-
-    return {
-      USER_REPOSITORY_DATA,
-      USER_REPOSITORY_DATA_FILE_PATH,
-    };
+    return USER_REPOSITORY_DATA;
   } catch (e_) {
     log('Could not Load User_Repositories', e_.message);
     ipcRenderer.sendSync('quit', {
       message: `Could not Load User_Repositories\n\n${e_}`,
     });
   }
-
-  return {
-    USER_REPOSITORY_DATA: '',
-    USER_REPOSITORY_DATA_FILE_PATH: '',
-  };
 };
 
-const LOAD_SYNC_FILE: () => {
-  SYNC_DATA: SYNC_DATA_STRUCTURE;
-  SYNC_DATA_FILE_PATH: string;
-} = () => {
+const LOAD_SYNC_FILE = () => {
   try {
-    const SYNC_DATA_FILE_PATH = path.join(APP_HOME_PATH, 'Sync.json');
-    const SYNC_DATA = JSON.parse(
-      fs.readFileSync(SYNC_DATA_FILE_PATH, { encoding: 'utf-8' })
-    );
+    const SYNC_DATA = fs.pathExistsSync(SYNC_DATA_FILE_PATH)
+      ? JSON.parse(fs.readFileSync(SYNC_DATA_FILE_PATH, { encoding: 'utf-8' }))
+      : {};
 
-    return {
-      SYNC_DATA,
-      SYNC_DATA_FILE_PATH,
-    };
+    return SYNC_DATA;
   } catch (e_) {
     log('Could not Load Sync Data', e_.message);
     ipcRenderer.sendSync('quit', {
       message: `Could not Load Sync Data\n\n${e_}`,
     });
   }
-  return {
-    SYNC_DATA: '',
-    SYNC_DATA_FILE_PATH: '',
-  };
 };
 
 const getScheduler = () => {
@@ -125,15 +105,16 @@ export const sendSchedulerTask = (task: any) => {
 
 export const Scheduler = getScheduler();
 
-export const { APP_SETTINGS, APP_SETTINGS_FILE_PATH } = Load_APPSETTINGS();
+export const APP_SETTINGS = Load_APPSETTINGS();
+
 export const CCODES = Load_CCODES();
-export const {
-  USER_REPOSITORY_DATA,
-  USER_REPOSITORY_DATA_FILE_PATH,
-} = Load_USER_REPOSITORIES_();
-export const { SYNC_DATA, SYNC_DATA_FILE_PATH } = LOAD_SYNC_FILE();
+
+export const USER_REPOSITORY_DATA = Load_USER_REPOSITORIES_();
+
+export const SYNC_DATA = LOAD_SYNC_FILE();
 
 export const DEFAULT_REPO_FOLDER_PATH = '.usp';
+
 export const DEFAULT_REPO_DATA_FOLDER_PATH = path.join(
   DEFAULT_REPO_FOLDER_PATH,
   'data'
