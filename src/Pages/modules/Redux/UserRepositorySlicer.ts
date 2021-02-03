@@ -2,11 +2,11 @@
 import { createSlice } from '@reduxjs/toolkit';
 import fs from 'fs-extra';
 import path from 'path';
+import { LOAD_UPLOADS_FROM_REPOSITORY } from '../backgroundTasks';
 import {
   USER_REPOSITORY_DATA,
   USER_REPOSITORY_DATA_FILE_PATH,
 } from '../get_AppData';
-import log from '../log';
 
 export interface RepositoryInfo {
   displayName: string;
@@ -64,6 +64,7 @@ export const USER_REPOSITORY_Slice = createSlice({
       state.info[id] = DATA;
 
       SAVE(state);
+      LOAD_UPLOADS_FROM_REPOSITORY();
     },
     setCurrentDirLocation: (state, action) => {
       if (action.payload.length > 0) state.currentDirLocation = action.payload;

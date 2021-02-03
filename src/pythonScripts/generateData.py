@@ -108,8 +108,7 @@ class generateMetaData():
           valueDict["files"][index] = {
             "name": fileName,
             "id": None,
-            "isUploaded": False,
-            "iDownloaded": False
+            "iDownloaded": True
           }
 
         # NO NEED FOR FOLDERS BECAUSE, OUR MAIN KEY / PROPERTY IS FOLDER PATH

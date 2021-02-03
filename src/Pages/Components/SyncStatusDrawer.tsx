@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Drawer, List, Collapse, Spin, Empty } from 'antd';
 import { nanoid } from '@reduxjs/toolkit';
@@ -16,6 +16,7 @@ import {
   SYNC_DATA_STRUCTURE,
 } from '../modules/Redux/SynchronizationSlicer';
 import { store } from '../modules/Redux/store';
+import { assignGIDs } from '../modules/backgroundTasks';
 
 // ////////////////////////////////////////////////////////////////////////////////////
 const getStatusIcon = (
@@ -130,7 +131,7 @@ const UploadsDrawer = () => {
 
   return (
     <Collapse bordered={false}>
-      {Object.keys(RepoData).map((RepoID: any) => (
+      {Object.keys(RepoData).map((RepoID) => (
         <Collapse.Panel header={RepoData[RepoID].RepoName} key={nanoid()}>
           <Spin
             spinning={
@@ -143,24 +144,26 @@ const UploadsDrawer = () => {
                   uploadFinishedQueue[RepoID] &&
                   uploadFinishedQueue[RepoID].length
                 )
-              ) && !RepoData[RepoID].areFoldersAllocated
+              )
             }
             tip="Allocating Folders..."
           >
             {uploadingQueue.length ? (
               <List
                 dataSource={uploadingQueue}
-                renderItem={(data: any) => (
-                  <List.Item.Meta
-                    avatar={getStatusIcon(data.status)}
-                    title={data.fileName}
-                  />
-                )}
+                renderItem={(data) =>
+                  !(data.RepoID === RepoID) ? null : (
+                    <List.Item.Meta
+                      avatar={getStatusIcon(data.status)}
+                      title={data.fileName}
+                    />
+                  )
+                }
               />
             ) : null}
 
             {/* <Divider /> */}
-            {uploadWatingQueue[RepoID] && uploadWatingQueue[RepoID].length && (
+            {(uploadWatingQueue[RepoID] && uploadWatingQueue[RepoID].length && (
               <List
                 dataSource={uploadWatingQueue[RepoID]}
                 renderItem={(data) => (
@@ -170,9 +173,10 @@ const UploadsDrawer = () => {
                   />
                 )}
               />
-            )}
+            )) ||
+              null}
             {/* <Divider /> */}
-            {uploadFinishedQueue[RepoID] &&
+            {(uploadFinishedQueue[RepoID] &&
               uploadFinishedQueue[RepoID].length && (
                 <List
                   dataSource={uploadFinishedQueue[RepoID]}
@@ -183,7 +187,8 @@ const UploadsDrawer = () => {
                     />
                   )}
                 />
-              )}
+              )) ||
+              null}
 
             {!uploadingQueue.length &&
               !(
@@ -192,7 +197,7 @@ const UploadsDrawer = () => {
               !(
                 uploadFinishedQueue[RepoID] &&
                 uploadFinishedQueue[RepoID].length
-              ) && <Empty description="Uploads are completed..." />}
+              ) && <Empty description="Nothing to do :/" />}
           </Spin>
         </Collapse.Panel>
       ))}

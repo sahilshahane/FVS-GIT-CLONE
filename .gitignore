@@ -54,3 +54,8 @@ Testing/.usp
 
 __pycache__
 token.pickle
+assets/installation/.usp/info.json
+assets/installation/.usp/Sync.json
+test.py
+scheduler-logs.txt
+Testing/.usp/commit.json

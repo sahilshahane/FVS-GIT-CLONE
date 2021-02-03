@@ -62,9 +62,10 @@ def resumeUpload(task):
 
 def generateGDriveID(task):
   count = task["data"]["count"]
+  RepoID = task["data"]["RepoID"]
   service = getGDriveService()
   ids = GoogleDrive.generateIDs(CCODES,count,service)
-  output({"code":CCODES["IDS_GENERATED"], "data" : ids})
+  output({"code":CCODES["GENERATE_IDS"], "data" : {"ids" : ids, "RepoID" : RepoID}})
 
 def allocateIDs(task):
   DIR_PATH = task["data"]["path"]
