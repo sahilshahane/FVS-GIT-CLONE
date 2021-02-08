@@ -1,3 +1,4 @@
+from os import path
 import sys
 import os
 import argparse
@@ -41,30 +42,47 @@ def getGDriveService():
   global GDRIVE_SERVICE
 
   if not GDRIVE_SERVICE:
-    GDRIVE_SERVICE = GoogleDrive.get_gdrive_service(CCODES)
+    GDRIVE_SERVICE = GoogleDrive.getService(CCODES)
 
   return GDRIVE_SERVICE
 
-def startGoogleLogin(task):
-  service = GoogleDrive.startLogin(CCODES)
-  userInfo = GoogleDrive.getUSERInfo(CCODES,service)
+def startGoogleLogin(task=None):
+  GoogleDrive.startLogin(CCODES)
+  userInfo = GoogleDrive.getUSERInfo(CCODES)
   output({"code":CCODES["GOOGLE_LOGIN_SUCCESS"],"msg":"Google Login Was Successfull!","data": userInfo})
 
 def Init_Dir(task):
   DIR_PATH = task["data"]["path"]
   main.initialize(CCODES,APP_SETTINGS,DIR_PATH,force = task.get('force'))
 
-def uploadFile(task):
-  pass
 
-def resumeUpload(task):
-  pass
+def uploadFile(task):
+  RepoID = task["data"]["RepoID"]
+  driveID = task["data"].get("driveID")
+  fileName = task["data"]["fileName"]
+  filePath = task["data"]["filePath"]
+  parentDriveID = task["data"]["parentDriveID"]
+
+  try:
+    driveID = GoogleDrive.uploadFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID)
+
+    output({
+    "code":CCODES["UPLOAD_SUCCESS"],
+    "data" : {
+      "RepoID" : RepoID,
+      "driveID" : driveID,
+      "fileName" : fileName,
+      "parentPath" : os.path.dirname(filePath)
+    }})
+
+  except Exception as e:
+    output({ "code":CCODES["UPLOAD_FAILED"], "data" : task["data"], "exception": {"msg":str(e),"type": str(e.__class__.__name__)}})
+
 
 def generateGDriveID(task):
   count = task["data"]["count"]
   RepoID = task["data"]["RepoID"]
-  service = getGDriveService()
-  ids = GoogleDrive.generateIDs(CCODES,count,service)
+  ids = GoogleDrive.generateIDs(CCODES,count)
   output({"code":CCODES["GENERATE_IDS"], "data" : {"ids" : ids, "RepoID" : RepoID}})
 
 def allocateIDs(task):
@@ -83,12 +101,24 @@ def retriveUploads(task):
   RepoID = task["data"]["RepoID"]
   main.showUploads(CCODES,DIR_PATH,RepoID)
 
+def createRepoFolders(task):
+  RepoID = task["data"]["RepoID"]
+  rootFolderName = task["data"]["RepoName"]
+  rootFolderPath = task["data"]["folderPath"]
+  folderData = task["data"]["folderData"]
+  try:
+    folderData = GoogleDrive.createRepoFolders(CCODES,RepoID,rootFolderName, rootFolderPath, folderData)
+    output({"code": CCODES["FOLDERS_CREATED"], "data": {"RepoID" : RepoID, "folderData":folderData}})
+  except Exception as e:
+    output({"code": CCODES["FAILED_TO_CREATE_FOLDERS"], "data": {"RepoID" : RepoID}, "exception" : {"msg" : str(e), "type" :  str(e.__class__.__name__)}})
+
 TASKS_DEFINITIONS = {
   CCODES["START_GOOGLE_LOGIN"] : startGoogleLogin,
   CCODES["INIT_DIR"] : Init_Dir,
   CCODES["UPLOAD_FILE"]: uploadFile,
   CCODES["GENERATE_IDS"]: generateGDriveID,
-  CCODES["RETRIVE_REPO_UPLOADS"] : retriveUploads
+  CCODES["RETRIVE_REPO_UPLOADS"] : retriveUploads,
+  CCODES["CREATE_FOLDERS"] : createRepoFolders,
 }
 
 def addTask(task):
@@ -96,8 +126,6 @@ def addTask(task):
   threading.Thread(target=TASKS_DEFINITIONS[task["code"]],args=[task]).start()
 
 def nodeMain():
-  output({"CCODES": CCODES,"APP_HOME_PATH": os.environ["APP_HOME_PATH"], "isDev": args.development })
-
   # MAIN LOOP
   while(True):
     task = sys.stdin.readline()[:-1]
@@ -111,9 +139,21 @@ def nodeMain():
 def aloneMain():
   DIR_PATH = os.path.abspath("Testing")
 
-  os.environ["SHOW_NODE_OUTPUT"] = ''
+  # os.environ["SHOW_NODE_OUTPUT"] = ''
 
-  task = {"data":{"path":DIR_PATH,"RepoID":1}}
+  task = {
+    "data":{"folderPath":DIR_PATH, "RepoID":1,"RepoName":"Yo Yo Bantai", "folderData":{
+    DIR_PATH : {
+      "driveID" : None
+    },
+    os.path.join(DIR_PATH,'asd22') : {
+      "driveID" : None
+    },
+    os.path.join(DIR_PATH,'asd22','asd') : {
+      "driveID" : None
+    },
+  }}}
+
   # try:
   #   shutil.rmtree(os.path.join(DIR_PATH,'.usp'))
   # except Exception:
@@ -122,9 +162,7 @@ def aloneMain():
   # Init_Dir(task)
   # allocateIDs(task)
   # uploadRepository(task)
-
-  retriveUploads(task)
-
+  createRepoFolders(task)
 
 
 
@@ -133,5 +171,5 @@ def aloneMain():
 
 if(args.isGUI):
   nodeMain()
-elif(not args.node and args.development):
+elif(not args.isGUI and args.development):
   aloneMain()

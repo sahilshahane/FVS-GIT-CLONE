@@ -15,7 +15,8 @@ const initFolder = async () => {
 
   sendSchedulerTask({
     code: CCODES.INIT_DIR,
-    data: { path: SELECTED_FOLDER },
+    data: { path: SELECTED_FOLDER, force: true },
+    force: true,
   });
 };
 

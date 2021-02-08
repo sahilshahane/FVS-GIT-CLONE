@@ -20,50 +20,47 @@ import {
   updateDownloadingQueue,
   setUploadWatingQueue,
   setDownloadWatingQueue,
+  SYNC_INPUT,
 } from './Redux/SynchronizationSlicer';
 
-import showError from './ErrorPopup_dialog';
+import showError, { ShowInfo } from './ErrorPopup_dialog';
 
 const RepoSyncTaskTimeouts: { [RepoID: string]: any } = {};
 const RepoSyncTaskTimeoutsRate = 1000;
 
-export const assignGIDs = (
+export const createRepoFolders = (
   RepoID: string | number,
   TimeoutMs = RepoSyncTaskTimeoutsRate
 ) => {
-  const { uploadWatingQueue, RepoData } = Reduxstore.getState().Sync;
+  clearTimeout(RepoSyncTaskTimeouts[RepoID]);
 
-  if (uploadWatingQueue[RepoID] && uploadWatingQueue[RepoID].length) {
-    clearTimeout(RepoSyncTaskTimeouts[RepoID]);
+  RepoSyncTaskTimeouts[RepoID] = setTimeout(() => {
+    const { Sync, UserRepoData } = Reduxstore.getState();
+    const { RepoData } = Sync;
 
-    let IDs_TO_GENERATE = 0;
-
-    RepoData[RepoID].folderData.forEach(({ driveID }) => {
-      if (!driveID) IDs_TO_GENERATE += 1;
+    sendSchedulerTask({
+      code: CCODES.CREATE_FOLDERS,
+      data: {
+        RepoID,
+        RepoName: UserRepoData.info[RepoID].displayName,
+        folderPath: UserRepoData.info[RepoID].localLocation,
+        folderData: RepoData[RepoID],
+      },
     });
-
-    uploadWatingQueue[RepoID].forEach((val) => {
-      if (!val.driveID) IDs_TO_GENERATE += 1;
-    });
-
-    if (IDs_TO_GENERATE)
-      RepoSyncTaskTimeouts[RepoID] = setTimeout(() => {
-        sendSchedulerTask({
-          code: CCODES.GENERATE_IDS,
-          data: { count: IDs_TO_GENERATE, RepoID },
-        });
-      }, TimeoutMs);
-  }
+  }, TimeoutMs);
 };
 
 export const LOAD_UPLOADS_FROM_REPOSITORY = async () => {
   const { UserRepoData, Sync } = Reduxstore.getState();
 
-  const ReposToLoad = Object.keys(UserRepoData.info).reduce((prev, RepoID) => {
-    if (!Sync.RepoData[RepoID]) return [...prev, RepoID];
+  const ReposToLoad: Array<number> = Object.keys(UserRepoData.info).reduce(
+    (prev: any, RepoID) => {
+      if (!Sync.RepoData[RepoID]) return [...prev, RepoID];
 
-    return prev;
-  }, []);
+      return prev;
+    },
+    []
+  );
 
   ReposToLoad.forEach(async (RepoID) => {
     try {
@@ -81,32 +78,28 @@ export const LOAD_UPLOADS_FROM_REPOSITORY = async () => {
 
       const SyncData = await fs.readJson(SyncfilePath);
 
-      // const RepositoryFolderID = SyncData[repo.localLocation].id;
-
-      const filesToUpload: Array<any> = [];
-      const filesToDownload: Array<any> = [];
-      const folderData: Array<any> = [];
+      const filesToUpload: Array<SYNC_INPUT> = [];
+      const filesToDownload: Array<SYNC_INPUT> = [];
+      const folderData: { [folderPath: string]: string | null } = {};
 
       Object.keys(SyncData).map((folderPath) => {
-        folderData.push({
-          folderPath,
-          driveID: SyncData[folderPath].id,
-          isCreated: SyncData[folderPath].isCreated,
-        });
+        if (!SyncData[folderPath].driveID) folderData[folderPath] = null;
+        else folderData[folderPath] = SyncData[folderPath].driveID;
 
         SyncData[folderPath].files.forEach((fileData: any) => {
-          const filePath = path.join(folderPath, fileData.name);
+          const filePath = path.join(folderPath, fileData.fileName);
 
           if (!fileData.isUploaded) {
-            filesToUpload.push({ filePath, fileName: fileData.name });
+            filesToUpload.push({ ...fileData, filePath });
           } else if (fileData.isUploaded && !fileData.isDownloaded) {
-            filesToDownload.push({ filePath, fileName: fileData.name });
+            filesToDownload.push({ ...fileData, filePath });
           }
         });
 
         return null;
       });
 
+      // ShowInfo('', JSON.stringify(folderData, null, 2));
       batch(() => {
         Reduxstore.dispatch(
           setRepositoryData({
@@ -133,75 +126,29 @@ export const LOAD_UPLOADS_FROM_REPOSITORY = async () => {
           );
       });
 
-      assignGIDs(RepoID);
+      createRepoFolders(RepoID);
     } catch (err) {
-      showError(
-        'Repository Error',
-        `Something Went Wrong While Loading ${repo.displayName} Repository`
-      );
+      showError('Repository Error', String(err));
     }
   });
 };
 
 let uploadServiceTimeoutID: NodeJS.Timeout | any = null;
-let downloadServiceTimeoutID: NodeJS.Timeout | any = null;
 
-const MAX_PARALLEL_UPLOAD = 4;
-const MAX_PARALLEL_DOWNLOAD = 4;
+const SYNC_CHECK_TIMEOUT = 100; // values in ms
 
-const SYNC_CHECK_TIMEOUT = 2000; // values in ms
+export const updateSync = () => {
+  clearTimeout(uploadServiceTimeoutID);
 
-export const updateSync = async () => {
-  try {
-    const {
-      uploadingQueue,
-      downloadingQueue,
-      uploadWatingQueue,
-      downloadWatingQueue,
-    } = Reduxstore.getState().Sync;
-
-    const uploadWaitingListLenght = Object.keys(uploadWatingQueue).length;
-    const downloadWaitingListLenght = Object.keys(downloadWatingQueue).length;
-
-    if (
-      uploadingQueue.length < MAX_PARALLEL_UPLOAD &&
-      uploadWaitingListLenght
-    ) {
-      clearTimeout(uploadServiceTimeoutID);
-
-      uploadServiceTimeoutID = setTimeout(
-        () => Reduxstore.dispatch(updateUploadingQueue()),
-        SYNC_CHECK_TIMEOUT
-      );
-    }
-
-    if (
-      downloadingQueue.length < MAX_PARALLEL_DOWNLOAD &&
-      downloadWaitingListLenght
-    ) {
-      clearTimeout(downloadServiceTimeoutID);
-
-      downloadServiceTimeoutID = setTimeout(
-        () => Reduxstore.dispatch(updateDownloadingQueue()),
-        SYNC_CHECK_TIMEOUT
-      );
-    }
-  } catch (Err) {
-    showError(
-      'Sync Worker Error',
-      `Something Went Wrong While Running Sync Service Worker`
-    );
-  }
-};
-
-const RegisterSyncWroker = async () => {
-  Reduxstore.subscribe(updateSync);
+  uploadServiceTimeoutID = setTimeout(
+    () => Reduxstore.dispatch(updateUploadingQueue()),
+    SYNC_CHECK_TIMEOUT
+  );
 };
 
 // eslint-disable-next-line import/prefer-default-export
 export const LOAD_ONCE_AFTER_APP_READY = () => {
   LOAD_UPLOADS_FROM_REPOSITORY();
-  RegisterSyncWroker();
 
   console.log('Background Service Started!');
 };
@@ -210,6 +157,6 @@ remote.getCurrentWindow().on('close', () => {
   const { AppSettings, UserRepoData, Sync } = Reduxstore.getState();
 
   fs.writeJsonSync(APP_SETTINGS_FILE_PATH, AppSettings);
-  fs.writeJsonSync(USER_REPOSITORY_DATA_FILE_PATH, UserRepoData);
-  fs.writeJsonSync(SYNC_DATA_FILE_PATH, Sync);
+  // fs.writeJsonSync(USER_REPOSITORY_DATA_FILE_PATH, UserRepoData);
+  // fs.writeJsonSync(SYNC_DATA_FILE_PATH, Sync);
 });

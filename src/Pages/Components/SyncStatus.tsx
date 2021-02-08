@@ -41,7 +41,7 @@ const UploadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
         Object.keys(uploadFinishedQueue).forEach((RepoID: any) => {
           totalFinished += uploadFinishedQueue[RepoID].length;
         });
-        setPercentage((totalFinished / totalSessionUploads) * 100);
+        setPercentage(Math.round((totalFinished / totalSessionUploads) * 100));
       }
     })();
   }, [

@@ -63,6 +63,10 @@ const Error_Dialog = (title: string, message: string) => {
 };
 
 export const Create_PythonScheduler = () => {
+  try {
+    fs.unlinkSync('scheduler-logs.txt');
+  } catch (error) {}
+
   const OPTIONS = {
     mode: 'json',
     // pythonPath: 'path/to/python',
@@ -91,7 +95,13 @@ export const Create_PythonScheduler = () => {
   });
 
   serverScript.on('stderr', (err) => {
-    Error_Dialog('STD-ERROR', String(err));
+    fs.appendFile(
+      'scheduler-logs.txt',
+      `${JSON.stringify(err, null)}\n\n\n`,
+      () => {}
+    );
+
+    console.error(err);
   });
 
   return serverScript;

@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { createSlice } from '@reduxjs/toolkit';
 import fs from 'fs-extra';
-import { SYNC_DATA, SYNC_DATA_FILE_PATH } from '../get_AppData';
+import path from 'path';
+import {
+  CCODES,
+  sendSchedulerTask,
+  SYNC_DATA,
+  SYNC_DATA_FILE_PATH,
+} from '../get_AppData';
 import log from '../log';
 
 export interface SYNC_INPUT {
@@ -18,7 +24,6 @@ export interface addAction_Input {
     RepoID: number;
     data: Array<SYNC_INPUT>;
   };
-  type?: any;
 }
 
 export interface addQueueAction_Input {
@@ -26,7 +31,6 @@ export interface addQueueAction_Input {
     RepoID: number;
     data: Array<SYNC_INPUT>;
   };
-  type?: any;
 }
 
 export interface DoingQueue {
@@ -38,34 +42,36 @@ export interface DoingQueue {
   status?: string;
 }
 
-export interface SYNC_DATA_STRUCTURE {
-  RepoData: {
-    [RepoID: string]: {
-      RepoName: string;
-      folderData: Array<{
-        folderPath: string | null;
-        isCreated?: boolean;
-        driveID?: string;
-      }>;
-      driveID?: string;
-    };
+export interface FinishedQueue {
+  fileName: string;
+  driveID: string;
+  parentPath: string;
+}
+
+export interface WatingQueueInterface {
+  [RepoID: string]: Array<SYNC_INPUT>;
+}
+
+export interface FinishedQueueInterface {
+  [RepoID: string]: Array<FinishedQueue>;
+}
+
+export interface RepoDataInerface {
+  [RepoID: string]: {
+    [folderPath: string]: string | null;
   };
+}
+
+export interface SYNC_DATA_STRUCTURE {
+  RepoData: RepoDataInerface;
 
   uploadingQueue: Array<DoingQueue>;
 
-  uploadWatingQueue: {
-    [RepoID: string]: Array<SYNC_INPUT>;
-  };
-  uploadFinishedQueue: {
-    [RepoID: string]: Array<SYNC_INPUT>;
-  };
+  uploadWatingQueue: WatingQueueInterface;
+  uploadFinishedQueue: FinishedQueueInterface;
   downloadingQueue: Array<DoingQueue>;
-  downloadWatingQueue: {
-    [RepoID: string]: Array<SYNC_INPUT>;
-  };
-  downloadFinishedQueue: {
-    [RepoID: string]: Array<SYNC_INPUT>;
-  };
+  downloadWatingQueue: WatingQueueInterface;
+  downloadFinishedQueue: FinishedQueueInterface;
   showUploadsDrawer: boolean;
   showDownloadsDrawer: boolean;
 
@@ -78,7 +84,7 @@ export interface SYNC_DATA_STRUCTURE {
 interface setWatingQueueInterface {
   payload: {
     RepoID: number;
-    data: [{ filePath: string; fileName: string }];
+    data: Array<SYNC_INPUT>;
   };
 }
 
@@ -86,19 +92,36 @@ interface setRepositoryDataInterface {
   payload: {
     RepoID: number;
     RepoName: string;
-    folderData: Array<{
-      folderPath: string | null;
-      isCreated?: boolean;
-    }>;
-    driveID?: string;
+    folderData: {
+      [folderPath: string]: string | null;
+    };
   };
-  type?: any;
 }
-interface assignGeneratedIdsInterface {
-  payload: { ids: Array<string>; RepoID: string | number };
-  type?: any;
+interface allocateRepoDataInterface {
+  payload: {
+    RepoID: number | string;
+    folderData: {
+      [folderPath: string]: string | null;
+    };
+  };
+}
+interface addFinishedQueueInterface {
+  payload: {
+    fileName: string;
+    parentPath: string;
+    driveID: string;
+    RepoID: number | string;
+  };
 }
 
+interface ReAddFailedUploadInterface {
+  payload: {
+    RepoID: string | number;
+    fileName: string;
+    filePath: string;
+    driveID?: string;
+  };
+}
 const GET: () => SYNC_DATA_STRUCTURE = () => {
   const data: SYNC_DATA_STRUCTURE = SYNC_DATA;
 
@@ -159,8 +182,8 @@ export const SynchronizationSlice = createSlice({
       SAVE(state);
     },
     setRepositoryData: (state, action: setRepositoryDataInterface) => {
-      const { RepoID, RepoName, folderData } = action.payload;
-      state.RepoData[RepoID] = { RepoName, folderData };
+      const { RepoID, folderData } = action.payload;
+      state.RepoData[RepoID] = folderData;
     },
     addUpload: (state, action: addAction_Input) => {
       const { RepoID, data } = action.payload;
@@ -196,14 +219,60 @@ export const SynchronizationSlice = createSlice({
       state.downloadWatingQueue[action.payload.RepoID] = action.payload.data;
       state.totalSessionDownloads += action.payload.data.length;
     },
+    addUploadFinishedQueue: (state, action: addFinishedQueueInterface) => {
+      const { RepoID, fileName, driveID, parentPath } = action.payload;
+      const filePath = path.join(parentPath, fileName);
+
+      const indexTobeRemoved = state.uploadingQueue.findIndex(
+        (val) => val.driveID === driveID || val.filePath === filePath
+      );
+
+      if (indexTobeRemoved > -1) {
+        state.uploadingQueue.splice(indexTobeRemoved, 1);
+      }
+
+      if (!state.uploadFinishedQueue[RepoID])
+        state.uploadFinishedQueue[RepoID] = [];
+
+      state.uploadFinishedQueue[RepoID].push({
+        fileName,
+        driveID,
+        parentPath,
+      });
+    },
+    ReAddFailedUpload: (state, action: ReAddFailedUploadInterface) => {
+      const { driveID, RepoID, fileName, filePath } = action.payload;
+      let indexTobeRemoved = -1;
+      if (driveID) {
+        indexTobeRemoved = state.uploadingQueue.findIndex(
+          (val) => val.driveID === driveID
+        );
+      } else {
+        indexTobeRemoved = state.uploadingQueue.findIndex(
+          (val) => val.filePath === filePath
+        );
+      }
+
+      if (indexTobeRemoved > -1) {
+        state.uploadingQueue.splice(indexTobeRemoved, 1);
+
+        state.uploadWatingQueue[RepoID].push({
+          driveID,
+          fileName,
+          filePath,
+        });
+      }
+    },
     updateUploadingQueue: (state) => {
-      const { uploadWatingQueue } = state;
+      const { uploadWatingQueue, RepoData } = state;
       Object.keys(uploadWatingQueue).forEach((RepoID) => {
         if (state.uploadingQueue.length < MAX_PARALLEL_UPLOAD) {
           const newUploads: Array<DoingQueue> = uploadWatingQueue[
             RepoID
           ].filter((val, index) => {
-            if (val.driveID) {
+            const parentID = RepoData[RepoID][path.dirname(val.filePath)];
+
+            if (parentID) {
               uploadWatingQueue[RepoID].splice(index, 1);
               return true;
             }
@@ -219,8 +288,18 @@ export const SynchronizationSlice = createSlice({
               status: 'RUNNING',
             }));
 
-          if (newUploads.length)
+          if (newUploads.length) {
             state.uploadingQueue = [...state.uploadingQueue, ...newUploads];
+
+            newUploads.forEach((val) => {
+              const parentPath = path.dirname(val.filePath);
+              const parentDriveID = state.RepoData[RepoID][parentPath];
+              sendSchedulerTask({
+                code: CCODES.UPLOAD_FILE,
+                data: { ...val, parentDriveID },
+              });
+            });
+          }
         }
       });
     },
@@ -258,22 +337,12 @@ export const SynchronizationSlice = createSlice({
       state.showDownloadsDrawer = false;
       state.showUploadsDrawer = false;
     },
-    assignGeneratedIds: (state, action: assignGeneratedIdsInterface) => {
-      const { RepoID, ids } = action.payload;
-      state.RepoData[RepoID].folderData = state.RepoData[RepoID].folderData.map(
-        (val) => {
-          if (!val.driveID && ids.length) val.driveID = ids.pop();
-          return val;
-        }
-      );
-      if (ids.length) {
-        state.uploadWatingQueue[RepoID] = state.uploadWatingQueue[RepoID].map(
-          (val) => {
-            if (!val.driveID && ids.length) val.driveID = ids.pop();
-            return val;
-          }
-        );
-      }
+    allocateRepoData: (state, action: allocateRepoDataInterface) => {
+      const { RepoID, folderData } = action.payload;
+      state.RepoData[RepoID] = {
+        ...state.RepoData[RepoID],
+        ...folderData,
+      };
     },
   },
 });
@@ -290,7 +359,9 @@ export const {
   setDownloadWatingQueue,
   updateUploadingQueue,
   updateDownloadingQueue,
-  assignGeneratedIds,
+  allocateRepoData,
+  addUploadFinishedQueue,
+  ReAddFailedUpload,
 } = SynchronizationSlice.actions;
 
 export const SYNC_ACTIONS = SynchronizationSlice.actions;

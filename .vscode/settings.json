@@ -24,7 +24,8 @@
     "test/**/__snapshots__": true,
     "yarn.lock": true,
     "*.{css,sass,scss}.d.ts": true,
-    "**/__pycache__": true
+    "**/__pycache__": true,
+    "src/pythonScripts/.venv": true
   },
   "git.ignoreLimitWarning": true,
   "files.exclude": {
@@ -51,8 +52,9 @@
     "assets/icon.svg": true,
     ".erb": false,
     "src/main.prod.js.LICENSE.txt": true,
-    "**/__pycache__": true
+    "**/__pycache__": true,
+    "src/pythonScripts/.venv": true
   },
-  "python.pythonPath": "c:\\Users\\void\\.virtualenvs\\pythonScripts-r1-r8vBX\\Scripts\\python.exe",
-  "python.formatting.provider": "autopep8"
+  "python.formatting.provider": "autopep8",
+  "python.pythonPath": "src\\pythonScripts\\.venv\\Scripts\\python.exe"
 }

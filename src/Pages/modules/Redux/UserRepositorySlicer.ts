@@ -2,7 +2,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import fs from 'fs-extra';
 import path from 'path';
-import { LOAD_UPLOADS_FROM_REPOSITORY } from '../backgroundTasks';
 import {
   USER_REPOSITORY_DATA,
   USER_REPOSITORY_DATA_FILE_PATH,
@@ -62,9 +61,6 @@ export const USER_REPOSITORY_Slice = createSlice({
       const id = Object.keys(state.info).length + 1;
 
       state.info[id] = DATA;
-
-      SAVE(state);
-      LOAD_UPLOADS_FROM_REPOSITORY();
     },
     setCurrentDirLocation: (state, action) => {
       if (action.payload.length > 0) state.currentDirLocation = action.payload;
@@ -88,7 +84,7 @@ export const USER_REPOSITORY_Slice = createSlice({
       } else if (state.selectedRepository) {
         if (PathIndex != null) {
           // -1 Represents as ["Home"]
-          if (PathIndex == -1) {
+          if (PathIndex === -1) {
             state.selectedRepository = null;
             state.currentDirLocation = ['Home'];
           } else {

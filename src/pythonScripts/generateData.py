@@ -101,14 +101,10 @@ class generateMetaData():
     def convertToGFID_data(self):
 
       for (ParentDir,valueDict) in self.GFID_DATA.items():
-        valueDict["id"] = None
-        valueDict["isCreated"] = False
-
         for (index, fileName) in enumerate(valueDict["files"]):
           valueDict["files"][index] = {
-            "name": fileName,
-            "id": None,
-            "iDownloaded": True
+            "fileName": fileName,
+            "isDownloaded": True
           }
 
         # NO NEED FOR FOLDERS BECAUSE, OUR MAIN KEY / PROPERTY IS FOLDER PATH

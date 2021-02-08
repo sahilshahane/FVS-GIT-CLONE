@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Drawer, List, Collapse, Spin, Empty } from 'antd';
 import { nanoid } from '@reduxjs/toolkit';
@@ -112,6 +112,31 @@ const DownloadsDrawer = () => {
   );
 };
 
+const CustomSpin = ({ children, RepoData }: any) => {
+  const [spinningProps, setSpinningProps] = useState({
+    spinning: false,
+    tip: '',
+  });
+
+  useEffect(() => {
+    const isAllocationRemaing = Object.values(RepoData).find(
+      (driveID) => !driveID
+    );
+
+    if (isAllocationRemaing > -1)
+      setSpinningProps({ spinning: true, tip: 'Allocating Folders...' });
+    else setSpinningProps({ spinning: false, tip: '' });
+  }, [RepoData]);
+
+  return (
+    <div>
+      <Spin spinning={spinningProps.spinning} tip={spinningProps.tip}>
+        {children}
+      </Spin>
+    </div>
+  );
+};
+
 // ////////////////////////////////////////////////////////////////////////////////////
 
 const UploadsDrawer = () => {
@@ -129,25 +154,13 @@ const UploadsDrawer = () => {
 
   const RepoData = useSelector((state: store) => state.Sync.RepoData);
 
+  const UserRepos = useSelector((state: store) => state.UserRepoData.info);
+
   return (
-    <Collapse bordered={false}>
+    <Collapse bordered={false} style={{ margin: 0, padding: 0, width: 300 }}>
       {Object.keys(RepoData).map((RepoID) => (
-        <Collapse.Panel header={RepoData[RepoID].RepoName} key={nanoid()}>
-          <Spin
-            spinning={
-              !(
-                !uploadingQueue.length &&
-                !(
-                  uploadWatingQueue[RepoID] && uploadWatingQueue[RepoID].length
-                ) &&
-                !(
-                  uploadFinishedQueue[RepoID] &&
-                  uploadFinishedQueue[RepoID].length
-                )
-              )
-            }
-            tip="Allocating Folders..."
-          >
+        <Collapse.Panel header={UserRepos[RepoID].displayName} key={nanoid()}>
+          <CustomSpin RepoData={RepoData} key={nanoid()}>
             {uploadingQueue.length ? (
               <List
                 dataSource={uploadingQueue}
@@ -182,7 +195,7 @@ const UploadsDrawer = () => {
                   dataSource={uploadFinishedQueue[RepoID]}
                   renderItem={(data) => (
                     <List.Item.Meta
-                      avatar={getStatusIcon(data.status)}
+                      avatar={getStatusIcon('FINISHED')}
                       title={data.fileName}
                     />
                   )}
@@ -197,8 +210,10 @@ const UploadsDrawer = () => {
               !(
                 uploadFinishedQueue[RepoID] &&
                 uploadFinishedQueue[RepoID].length
-              ) && <Empty description="Nothing to do :/" />}
-          </Spin>
+              ) && (
+                <Empty description="Atleast We Have Some thing in Common. We'er both Job Less. :/" />
+              )}
+          </CustomSpin>
         </Collapse.Panel>
       ))}
     </Collapse>
@@ -218,7 +233,7 @@ const SliderDrawer = () => {
   const dispatch = useDispatch();
 
   return (
-    <>
+    <div>
       <Drawer
         title="Uploads"
         placement="right"
@@ -226,6 +241,8 @@ const SliderDrawer = () => {
         onClose={() => dispatch(closeSyncDrawer())}
         visible={isUploadsDrawerVisible}
         width="300"
+        bodyStyle={{ padding: 0 }}
+        className="hideScrollbar"
       >
         <UploadsDrawer />
       </Drawer>
@@ -239,7 +256,7 @@ const SliderDrawer = () => {
       >
         <DownloadsDrawer />
       </Drawer>
-    </>
+    </div>
   );
 };
 // ////////////////////////////////////////////////////////////////////////////////////

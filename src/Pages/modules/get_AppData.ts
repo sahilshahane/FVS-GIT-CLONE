@@ -149,6 +149,8 @@ interface CCODES_ {
   UPLOAD_FAILED: 54;
   IDS_GENERATED: 55;
   RETRIVE_REPO_UPLOADS: 56;
+  GENERATE_IDS_FAILED: 58;
+  CREATE_FOLDERS: 59;
 }
 
 const getScheduler = () => {
