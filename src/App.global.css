@@ -222,3 +222,23 @@ body {
 .hideScrollbar::-webkit-scrollbar {
   display: none;
 }
+.space-align-block {
+  display: inline-block;
+  padding: 12px 20px;
+  position: absolute;
+  left: 10%;
+  top: 60%;
+}
+.Divider-align {
+  position: absolute;
+  top: 30%;
+}
+.align-connectbutton-google {
+  position: absolute;
+  top: 50%;
+  left: 30%;
+}
+.Image-Align-google {
+  height: 20px;
+  width: 20px;
+}
