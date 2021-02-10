@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import {
@@ -6,16 +7,14 @@ import {
 } from '../modules/Redux/UserRepositorySlicer';
 import { RepositoryInfo } from '../modules/Redux/UserRepositorySlicer';
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~// FILE UI //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~// FILE UI //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export const File = ({ info }: any) => {
   // console.log('File-UI recieved data ', fileInfo);
   const fileName = info.name;
   const { syncStatus } = info;
 
   return (
-    <div
-      className="file-ui"
-    >
+    <div className="file-ui">
       <h3>{fileName.length > 20 ? `${fileName.slice(0, 20)}...` : fileName}</h3>
       {syncStatus === true ? (
         <span className="synced-true" />
@@ -26,7 +25,7 @@ export const File = ({ info }: any) => {
   );
 };
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~// FOLDER UI //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~// FOLDER UI //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export const Folder = ({ info }: any) => {
   const dispatch = useDispatch();
 
@@ -39,11 +38,10 @@ export const Folder = ({ info }: any) => {
   };
 
   return (
-    <div
-      onDoubleClick={moveInsideADir}
-      className="folder-ui"
-    >
-      <h3>{folderName.length > 20 ? `${folderName.slice(0, 20)}...` : folderName}</h3>
+    <div onDoubleClick={moveInsideADir} className="folder-ui">
+      <h3>
+        {folderName.length > 20 ? `${folderName.slice(0, 20)}...` : folderName}
+      </h3>
       {syncStatus === true ? (
         <span className="synced-true" />
       ) : (
@@ -61,10 +59,7 @@ export const Repository = ({ info }: { info: RepositoryInfo }) => {
   };
 
   return (
-    <div
-      onDoubleClick={change_Repo}
-      className="folder-ui"
-    >
+    <div onDoubleClick={change_Repo} className="folder-ui">
       <h3>
         {info.displayName.length > 20
           ? `${info.displayName.slice(0, 20)}...`

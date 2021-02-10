@@ -48,3 +48,12 @@ npm-debug.log.*
 *.css.d.ts
 *.sass.d.ts
 *.scss.d.ts
+
+Testing
+Testing/.usp
+
+__pycache__
+token.pickle
+test.py
+scheduler-logs.txt
+Testing/.usp/commit.json

@@ -1,4 +1,5 @@
 @import '~antd/dist/antd.dark.min.css';
+
 /* @import '~antd/dist/antd.css';
 Light Theme */
 :root {
@@ -38,8 +39,12 @@ body {
     inset 0px 60px 50px -30px rgba(0, 0, 0, 0.5);
 }
 .app-bg {
-  background: rgb(51,65,101);
-  background: linear-gradient(163deg, rgba(51,65,101,1) 0%, rgba(55,40,40,1) 100%);
+  background: rgb(51, 65, 101);
+  background: linear-gradient(
+    163deg,
+    rgba(51, 65, 101, 1) 0%,
+    rgba(55, 40, 40, 1) 100%
+  );
   background-repeat: no-repeat;
   background-size: cover;
 }
@@ -65,7 +70,7 @@ body {
   margin-top: 5px;
   background-color: rgb(27, 27, 27);
 }
-.file-name-folderArea .folder-name-folderArea{
+.file-name-folderArea .folder-name-folderArea {
   font-family: 'Ubuntu', sans-serif;
   position: absolute;
   left: 15px;
@@ -91,7 +96,7 @@ body {
   position: absolute;
   right: 0px;
   top: 0px;
-  border-radius: 5px;
+  border-radius: 0px 5px 5px 0px;
 }
 .synced-true {
   background-color: #17a736;
@@ -105,7 +110,7 @@ body {
   cursor: pointer;
 }
 
-.file-ui{
+.file-ui {
   backdrop-filter: blur(51px);
   background-color: rgba(0, 0, 0, 0.225);
   height: 75px;
@@ -116,7 +121,7 @@ body {
   margin: 2px;
 }
 
-.folder-ui{
+.folder-ui {
   backdrop-filter: blur(51px);
   background: rgb(27, 27, 27);
   height: 75px;
@@ -125,7 +130,7 @@ body {
   padding-top: 7px;
   margin: 2px;
 }
-.folder-ui:hover{
+.folder-ui:hover {
   background-color: rgb(18, 18, 18);
 }
 
@@ -152,68 +157,68 @@ body {
   background-color: black;
 }
 
-.contain-collapse {
-  width: 20vw;
+#syncStatus {
+  width: 170px;
   position: fixed;
   bottom: 0px;
-  background-color: rgba(0, 0, 0, 0.8);
+  border-radius: 5px 5px 0px 0px;
 }
 
-#uploadPercentage {
-  display: flex;
-  justify-content: space-evenly;
-}
 .uploadCircle {
   padding-bottom: 5px;
 }
-.uploadCircle:hover{
+.uploadCircle:hover {
   cursor: pointer;
 }
 
-.uploadingCollapse{
+.uploadingCollapse {
   background-color: transparent;
 }
-.uploadingPanel{
+.uploadingPanel {
   background-color: rgb(20, 20, 20);
   margin-bottom: 15px;
   border-radius: 3px solid white;
   overflow: hidden;
 }
-.uploadingCollapse .uploadingPanel{
+.uploadingCollapse .uploadingPanel {
   border: 0px;
 }
 
-.fileInfo-fileList{
+.fileInfo-fileList {
   display: flex;
 }
-.fileStatus-fileList{
+.fileStatus-fileList {
 }
-.fileName-fileList{
+.fileName-fileList {
   padding-left: 10px;
 }
 
-.choose-repo{
+.choose-repo {
   display: flex;
   /* border: 1px solid red; */
   margin-bottom: 5px;
   position: relative;
 }
 
-.repo-info{
+.repo-info {
   /* border: 1px solid yellow; */
   align-self: center;
 }
-.display-name{
+.display-name {
   margin-right: 5px;
 }
 
-.repo-select-buttons{
+.repo-select-buttons {
   /* border: 1px solid white; */
   position: absolute;
   right: 0;
   transform: translate(0, -16%);
 }
-.repo-select-buttons button{
+.repo-select-buttons button {
   border-radius: 5px;
   margin-left: 3px;
+}
+
+.hideScrollbar::-webkit-scrollbar {
+  display: none;
 }

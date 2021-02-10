@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Collapse, Progress } from 'antd';
+import { Collapse, Progress, Row, Col, Space } from 'antd';
 import { Dispatch } from '@reduxjs/toolkit';
 import {
   showUploadsDrawer,
@@ -41,7 +41,7 @@ const UploadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
         Object.keys(uploadFinishedQueue).forEach((RepoID: any) => {
           totalFinished += uploadFinishedQueue[RepoID].length;
         });
-        setPercentage((totalFinished / totalSessionUploads) * 100);
+        setPercentage(Math.round((totalFinished / totalSessionUploads) * 100));
       }
     })();
   }, [
@@ -56,15 +56,17 @@ const UploadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
       onClick={() => dispatch(showUploadsDrawer())}
       style={{ fontSize: '10px', textAlign: 'center' }}
     >
-      <Progress
-        strokeColor="green"
-        type="circle"
-        percent={percentage}
-        width={45}
-        strokeWidth={10}
-        className="uploadCircle"
-      />
-      Uploaded
+      <Row justify="center">
+        <Progress
+          strokeColor="green"
+          type="circle"
+          percent={percentage}
+          width={45}
+          strokeWidth={10}
+          className="uploadCircle"
+        />
+      </Row>
+      <Row justify="center">Uploaded</Row>
     </div>
   );
 };
@@ -101,14 +103,14 @@ const DownloadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
         Object.keys(downloadFinishedQueue).forEach((RepoID: any) => {
           totalFinished += downloadFinishedQueue[RepoID].length;
         });
-        setPercentage((totalFinished / totalSessionDownloads) * 100);
+        setPercentage(Math.round((totalFinished / totalSessionDownloads) * 100));
       }
     })();
   }, [
     downloadFinishedQueue,
     totalSessionDownloads,
+    downloadingQueue.length,
     downloadWatingQueue,
-    downloadingQueue,
   ]);
   return (
     <div
@@ -116,15 +118,17 @@ const DownloadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
       onClick={() => dispatch(showDownloadsDrawer())}
       style={{ fontSize: '10px', textAlign: 'center' }}
     >
-      <Progress
-        strokeColor="green"
-        type="circle"
-        percent={percentage}
-        width={45}
-        strokeWidth={10}
-        className="uploadCircle"
-      />
-      Downloaded
+      <Row justify="center">
+        <Progress
+          strokeColor="green"
+          type="circle"
+          percent={percentage}
+          width={45}
+          strokeWidth={10}
+          className="downloadCircle"
+        />
+      </Row>
+      <Row justify="center">Downloaded</Row>
     </div>
   );
 };
@@ -141,11 +145,22 @@ const PercentageStatus = () => {
           expandIconPosition="right"
           bordered={false}
         >
-          <Collapse.Panel header="Check Status" key="1">
-            <div id="uploadPercentage">
-              <UploadsPercentage {...{ dispatch }} />
-              <DownloadsPercentage {...{ dispatch }} />
-            </div>
+          <Collapse.Panel
+            header="Check Status"
+            key="1"
+            className="component-bg"
+            id="syncStatus"
+          >
+            <Row justify="space-around">
+              <Space size="middle">
+                <Col>
+                  <UploadsPercentage {...{ dispatch }} />
+                </Col>
+                <Col>
+                  <DownloadsPercentage {...{ dispatch }} />
+                </Col>
+              </Space>
+            </Row>
           </Collapse.Panel>
         </Collapse>
       </div>

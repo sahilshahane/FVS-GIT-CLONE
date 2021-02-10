@@ -7,4 +7,13 @@ const ShowError = (title = '', message = '') => {
   });
 };
 
+export const ShowInfo = (title = '', message = 'null') => {
+  const data = {};
+
+  if (title) data.title = title;
+  if (message) data.content = message;
+
+  Modal.info(data);
+};
+
 export default ShowError;

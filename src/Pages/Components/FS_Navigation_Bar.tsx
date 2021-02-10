@@ -54,7 +54,7 @@ const Routing = () => {
 
   return (
     <div onDoubleClick={() => change_currentLocation(dispatch)}>
-      <Breadcrumb separator="/" className="breadcrumb">
+      <Breadcrumb separator="/" className="component-bg breadcrumb">
         {BreadCrumbPath.map((Path_Name: any, PathIndex: number) => {
           return (
             <Breadcrumb.Item

@@ -1,4 +1,5 @@
 /* eslint global-require: off, no-console: off */
+/* eslint-disable @typescript-eslint/naming-convention */
 
 /**
  * This module executes inside of electron's main process. You can start
@@ -11,11 +12,11 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-import fs from 'fs';
 import { PythonShell } from 'python-shell';
+import fs from 'fs';
 import MenuBuilder from './menu';
 import logApp from './Pages/modules/log';
 
@@ -26,7 +27,6 @@ export default class AppUpdater {
     autoUpdater.checkForUpdatesAndNotify();
   }
 }
-
 const QUIT = () => {
   // eslint-disable-next-line @typescript-eslint/no-use-before-define
   mainWindow.close();
@@ -63,36 +63,45 @@ const Error_Dialog = (title: string, message: string) => {
 };
 
 export const Create_PythonScheduler = () => {
-  const scriptPath = path.join('assets', 'pythonScripts', 'scheduler.py');
+  try {
+    fs.unlinkSync('scheduler-logs.txt');
+  } catch (error) {}
 
-  let OPTIONS = {
+  const OPTIONS = {
     mode: 'json',
     // pythonPath: 'path/to/python',
     pythonOptions: ['-u'], // get print results in real-time
-    scriptPath: __dirname,
+    scriptPath: path.join(__dirname, 'pythonScripts'),
     args: ['-node'],
   };
 
   if (process.env.NODE_ENV === 'development') {
-    OPTIONS = { ...OPTIONS, scriptPath: '.', args: [...OPTIONS.args, '-dev'] };
+    OPTIONS.args = [...OPTIONS.args, '-dev'];
   }
 
-  const serverScript = new PythonShell(scriptPath, OPTIONS);
+  const serverScript = new PythonShell('scheduler.py', OPTIONS);
 
   serverScript.on('error', (err) => {
     Error_Dialog('Error', String(err));
   });
 
   serverScript.on('message', (data) => {
+    console.log(data);
     fs.appendFile(
       'scheduler-logs.txt',
-      JSON.stringify(data, null) + '\n\n\n',
+      `${JSON.stringify(data, null)}\n\n\n`,
       () => {}
     );
   });
 
   serverScript.on('stderr', (err) => {
-    Error_Dialog('STD-ERROR', String(err));
+    fs.appendFile(
+      'scheduler-logs.txt',
+      `${JSON.stringify(err, null)}\n\n\n`,
+      () => {}
+    );
+
+    console.error(err);
   });
 
   return serverScript;
@@ -101,11 +110,10 @@ export const Create_PythonScheduler = () => {
 // ---------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------
-let mainWindow: BrowserWindow | null = null;
+
+let mainWindow: BrowserWindow = null;
 const CCODES = Load_CCODES();
-const Scheduler = Create_PythonScheduler();
+let Scheduler = Create_PythonScheduler();
 const APP_HOME_PATH = getAppHomePath();
 
 Object.defineProperty(global, 'CCODES', {
@@ -118,6 +126,9 @@ Object.defineProperty(global, 'PyScheduler', {
   get() {
     return Scheduler;
   },
+  set(val) {
+    Scheduler = val;
+  },
 });
 
 Object.defineProperty(global, 'APP_HOME_PATH', {
@@ -126,10 +137,9 @@ Object.defineProperty(global, 'APP_HOME_PATH', {
   },
 });
 
-if (process.env.NODE_ENV === 'production') {
-  const sourceMapSupport = require('source-map-support');
-  sourceMapSupport.install();
-}
+// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 if (
   process.env.NODE_ENV === 'development' ||
@@ -141,7 +151,7 @@ if (
 const installExtensions = async () => {
   const installer = require('electron-devtools-installer');
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS'];
+  const extensions = ['REACT_DEVELOPER_TOOLS', 'REDUX_DEVTOOLS'];
 
   return installer
     .default(
@@ -160,8 +170,8 @@ const createWindow = async () => {
   }
 
   const RESOURCES_PATH = app.isPackaged
-    ? path.join(process.resourcesPath, 'resources')
-    : path.join(__dirname, '../resources');
+    ? path.join(process.resourcesPath, 'assets')
+    : path.join(__dirname, '../assets');
 
   const getAssetPath = (...paths: string[]): string => {
     return path.join(RESOURCES_PATH, ...paths);
@@ -175,6 +185,7 @@ const createWindow = async () => {
     webPreferences: {
       nodeIntegration: true,
       enableRemoteModule: true,
+      contextIsolation: false,
     },
   });
 
@@ -198,8 +209,8 @@ const createWindow = async () => {
     mainWindow = null;
   });
 
-  const menuBuilder = new MenuBuilder(mainWindow);
-  menuBuilder.buildMenu();
+  // const menuBuilder = new MenuBuilder(mainWindow);
+  // menuBuilder.buildMenu();
 
   // Open urls in the user's browser
   mainWindow.webContents.on('new-window', (event, url) => {
@@ -236,7 +247,7 @@ ipcMain.on('get-home-path', (evt) => {
   evt.returnValue = getAppHomePath();
 });
 
-ipcMain.handle('select-dialog', async (event, options) => {
+ipcMain.handle('select-dialog', async (_, options) => {
   const result = await dialog.showOpenDialog(mainWindow, options);
 
   if (result.filePaths.length < 1) return null;
@@ -244,7 +255,7 @@ ipcMain.handle('select-dialog', async (event, options) => {
   return result.filePaths[0];
 });
 
-ipcMain.on('quit', (evt, args) => {
+ipcMain.on('quit', (_, args) => {
   const { message } = args;
   dialog.showErrorBox('', message);
   QUIT();

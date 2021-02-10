@@ -5,7 +5,7 @@ import { useHistory } from 'react-router-dom';
 import { Modal, Col, Button, Space } from 'antd';
 import {
   saveGoogleLogin,
-  saveSettings,
+  saveRepositorySettings,
 } from './modules/Redux/AppSettingsSlicer';
 import log from './modules/log';
 import {
@@ -41,7 +41,7 @@ const Login = () => {
 
   const SaveLoginInfo = (INFO_OBJ: any) => {
     dispatch(saveGoogleLogin(INFO_OBJ));
-    dispatch(saveSettings());
+    dispatch(saveRepositorySettings());
     history.push('/');
   };
 

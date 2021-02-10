@@ -9,13 +9,14 @@ import { CCODES, sendSchedulerTask } from '../modules/get_AppData';
 const initFolder = async () => {
   let SELECTED_FOLDER = null;
 
-  if (!(process.env.NODE_ENV === 'development'))
-    SELECTED_FOLDER = await selectDirectory({});
-  else SELECTED_FOLDER = path.resolve('Testing');
+  // if (!(process.env.NODE_ENV === 'development'))
+  // else SELECTED_FOLDER = path.resolve('Testing');
+  SELECTED_FOLDER = await selectDirectory({});
 
   sendSchedulerTask({
     code: CCODES.INIT_DIR,
-    data: { path: SELECTED_FOLDER },
+    data: { path: SELECTED_FOLDER, force: true },
+    force: true,
   });
 };
 

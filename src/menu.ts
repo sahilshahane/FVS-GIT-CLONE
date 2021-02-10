@@ -5,12 +5,20 @@ import {
   BrowserWindow,
   MenuItemConstructorOptions,
 } from 'electron';
-import fs from 'fs-extra';
+import { Create_PythonScheduler } from './main.dev';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   selector?: string;
   submenu?: DarwinMenuItemConstructorOptions[] | Menu;
 }
+
+const onReload = () => {
+  try {
+    fs.unlinkSync('scheduler-logs.txt');
+  } catch (err) {}
+  global.PyScheduler.end(() => {});
+  global.PyScheduler = Create_PythonScheduler();
+};
 
 export default class MenuBuilder {
   mainWindow: BrowserWindow;
@@ -222,18 +230,7 @@ export default class MenuBuilder {
                   accelerator: 'Ctrl+R',
                   click: () => {
                     this.mainWindow.webContents.reload();
-                    try {
-                      fs.unlinkSync('scheduler-logs.txt');
-                    } catch (err) {}
-                    global.PyScheduler.removeAllListeners('message');
-                    global.PyScheduler.on('message', (data) => {
-                      fs.appendFile(
-                        'scheduler-logs.txt',
-                        JSON.stringify(data, null, 2) + '\n\n\n',
-                        'utf-8',
-                        () => {}
-                      );
-                    });
+                    onReload();
                   },
                 },
                 {

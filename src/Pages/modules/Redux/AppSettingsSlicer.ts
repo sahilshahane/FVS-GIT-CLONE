@@ -7,8 +7,8 @@ export const AppSettingsSlice = createSlice({
   name: 'AppSettings',
   initialState: APP_SETTINGS,
   reducers: {
-    saveSettings: (state) => {
-      fs.writeFile(
+    saveRepositorySettings: (state) => {
+      fs.writeFileSync(
         APP_SETTINGS_FILE_PATH,
         JSON.stringify(state, null, 2),
         (err) => {
@@ -39,7 +39,7 @@ export const AppSettingsSlice = createSlice({
 });
 
 export const {
-  saveSettings,
+  saveRepositorySettings,
   changeTheme,
   saveGoogleLogin,
 } = AppSettingsSlice.actions;
