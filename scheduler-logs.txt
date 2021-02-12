@@ -1,6 +1,3 @@
-{"code":19,"msg":"Google Login Started"}
-
-
-{"code":21,"msg":"Google Login Was Successfull!","data":{"user":{"kind":"drive#user","displayName":"test accout","me":true,"permissionId":"04909922914753751588","emailAddress":"testaccoutfortheapp@gmail.com"},"storageQuota":{"limit":"16106127360","usage":"230672028","usageInDrive":"230672028","usageInDriveTrash":"0"}}}
+{"code":61,"data":{"RepoID":"1","folderData":{"D:\\Major Project\\fhs\\Testing":"1lXLjfLLL-7cAUlF3EgxdqcZk8Be8naHM","D:\\Major Project\\fhs\\Testing\\asd22":"1zZkT0JfHuQgup1bkgbQ5fQXdsX4EoYyt","D:\\Major Project\\fhs\\Testing\\asd22\\asd":"1P_GB4TnVlg9nhIdaXVHqlDrqYSLZGFOo"}}}
 
 

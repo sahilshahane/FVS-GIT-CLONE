@@ -17,7 +17,6 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { PythonShell } from 'python-shell';
 import fs from 'fs';
-import MenuBuilder from './menu';
 import logApp from './Pages/modules/log';
 
 export default class AppUpdater {
@@ -205,8 +204,8 @@ const createWindow = async () => {
     }
   });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
+  mainWindow.on('close', (e) => {
+    e.preventDefault();
   });
 
   // const menuBuilder = new MenuBuilder(mainWindow);
@@ -220,7 +219,7 @@ const createWindow = async () => {
 
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
-  new AppUpdater();
+  // new AppUpdater();
 };
 
 /**
