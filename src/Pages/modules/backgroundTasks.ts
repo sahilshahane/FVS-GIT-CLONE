@@ -21,22 +21,12 @@ import {
   setUploadWatingQueue,
   setDownloadWatingQueue,
   SYNC_INPUT,
+  SyncFile,
   SYNC_DATA_STRUCTURE,
 } from './Redux/SynchronizationSlicer';
+
 import showError, { ShowInfo } from './ErrorPopup_dialog';
 import { USER_REPOSITORY_DATA_STRUCTURE } from './Redux/UserRepositorySlicer';
-
-interface SyncFile {
-  [folderPath: string]: {
-    files: Array<{
-      fileName: string;
-      driveID?: string;
-      isUploaded?: boolean;
-      isDownloaded?: boolean;
-    }>;
-    driveID?: string;
-  };
-}
 
 const RepoSyncTaskTimeouts: { [RepoID: string]: any } = {};
 const RepoSyncTaskTimeoutsRate = 1000;
@@ -149,14 +139,24 @@ export const LOAD_UPLOADS_FROM_REPOSITORY = async () => {
 };
 
 let uploadServiceTimeoutID: NodeJS.Timeout | any = null;
+let downloadServiceTimeoutID: NodeJS.Timeout | any = null;
 
 const SYNC_CHECK_TIMEOUT = 100; // values in ms
 
-export const updateSync = () => {
+export const updateUploads = () => {
   clearTimeout(uploadServiceTimeoutID);
 
   uploadServiceTimeoutID = setTimeout(
     () => Reduxstore.dispatch(updateUploadingQueue()),
+    SYNC_CHECK_TIMEOUT
+  );
+};
+
+export const updateDownloads = () => {
+  clearTimeout(downloadServiceTimeoutID);
+
+  downloadServiceTimeoutID = setTimeout(
+    () => Reduxstore.dispatch(updateDownloadingQueue()),
     SYNC_CHECK_TIMEOUT
   );
 };

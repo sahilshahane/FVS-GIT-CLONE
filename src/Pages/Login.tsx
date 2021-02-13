@@ -2,9 +2,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
-import { Modal, Col, Button, Space, Divider } from 'antd';
-import Particles from 'react-particles-js';
-import particlesConfig from './modules/particalConfig';
+import { Modal, Col, Button, Space } from 'antd';
 import {
   saveGoogleLogin,
   saveRepositorySettings,
@@ -16,7 +14,6 @@ import {
   sendSchedulerTask,
   Scheduler,
 } from './modules/get_AppData';
-import GoogleDrivePNG from '../../assets/icons/googledriveicon2.png';
 
 const showWarning = async () => {
   Modal.info({
@@ -82,33 +79,17 @@ const Login = () => {
         alignItems: 'center',
       }}
     >
-      <div style={{ position: 'absolute' }}>
-        <Col
-          className="component-bg"
-          style={{
-            width: '300px',
-            height: '200px',
-            alignItems: 'center',
-          }}
-        >
-          <Divider className="Divider-align" />
-          <div className="space-align-block">
-            <Space align="center">
-              <Button onClick={startLogin}>
-                <img
-                  src={GoogleDrivePNG}
-                  className="Image-Align-google"
-                  alt="Google Drive Icon"
-                />
-                &nbsp; Login with GoogleDrive
-              </Button>
-            </Space>
-          </div>
-        </Col>
-      </div>
-      <div style={{ overflow: 'hidden' }}>
-        <Particles height="100vh" width="100vw" params={particlesConfig} />
-      </div>
+      <Col
+        className="component-bg"
+        style={{
+          width: '500px',
+          height: '500px',
+        }}
+      >
+        <Space align="center" style={{ margin: 'auto' }}>
+          <Button onClick={startLogin}>Connect : Google Drive</Button>
+        </Space>
+      </Col>
     </div>
   );
 };

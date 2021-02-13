@@ -5,7 +5,7 @@ import googleapiclient
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
-from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 import orjson
 from utils import output
 import webbrowser
@@ -14,7 +14,10 @@ import wsgiref.util
 import main
 import pathlib
 import google_auth_httplib2
+from urllib.error import HTTPError
 import httplib2
+import mimetypes
+import io
 
 CREDENTIALS = None
 service = None
@@ -69,8 +72,8 @@ def getService(CCODES,creds = None):
               raise NoGoogleIDFound
 
             # Save the credentials for the next run
-            with open(TOKEN_FILE_PATH, 'wb') as token:
-                pickle.dump(creds, token)
+        with open(TOKEN_FILE_PATH, 'wb') as token:
+            pickle.dump(creds, token)
 
         # output({"code":CCODES["GOOGLE_ID_FOUND"],'msg':"Found an Google Account"})
         # return Google Drive API service
@@ -237,6 +240,8 @@ def uploadFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID):
 
   return driveID
 
+# Are you even using this method.
+# NOPE - it was a naive attempt to upload files
 def uploadRepository(CCODES,DIR_PATH, service = None):
   if(not service): service = get_gdrive_service(CCODES)
 
@@ -303,3 +308,67 @@ def createRepoFolders(CCODES, RepoID, rootFolderName, rootFolderPath, folderData
       except KeyError: pass
 
   return folderData
+
+def downloadGoogleWorkspaceFile(CCODES, driveID, filePath, repoID, newMime, service):
+  fileExtension = {
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".pptx",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".xlsx"
+  }
+  request = service.files().export_media(fileId=driveID, mimeType=newMime)
+  fileBytes = io.BytesIO()
+  downloader = MediaIoBaseDownload(fileBytes, request)
+  done = False
+  while not done:
+    status, done = downloader.next_chunk()
+    # print(status.progress())
+
+  fileBytes.seek(0)
+  if os.path.exists(filePath):
+    os.remove(filePath)
+
+  _, extName = os.path.splitext(filePath)
+  filePath = filePath[:-len(extName)]+fileExtension[newMime]
+
+  return [fileBytes, filePath]
+
+
+def downloadFile(CCODES, driveID, fileName, filePath, repoID):
+  service = getService(CCODES)
+  fileBytes = io.BytesIO()
+  driveID = driveID
+  googleWorkspace = {
+    "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.google-apps.presentation": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  }
+
+  fileMimeType = ""
+  fileMimeType = service.files().get(fileId=driveID, fields="mimeType").execute()["mimeType"]
+
+  if fileMimeType in googleWorkspace:
+    fileBytes, filePath = downloadGoogleWorkspaceFile(CCODES, driveID, filePath, repoID, googleWorkspace[fileMimeType], service)
+  else:
+    request =  service.files().get_media(fileId=driveID, acknowledgeAbuse=True)
+    downloader = MediaIoBaseDownload(fileBytes, request)
+    done = False
+    while not done:
+      status, done = downloader.next_chunk()
+      # print(status.progress())
+
+  fileBytes.seek(0)
+  if os.path.exists(filePath):
+    os.remove(filePath)
+  with open(filePath, "wb") as dest:
+    dest.write(fileBytes.read())
+
+
+  #########################################################################
+  # page_token = None
+  # while True:
+  #   response = service.files().list(q="name='notepadIguess.exe'", spaces="drive",fields="nextPageToken, files(id, name, mimeType)", pageToken=page_token).execute()
+  #   for file in response.get("files", []):
+  #     print(f"{file.get('name')} {file.get('id')} {file.get('mimeType')}")
+  #   page_token = response.get("nextPageToken", None)
+  #   if page_token is None:
+  #     break

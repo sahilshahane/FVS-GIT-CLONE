@@ -13,8 +13,14 @@ import SynchronizationSlice, {
   updateUploadingQueue,
   addUploadFinishedQueue,
   ReAddFailedUpload,
+  addDownloadFinishedQueue,
+  ReAddFailedDownload
 } from './SynchronizationSlicer';
-import { LOAD_UPLOADS_FROM_REPOSITORY, updateSync } from '../backgroundTasks';
+import {
+  LOAD_UPLOADS_FROM_REPOSITORY,
+  updateUploads,
+  updateDownloads,
+} from '../backgroundTasks';
 
 export default configureStore({
   reducer: {
@@ -33,15 +39,24 @@ export default configureStore({
             break;
           case allocateRepoData.type:
             next(action);
-            updateSync();
+            updateUploads();
+            updateDownloads();
             break;
           case addUploadFinishedQueue.type:
             next(action);
-            updateSync();
+            updateUploads();
             break;
           case ReAddFailedUpload.type:
             next(action);
-            updateSync();
+            updateUploads();
+            break;
+          case addDownloadFinishedQueue.type:
+            next(action);
+            updateDownloads();
+            break;
+          case ReAddFailedDownload.type:
+            next(action);
+            updateDownloads();
             break;
           default:
             next(action);

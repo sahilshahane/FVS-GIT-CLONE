@@ -103,14 +103,16 @@ const DownloadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
         Object.keys(downloadFinishedQueue).forEach((RepoID: any) => {
           totalFinished += downloadFinishedQueue[RepoID].length;
         });
-        setPercentage((totalFinished / totalSessionDownloads) * 100);
+        setPercentage(
+          Math.round((totalFinished / totalSessionDownloads) * 100)
+        );
       }
     })();
   }, [
     downloadFinishedQueue,
     totalSessionDownloads,
+    downloadingQueue.length,
     downloadWatingQueue,
-    downloadingQueue,
   ]);
   return (
     <div
@@ -125,7 +127,7 @@ const DownloadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
           percent={percentage}
           width={45}
           strokeWidth={10}
-          className="uploadCircle"
+          className="downloadCircle"
         />
       </Row>
       <Row justify="center">Downloaded</Row>

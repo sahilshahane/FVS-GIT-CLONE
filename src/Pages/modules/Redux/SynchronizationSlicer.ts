@@ -240,6 +240,27 @@ export const SynchronizationSlice = createSlice({
         parentPath,
       });
     },
+    addDownloadFinishedQueue: (state, action: addFinishedQueueInterface) => {
+      const { RepoID, fileName, driveID, parentPath } = action.payload;
+      const filePath = path.join(parentPath, fileName);
+
+      const indexTobeRemoved = state.downloadingQueue.findIndex(
+        (val) => val.driveID === driveID || val.filePath === filePath
+      );
+
+      if (indexTobeRemoved > -1) {
+        state.downloadingQueue.splice(indexTobeRemoved, 1);
+      }
+
+      if (!state.downloadFinishedQueue[RepoID])
+        state.downloadFinishedQueue[RepoID] = [];
+
+      state.downloadFinishedQueue[RepoID].push({
+        fileName,
+        driveID,
+        parentPath,
+      });
+    },
     ReAddFailedUpload: (state, action: ReAddFailedUploadInterface) => {
       const { driveID, RepoID, fileName, filePath } = action.payload;
       let indexTobeRemoved = -1;
@@ -257,6 +278,29 @@ export const SynchronizationSlice = createSlice({
         state.uploadingQueue.splice(indexTobeRemoved, 1);
 
         state.uploadWatingQueue[RepoID].push({
+          driveID,
+          fileName,
+          filePath,
+        });
+      }
+    },
+    ReAddFailedDownload: (state, action: ReAddFailedUploadInterface) => {
+      const { driveID, RepoID, fileName, filePath } = action.payload;
+      let indexTobeRemoved = -1;
+      if (driveID) {
+        indexTobeRemoved = state.downloadingQueue.findIndex(
+          (val) => val.driveID === driveID
+        );
+      } else {
+        indexTobeRemoved = state.downloadingQueue.findIndex(
+          (val) => val.filePath === filePath
+        );
+      }
+
+      if (indexTobeRemoved > -1) {
+        state.downloadingQueue.splice(indexTobeRemoved, 1);
+
+        state.downloadWatingQueue[RepoID].push({
           driveID,
           fileName,
           filePath,
@@ -304,24 +348,45 @@ export const SynchronizationSlice = createSlice({
       });
     },
     updateDownloadingQueue: (state) => {
-      Object.keys(state.downloadWatingQueue).forEach((RepoID) => {
-        while (
-          state.downloadingQueue.length < MAX_PARALLEL_DOWNLOAD &&
-          state.downloadWatingQueue[RepoID].length
-        ) {
-          const cpyState = [...state.downloadWatingQueue[RepoID]];
+      const { downloadWatingQueue, RepoData } = state;
+      Object.keys(downloadWatingQueue).forEach((RepoID) => {
+        if (state.downloadingQueue.length < MAX_PARALLEL_DOWNLOAD) {
+          const newDownloads: Array<DoingQueue> = downloadWatingQueue[
+            RepoID
+          ].filter((val, index) => {
+            const parentID = RepoData[RepoID][path.dirname(val.filePath)];
 
-          const newDownloads = cpyState
+            if (parentID) {
+              downloadWatingQueue[RepoID].splice(index, 1);
+              return true;
+            }
+
+            return false;
+          })
             .splice(0, MAX_PARALLEL_DOWNLOAD - state.downloadingQueue.length)
             .map((val) => ({
+              RepoID,
               fileName: val.fileName,
               filePath: val.filePath,
-              RepoID,
+              driveID: val.driveID,
               status: 'RUNNING',
             }));
 
-          state.downloadWatingQueue[RepoID] = cpyState;
-          state.downloadingQueue = [...state.downloadingQueue, ...newDownloads];
+          if (newDownloads.length) {
+            state.downloadingQueue = [
+              ...state.downloadingQueue,
+              ...newDownloads,
+            ];
+
+            newDownloads.forEach((val) => {
+              const parentPath = path.dirname(val.filePath);
+              const parentDriveID = state.RepoData[RepoID][parentPath];
+              sendSchedulerTask({
+                code: CCODES.DOWNLOAD_FILE,
+                data: { ...val, parentDriveID },
+              });
+            });
+          }
         }
       });
     },
@@ -361,7 +426,9 @@ export const {
   updateDownloadingQueue,
   allocateRepoData,
   addUploadFinishedQueue,
+  addDownloadFinishedQueue,
   ReAddFailedUpload,
+  ReAddFailedDownload,
 } = SynchronizationSlice.actions;
 
 export const SYNC_ACTIONS = SynchronizationSlice.actions;

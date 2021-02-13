@@ -6,7 +6,6 @@ const selectDirectory = async ({
 }) => {
   let options = {
     properties: ['openDirectory'],
-    defaultPath,
   };
   if (defaultPath) options.defaultPath = defaultPath;
   if (multiSelections) options.properties.push('multiSelections');

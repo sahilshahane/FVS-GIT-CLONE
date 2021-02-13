@@ -78,6 +78,32 @@ def uploadFile(task):
   except Exception as e:
     output({ "code":CCODES["UPLOAD_FAILED"], "data" : task["data"], "exception": {"msg":str(e),"type": str(e.__class__.__name__)}})
 
+def downloadFile(task):
+  RepoID = task["data"]["RepoID"]
+  driveID = task["data"].get("driveID")
+  fileName = task["data"]["fileName"]
+  filePath = task["data"]["filePath"]
+
+  try:
+    GoogleDrive.downloadFile(CCODES, driveID, fileName, filePath, RepoID)
+
+    output({
+      "code": CCODES["DOWNLOAD_SUCCESS"],
+      "data": {
+        "RepoId": RepoID,
+        "fileName" : fileName,
+        "parentPath" : os.path.dirname(filePath)
+      }
+    })
+  except Exception as e:
+    output({
+      "code": CCODES["DOWNLOAD_FAILED"],
+      "data": task["data"],
+      "exception": {
+        "msg":str(e),
+        "type": str(e.__class__.__name__)
+      }
+    })
 
 def generateGDriveID(task):
   count = task["data"]["count"]
@@ -119,6 +145,7 @@ TASKS_DEFINITIONS = {
   CCODES["GENERATE_IDS"]: generateGDriveID,
   CCODES["RETRIVE_REPO_UPLOADS"] : retriveUploads,
   CCODES["CREATE_FOLDERS"] : createRepoFolders,
+  CCODES["DOWNLOAD_FILE"]: downloadFile
 }
 
 def addTask(task):
@@ -139,20 +166,22 @@ def nodeMain():
 def aloneMain():
   DIR_PATH = os.path.abspath("Testing")
 
-  # os.environ["SHOW_NODE_OUTPUT"] = ''
+  # os.environ["SHOW_NODE_OUTPUT"] = 'sdf'
 
   task = {
-    "data":{"folderPath":DIR_PATH, "RepoID":1,"RepoName":"Yo Yo Bantai", "folderData":{
-    DIR_PATH : {
-      "driveID" : None
-    },
-    os.path.join(DIR_PATH,'asd22') : {
-      "driveID" : None
-    },
-    os.path.join(DIR_PATH,'asd22','asd') : {
-      "driveID" : None
-    },
-  }}}
+    "data": {"filePath": "/home/uttkarsh/Programming/Delete/5/node_modules/notepadIG.exe", "fileName": "insideNodeM.txt", "driveID": "1brPUqYUgntRrZLwZWcjhTOfkzJ7t9svA", "RepoID": "101"},
+    # "data":{"folderPath":DIR_PATH, "RepoID":1,"RepoName":"Yo Yo Bantai", "folderData":{
+    # DIR_PATH : {
+    #   "driveID" : None
+    # },
+    # os.path.join(DIR_PATH,'asd22') : {
+    #   "driveID" : None
+    # },
+    # os.path.join(DIR_PATH,'asd22','asd') : {
+    #   "driveID" : None
+    # },
+    # }}
+  }
 
   # try:
   #   shutil.rmtree(os.path.join(DIR_PATH,'.usp'))
@@ -162,12 +191,8 @@ def aloneMain():
   # Init_Dir(task)
   # allocateIDs(task)
   # uploadRepository(task)
-  createRepoFolders(task)
-
-
-
-
-
+  # createRepoFolders(task)
+  downloadFile(task)
 
 if(args.isGUI):
   nodeMain()
