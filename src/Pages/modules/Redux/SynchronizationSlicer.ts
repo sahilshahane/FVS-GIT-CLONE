@@ -353,7 +353,17 @@ export const SynchronizationSlice = createSlice({
         if (state.downloadingQueue.length < MAX_PARALLEL_DOWNLOAD) {
           const newDownloads: Array<DoingQueue> = downloadWatingQueue[
             RepoID
-          ] .splice(0, MAX_PARALLEL_DOWNLOAD - state.downloadingQueue.length)
+          ].filter((val, index) => {
+            const parentID = RepoData[RepoID][path.dirname(val.filePath)];
+
+            if (parentID) {
+              downloadWatingQueue[RepoID].splice(index, 1);
+              return true;
+            }
+
+            return false;
+          })
+            .splice(0, MAX_PARALLEL_DOWNLOAD - state.downloadingQueue.length)
             .map((val) => ({
               RepoID,
               fileName: val.fileName,
@@ -363,12 +373,17 @@ export const SynchronizationSlice = createSlice({
             }));
 
           if (newDownloads.length) {
-            state.downloadingQueue = [...state.downloadingQueue, ...newDownloads];
+            state.downloadingQueue = [
+              ...state.downloadingQueue,
+              ...newDownloads,
+            ];
 
             newDownloads.forEach((val) => {
+              const parentPath = path.dirname(val.filePath);
+              const parentDriveID = state.RepoData[RepoID][parentPath];
               sendSchedulerTask({
                 code: CCODES.DOWNLOAD_FILE,
-                data: { ...val },
+                data: { ...val, parentDriveID },
               });
             });
           }

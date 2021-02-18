@@ -53,7 +53,7 @@ Testing
 Testing/.usp
 
 __pycache__
-token.pickle
 test.py
 scheduler-logs.txt
 Testing/.usp/commit.json
+assets/installation/.usp/token.pickle

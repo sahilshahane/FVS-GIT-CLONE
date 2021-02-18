@@ -86,7 +86,7 @@ def downloadFile(task):
 
   try:
     GoogleDrive.downloadFile(CCODES, driveID, fileName, filePath, RepoID)
-    
+
     output({
       "code": CCODES["DOWNLOAD_SUCCESS"],
       "data": {
@@ -96,11 +96,11 @@ def downloadFile(task):
       }
     })
   except Exception as e:
-    output({ 
-      "code": CCODES["DOWNLOAD_FAILED"], 
-      "data": task["data"], 
+    output({
+      "code": CCODES["DOWNLOAD_FAILED"],
+      "data": task["data"],
       "exception": {
-        "msg":str(e), 
+        "msg":str(e),
         "type": str(e.__class__.__name__)
       }
     })
@@ -137,7 +137,6 @@ def createRepoFolders(task):
     output({"code": CCODES["FOLDERS_CREATED"], "data": {"RepoID" : RepoID, "folderData":folderData}})
   except Exception as e:
     output({"code": CCODES["FAILED_TO_CREATE_FOLDERS"], "data": {"RepoID" : RepoID}, "exception" : {"msg" : str(e), "type" :  str(e.__class__.__name__)}})
-
 
 TASKS_DEFINITIONS = {
   CCODES["START_GOOGLE_LOGIN"] : startGoogleLogin,

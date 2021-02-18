@@ -103,7 +103,9 @@ const DownloadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
         Object.keys(downloadFinishedQueue).forEach((RepoID: any) => {
           totalFinished += downloadFinishedQueue[RepoID].length;
         });
-        setPercentage(Math.round((totalFinished / totalSessionDownloads) * 100));
+        setPercentage(
+          Math.round((totalFinished / totalSessionDownloads) * 100)
+        );
       }
     })();
   }, [

@@ -14,6 +14,9 @@ import {
   closeSyncDrawer,
   SYNC_INPUT,
   SYNC_DATA_STRUCTURE,
+  DoingQueue,
+  WatingQueueInterface,
+  FinishedQueueInterface,
 } from '../modules/Redux/SynchronizationSlicer';
 import { store } from '../modules/Redux/store';
 import { assignGIDs } from '../modules/backgroundTasks';
@@ -50,86 +53,17 @@ const getStatusIcon = (
   }
 };
 
-// ////////////////////////////////////////////////////////////////////////////////////
-
-const DownloadsDrawer = () => {
-  const downloadWatingQueue = useSelector(
-    (state: store) => state.Sync.downloadWatingQueue
-  );
-
-  const downloadingQueue = useSelector(
-    (state: store) => state.Sync.downloadingQueue
-  );
-
-  const downloadFinishedQueue = useSelector(
-    (state: store) => state.Sync.downloadFinishedQueue
-  );
-
-  const RepoData = useSelector((state: store) => state.Sync.RepoData);
-
-  const UserRepos = useSelector((state: store) => state.UserRepoData.info);
-
+const shouldShowRepo = (
+  DoingQueue_: Array<DoingQueue>,
+  WaitingQueue: WatingQueueInterface,
+  FinishedQueue: FinishedQueueInterface,
+  RepoID: number | string
+) => {
   return (
-    <Collapse bordered={false} style={{ margin: 0, padding: 0, width: 300 }}>
-      {Object.keys(RepoData).map((RepoID) => (
-        <Collapse.Panel header={UserRepos[RepoID].displayName} key={nanoid()}>
-          <CustomSpin RepoData={RepoData} key={nanoid()}>
-            {downloadingQueue.length ? (
-              <List
-                dataSource={downloadingQueue}
-                renderItem={(data) =>
-                  !(data.RepoID === RepoID) ? null : (
-                    <List.Item.Meta
-                      avatar={getStatusIcon(data.status)}
-                      title={data.fileName}
-                    />
-                  )
-                }
-              />
-            ) : null}
-
-            {/* <Divider /> */}
-            {(downloadWatingQueue[RepoID] && downloadWatingQueue[RepoID].length && (
-              <List
-                dataSource={downloadWatingQueue[RepoID]}
-                renderItem={(data) => (
-                  <List.Item.Meta
-                    avatar={getStatusIcon(data.status)}
-                    title={data.fileName}
-                  />
-                )}
-              />
-            )) ||
-              null}
-            {/* <Divider /> */}
-            {(downloadFinishedQueue[RepoID] &&
-              downloadFinishedQueue[RepoID].length && (
-                <List
-                  dataSource={downloadFinishedQueue[RepoID]}
-                  renderItem={(data) => (
-                    <List.Item.Meta
-                      avatar={getStatusIcon('FINISHED')}
-                      title={data.fileName}
-                    />
-                  )}
-                />
-              )) ||
-              null}
-
-            {!downloadingQueue.length &&
-              !(
-                downloadWatingQueue[RepoID] && downloadWatingQueue[RepoID].length
-              ) &&
-              !(
-                downloadFinishedQueue[RepoID] &&
-                downloadFinishedQueue[RepoID].length
-              ) && (
-                <Empty description="Atleast We Have Some thing in Common. We'er both Job Less. :/" />
-              )}
-          </CustomSpin>
-        </Collapse.Panel>
-      ))}
-    </Collapse>
+    !DoingQueue_.find((val) => val.RepoID === RepoID) &&
+    !DoingQueue_.length &&
+    !(WaitingQueue[RepoID] && WaitingQueue[RepoID].length) &&
+    !(FinishedQueue[RepoID] && FinishedQueue[RepoID].length)
   );
 };
 
@@ -160,6 +94,84 @@ const CustomSpin = ({ children, RepoData }: any) => {
 
 // ////////////////////////////////////////////////////////////////////////////////////
 
+const DownloadsDrawer = () => {
+  const downloadWatingQueue = useSelector(
+    (state: store) => state.Sync.downloadWatingQueue
+  );
+
+  const downloadingQueue = useSelector(
+    (state: store) => state.Sync.downloadingQueue
+  );
+
+  const downloadFinishedQueue = useSelector(
+    (state: store) => state.Sync.downloadFinishedQueue
+  );
+
+  const RepoData = useSelector((state: store) => state.Sync.RepoData);
+
+  const UserRepos = useSelector((state: store) => state.UserRepoData.info);
+
+  return (
+    <Collapse bordered={false} style={{ margin: 0, padding: 0, width: 300 }}>
+      {Object.keys(RepoData).map((RepoID) =>
+        shouldShowRepo(
+          downloadingQueue,
+          downloadWatingQueue,
+          downloadFinishedQueue,
+          RepoID
+        ) ? null : (
+          <Collapse.Panel header={UserRepos[RepoID].displayName} key={nanoid()}>
+            {downloadingQueue.length ? (
+              <List
+                dataSource={downloadingQueue}
+                renderItem={(data) =>
+                  !(data.RepoID === RepoID) ? null : (
+                    <List.Item.Meta
+                      avatar={getStatusIcon(data.status)}
+                      title={data.fileName}
+                    />
+                  )
+                }
+              />
+            ) : null}
+
+            {/* <Divider /> */}
+            {(downloadWatingQueue[RepoID] &&
+              downloadWatingQueue[RepoID].length && (
+                <List
+                  dataSource={downloadWatingQueue[RepoID]}
+                  renderItem={(data) => (
+                    <List.Item.Meta
+                      avatar={getStatusIcon(data.status)}
+                      title={data.fileName}
+                    />
+                  )}
+                />
+              )) ||
+              null}
+            {/* <Divider /> */}
+            {(downloadFinishedQueue[RepoID] &&
+              downloadFinishedQueue[RepoID].length && (
+                <List
+                  dataSource={downloadFinishedQueue[RepoID]}
+                  renderItem={(data) => (
+                    <List.Item.Meta
+                      avatar={getStatusIcon('FINISHED')}
+                      title={data.fileName}
+                    />
+                  )}
+                />
+              )) ||
+              null}
+          </Collapse.Panel>
+        )
+      )}
+    </Collapse>
+  );
+};
+
+// ////////////////////////////////////////////////////////////////////////////////////
+
 const UploadsDrawer = () => {
   const uploadWatingQueue = useSelector(
     (state: store) => state.Sync.uploadWatingQueue
@@ -179,64 +191,61 @@ const UploadsDrawer = () => {
 
   return (
     <Collapse bordered={false} style={{ margin: 0, padding: 0, width: 300 }}>
-      {Object.keys(RepoData).map((RepoID) => (
-        <Collapse.Panel header={UserRepos[RepoID].displayName} key={nanoid()}>
-          <CustomSpin RepoData={RepoData} key={nanoid()}>
-            {uploadingQueue.length ? (
-              <List
-                dataSource={uploadingQueue}
-                renderItem={(data) =>
-                  !(data.RepoID === RepoID) ? null : (
-                    <List.Item.Meta
-                      avatar={getStatusIcon(data.status)}
-                      title={data.fileName}
-                    />
-                  )
-                }
-              />
-            ) : null}
-
-            {/* <Divider /> */}
-            {(uploadWatingQueue[RepoID] && uploadWatingQueue[RepoID].length && (
-              <List
-                dataSource={uploadWatingQueue[RepoID]}
-                renderItem={(data) => (
-                  <List.Item.Meta
-                    avatar={getStatusIcon(data.status)}
-                    title={data.fileName}
-                  />
-                )}
-              />
-            )) ||
-              null}
-            {/* <Divider /> */}
-            {(uploadFinishedQueue[RepoID] &&
-              uploadFinishedQueue[RepoID].length && (
+      {Object.keys(RepoData).map((RepoID) =>
+        shouldShowRepo(
+          uploadingQueue,
+          uploadWatingQueue,
+          uploadFinishedQueue,
+          RepoID
+        ) ? null : (
+          <Collapse.Panel header={UserRepos[RepoID].displayName} key={nanoid()}>
+            <CustomSpin RepoData={RepoData} key={nanoid()}>
+              {uploadingQueue.length ? (
                 <List
-                  dataSource={uploadFinishedQueue[RepoID]}
-                  renderItem={(data) => (
-                    <List.Item.Meta
-                      avatar={getStatusIcon('FINISHED')}
-                      title={data.fileName}
-                    />
-                  )}
+                  dataSource={uploadingQueue}
+                  renderItem={(data) =>
+                    !(data.RepoID === RepoID) ? null : (
+                      <List.Item.Meta
+                        avatar={getStatusIcon(data.status)}
+                        title={data.fileName}
+                      />
+                    )
+                  }
                 />
-              )) ||
-              null}
+              ) : null}
 
-            {!uploadingQueue.length &&
-              !(
-                uploadWatingQueue[RepoID] && uploadWatingQueue[RepoID].length
-              ) &&
-              !(
-                uploadFinishedQueue[RepoID] &&
-                uploadFinishedQueue[RepoID].length
-              ) && (
-                <Empty description="Atleast We Have Some thing in Common. We'er both Job Less. :/" />
-              )}
-          </CustomSpin>
-        </Collapse.Panel>
-      ))}
+              {/* <Divider /> */}
+              {(uploadWatingQueue[RepoID] &&
+                uploadWatingQueue[RepoID].length && (
+                  <List
+                    dataSource={uploadWatingQueue[RepoID]}
+                    renderItem={(data) => (
+                      <List.Item.Meta
+                        avatar={getStatusIcon(data.status)}
+                        title={data.fileName}
+                      />
+                    )}
+                  />
+                )) ||
+                null}
+              {/* <Divider /> */}
+              {(uploadFinishedQueue[RepoID] &&
+                uploadFinishedQueue[RepoID].length && (
+                  <List
+                    dataSource={uploadFinishedQueue[RepoID]}
+                    renderItem={(data) => (
+                      <List.Item.Meta
+                        avatar={getStatusIcon('FINISHED')}
+                        title={data.fileName}
+                      />
+                    )}
+                  />
+                )) ||
+                null}
+            </CustomSpin>
+          </Collapse.Panel>
+        )
+      )}
     </Collapse>
   );
 };
@@ -274,6 +283,8 @@ const SliderDrawer = () => {
         onClose={() => dispatch(closeSyncDrawer())}
         visible={isDownloadsDrawerVisible}
         width="300"
+        bodyStyle={{ padding: 0 }}
+        className="hideScrollbar"
       >
         <DownloadsDrawer />
       </Drawer>

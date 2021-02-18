@@ -16,7 +16,11 @@ import SynchronizationSlice, {
   addDownloadFinishedQueue,
   ReAddFailedDownload
 } from './SynchronizationSlicer';
-import { LOAD_UPLOADS_FROM_REPOSITORY, updateUploads, updateDownloads } from '../backgroundTasks';
+import {
+  LOAD_UPLOADS_FROM_REPOSITORY,
+  updateUploads,
+  updateDownloads,
+} from '../backgroundTasks';
 
 export default configureStore({
   reducer: {

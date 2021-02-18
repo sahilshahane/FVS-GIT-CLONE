@@ -241,6 +241,7 @@ def uploadFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID):
   return driveID
 
 # Are you even using this method.
+# NOPE - it was a naive attempt to upload files
 def uploadRepository(CCODES,DIR_PATH, service = None):
   if(not service): service = get_gdrive_service(CCODES)
 
@@ -325,7 +326,7 @@ def downloadGoogleWorkspaceFile(CCODES, driveID, filePath, repoID, newMime, serv
   fileBytes.seek(0)
   if os.path.exists(filePath):
     os.remove(filePath)
-  
+
   _, extName = os.path.splitext(filePath)
   filePath = filePath[:-len(extName)]+fileExtension[newMime]
 
@@ -351,16 +352,16 @@ def downloadFile(CCODES, driveID, fileName, filePath, repoID):
     request =  service.files().get_media(fileId=driveID, acknowledgeAbuse=True)
     downloader = MediaIoBaseDownload(fileBytes, request)
     done = False
-    while not done: 
+    while not done:
       status, done = downloader.next_chunk()
       # print(status.progress())
-    
+
   fileBytes.seek(0)
   if os.path.exists(filePath):
     os.remove(filePath)
   with open(filePath, "wb") as dest:
     dest.write(fileBytes.read())
-  
+
 
   #########################################################################
   # page_token = None
