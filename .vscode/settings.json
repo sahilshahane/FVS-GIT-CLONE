@@ -45,7 +45,6 @@
     "babel.config.js": true,
     "**/package-lock.json": true,
     "**/yarn.lock": true,
-    "tsconfig.json": true,
     "assets/icon.icns": true,
     "assets/icon.ico": true,
     "assets/icon.png": true,

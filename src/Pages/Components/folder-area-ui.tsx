@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import React from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { store } from '../modules/Redux/store';
 import {
   GoTo_Repository,
   move_To_NextLocation,
+  RepositoryInfo,
 } from '../modules/Redux/UserRepositorySlicer';
-import { RepositoryInfo } from '../modules/Redux/UserRepositorySlicer';
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~// FILE UI //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 export const File = ({ info }: any) => {
@@ -57,7 +58,13 @@ export const Repository = ({ info }: { info: RepositoryInfo }) => {
   const change_Repo = () => {
     dispatch(GoTo_Repository(info));
   };
-
+  const uploadWatingQueue = useSelector(
+    (state: store) => state.Sync.uploadWatingQueue[info]
+  );
+  const uploadingQueue = useSelector(
+    (state: store) => state.Sync.uploadWatingQueue[info]
+  );
+  useEffect(() => {}, [info.syncStatus]);
   return (
     <div onDoubleClick={change_Repo} className="folder-ui">
       <h3>
@@ -65,7 +72,7 @@ export const Repository = ({ info }: { info: RepositoryInfo }) => {
           ? `${info.displayName.slice(0, 20)}...`
           : info.displayName}
       </h3>
-      {info.syncStatus === true ? (
+      {info.syncStatus ? (
         <span className="synced-true" />
       ) : (
         <span className="synced-false" />

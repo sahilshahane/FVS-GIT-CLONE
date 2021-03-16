@@ -2,8 +2,6 @@ import { batch } from 'react-redux';
 import ReduxStore from './Redux/store';
 import { addRepository } from './Redux/UserRepositorySlicer';
 import {
-  addUpload,
-  addDownload,
   allocateRepoData,
   updateUploadingQueue,
   addUploadFinishedQueue,
@@ -38,10 +36,8 @@ const Handler = (response: {
       );
       break;
     case CCODES.ADD_UPLOAD:
-      dispatch(addUpload(response.data));
       break;
     case CCODES.ADD_DOWNLOAD:
-      dispatch(addDownload(response.data));
       break;
     case CCODES.REPO_EXISTS:
       if (process.env.NODE_ENV === 'development')

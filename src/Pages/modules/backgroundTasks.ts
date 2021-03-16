@@ -145,7 +145,7 @@ const SYNC_CHECK_TIMEOUT = 100; // values in ms
 
 export const updateUploads = () => {
   clearTimeout(uploadServiceTimeoutID);
-
+  // console.log('Updating...');
   uploadServiceTimeoutID = setTimeout(
     () => Reduxstore.dispatch(updateUploadingQueue()),
     SYNC_CHECK_TIMEOUT

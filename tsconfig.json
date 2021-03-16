@@ -9,7 +9,7 @@
     "jsx": "react",
     "strict": true,
     "pretty": true,
-    "sourceMap": false,
+    "sourceMap": true,
     /* Additional Checks */
     "noUnusedLocals": true,
     "noUnusedParameters": true,

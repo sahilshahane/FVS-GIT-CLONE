@@ -40,6 +40,13 @@ interface addRepositoryinterface {
   type: any;
 }
 
+interface setSyncStatus {
+  payload: {
+    status: boolean;
+    RepoID: number | string;
+  };
+}
+
 const GET_INITIAL_STATE: () => USER_REPOSITORY_DATA_STRUCTURE = () => {
   const data: USER_REPOSITORY_DATA_STRUCTURE = USER_REPOSITORY_DATA;
 
@@ -113,6 +120,10 @@ export const USER_REPOSITORY_Slice = createSlice({
     },
     saveUserRepositoryDataSync: (state) => {
       SAVE(state);
+    },
+    setSyncStatus: (state, action: setSyncStatus) => {
+      const { RepoID, status } = action.payload;
+      state.info[RepoID].syncStatus = status;
     },
   },
 });

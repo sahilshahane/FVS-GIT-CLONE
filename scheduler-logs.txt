@@ -1,12 +1,180 @@
-{"code":61,"data":{"RepoID":"1","folderData":{"D:\\Major Project\\fhs\\Testing":"1_cPxryJHw0PkQS0_XjKo1qfuNnBWyEfQ","D:\\Major Project\\fhs\\Testing\\asd22":"1mINAG1BEHmsORP1Ib9YhOYRrJwZPNNX_","D:\\Major Project\\fhs\\Testing\\asd22\\asd":"1gsHpbTAzczoiJUWWQcRiSm9cItMYas8Q"}}}
+{"code":61,"data":{"RepoID":"1","folderData":{"D:\\Major Project\\fhs\\Testing":"1SkESn6SnC8-dDE5UYYyuJg3yM4hxTnxQ","D:\\Major Project\\fhs\\Testing\\asd22":"1UmnFKTynzZ9iNpOsAeB8WIJyf1CXlUOF","D:\\Major Project\\fhs\\Testing\\asd22\\asd":"1YZTp67clvv8mkbh5KLx4amtkZxrHeE-W"}}}
 
 
-{"code":65,"data":{"RepoID":"1","fileName":"44.txt","filePath":"D:\\Major Project\\fhs\\Testing\\asd22\\44.txt","driveID":"1_87IVMfqeYZNEz6NlGjc2WBElQi1iDhC","status":"RUNNING","parentDriveID":"1mINAG1BEHmsORP1Ib9YhOYRrJwZPNNX_"},"exception":{"msg":"<HttpError 403 when requesting https://www.googleapis.com/drive/v3/files/1_87IVMfqeYZNEz6NlGjc2WBElQi1iDhC?acknowledgeAbuse=true&alt=media returned \"This file has not been flagged for abuse.\". Details: \"This file has not been flagged for abuse.\">","type":"HttpError"}}
+{"code":53,"data":{"RepoID":"1","driveID":"1Bke5kEa1ToGUeRh-g2_2xyhqbVQK9_pt","fileName":"3.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
 
 
-{"code":61,"data":{"RepoID":"1","folderData":{"D:\\Major Project\\fhs\\Testing":"1iW7KZnT85zelxjrE5KnTVg3ho65qpaOp","D:\\Major Project\\fhs\\Testing\\asd22":"1umS3NmsAFB4nc4MnTXcHoneI4gtr8O06","D:\\Major Project\\fhs\\Testing\\asd22\\asd":"1savtv465so6B7KjPw8C9Hisl8X6meywy"}}}
+{"code":53,"data":{"RepoID":"1","driveID":"1hZqjSQQJnN8ENWFrYdz8y7bpuDUYopjQ","fileName":"44.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
 
 
-{"code":65,"data":{"RepoID":"1","fileName":"44.txt","filePath":"D:\\Major Project\\fhs\\Testing\\asd22\\44.txt","driveID":"1_87IVMfqeYZNEz6NlGjc2WBElQi1iDhC","status":"RUNNING","parentDriveID":"1umS3NmsAFB4nc4MnTXcHoneI4gtr8O06"},"exception":{"msg":"<HttpError 403 when requesting https://www.googleapis.com/drive/v3/files/1_87IVMfqeYZNEz6NlGjc2WBElQi1iDhC?acknowledgeAbuse=true&alt=media returned \"This file has not been flagged for abuse.\". Details: \"This file has not been flagged for abuse.\">","type":"HttpError"}}
+{"code":53,"data":{"RepoID":"1","driveID":"1p6vFTDNm2sfTeMMeEKG5aKXhoDH90Wgx","fileName":"43.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"1","driveID":"1JwLRE6bVdVA9teEHWMbCKDfwKojP72UK","fileName":"45.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"1","driveID":"15-oetPodtIhQW8Z04dcsAMdDAhAcCQFj","fileName":"1.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"1","driveID":"1D9UMog6A5TqOVQ2h7czniexl5EFule-H","fileName":"2.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"1","driveID":"1OchILQoAxdcH8UrwZxWaHCMjKM7pVD2n","fileName":"3.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":13,"data":["*.py","DrivePart\\**",".git\\**","__pycache__\\**",".uspignore",".usp","node_modules",".gitignore"],"msg":"Ignore Data Loaded"}
+
+
+{"code":11,"msg":"Repository Initialization Completed","data":{"folderName":"Testing","localPath":"D:\\Major Project\\fhs\\Testing"}}
+
+
+{"code":8,"data":{"total":1,"latest":{"fileName":"1615908690.json","RepositoryPath":"D:\\Major Project\\fhs\\Testing","totalFiles":7,"totalFolders":3,"fileHash":"fa500877b8ce4dce","hashType":"xxh3_64"}},"msg":"Commited Data Successfully"}
+
+
+{"code":61,"data":{"RepoID":"2","folderData":{"D:\\Major Project\\fhs\\Testing":"1qjd570S9h3vdP-g2LoeEUNFAVruJ-Daa","D:\\Major Project\\fhs\\Testing\\asd22":"1F1HRFXs0SiYWUvOwO1iPITfhj0vD9Y4S","D:\\Major Project\\fhs\\Testing\\asd22\\asd":"1BHSvpckQe-ZSdKgbpveoRMVvME2svnkl"}}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"14JpvoocRy-j_mQCi0a_GEAme38U4uKko","fileName":"44.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"1Em4_Ubg6Y6sChhWA8ogSQg01Iu4tY9Gd","fileName":"3.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"14u6577JcBI7HfH3MXoYAHOikljXRgXPE","fileName":"43.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"132WHwh1108P4mb5XgQJNW9JqLZNX8o5C","fileName":"45.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"1jXRx3tHx01mCWaN6lSlMS4E6BoARJNWU","fileName":"1.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"16O66LVsw-DR0EYLKr3hP1jcKQ7S0QzcQ","fileName":"2.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"1qQ-Lc-9Y2kw1UPbuHFxiV-pJa35VGKNZ","fileName":"3.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":61,"data":{"RepoID":"1","folderData":{"D:\\Major Project\\fhs\\Testing":"1hq3C21DkeDAjIZEGo_IHGd5DOKNEiP_a","D:\\Major Project\\fhs\\Testing\\asd22":"18YeIJJjRoZpKV2Bu2RadO81W_oZFVR9C","D:\\Major Project\\fhs\\Testing\\asd22\\asd":"1sylnWuuzgkWMCTX4zzaWei5Ltcs-iQV-"}}}
+
+
+{"code":53,"data":{"RepoID":"1","driveID":"1ZS5TB6cPo98i53x6s51ajrzLFz6JaCIx","fileName":"1.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"1","driveID":"1l2Il5T1G2Lec3-TmzfbJS-7GkEceD6_V","fileName":"3.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"1","driveID":"10kmhwvKJ_RZVOGlczHdLoV1_t29Jdkn6","fileName":"3.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"1","driveID":"1sVqPLh6EH_eAogfxkiDJQbTsjEqPXPd7","fileName":"44.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"1","driveID":"1Ld0VICw61C26tYsRd3HDyQKe2oXtqhWa","fileName":"2.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"1","driveID":"1SMxO3-JbB76ob-eMgZLaduNaxladjNtj","fileName":"43.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"1","driveID":"12U-nCDLEEEV7_FXy4KFQWoNXkb2W8rIM","fileName":"45.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":13,"data":["*.py","DrivePart\\**",".git\\**","__pycache__\\**",".uspignore",".usp","node_modules",".gitignore"],"msg":"Ignore Data Loaded"}
+
+
+{"code":11,"msg":"Repository Initialization Completed","data":{"folderName":"Testing","localPath":"D:\\Major Project\\fhs\\Testing"}}
+
+
+{"code":8,"data":{"total":1,"latest":{"fileName":"1615908736.json","RepositoryPath":"D:\\Major Project\\fhs\\Testing","totalFiles":7,"totalFolders":3,"fileHash":"fa500877b8ce4dce","hashType":"xxh3_64"}},"msg":"Commited Data Successfully"}
+
+
+{"code":13,"data":["*.py","DrivePart\\**",".git\\**","__pycache__\\**",".uspignore",".usp","node_modules",".gitignore"],"msg":"Ignore Data Loaded"}
+
+
+{"code":11,"msg":"Repository Initialization Completed","data":{"folderName":"Testing","localPath":"D:\\Major Project\\fhs\\Testing"}}
+
+
+{"code":8,"data":{"total":1,"latest":{"fileName":"1615908737.json","RepositoryPath":"D:\\Major Project\\fhs\\Testing","totalFiles":7,"totalFolders":3,"fileHash":"fa500877b8ce4dce","hashType":"xxh3_64"}},"msg":"Commited Data Successfully"}
+
+
+{"code":13,"data":["*.py","DrivePart\\**",".git\\**","__pycache__\\**",".uspignore",".usp","node_modules",".gitignore"],"msg":"Ignore Data Loaded"}
+
+
+{"code":8,"data":{"total":1,"latest":{"fileName":"1615908737.json","RepositoryPath":"D:\\Major Project\\fhs\\Testing","totalFiles":7,"totalFolders":3,"fileHash":"fa500877b8ce4dce","hashType":"xxh3_64"}},"msg":"Commited Data Successfully"}
+
+
+{"code":11,"msg":"Repository Initialization Completed","data":{"folderName":"Testing","localPath":"D:\\Major Project\\fhs\\Testing"}}
+
+
+{"code":61,"data":{"RepoID":"3","folderData":{"D:\\Major Project\\fhs\\Testing":"1byDUFLeQU-vS8JC8o3ufkmUASwWu6xoK","D:\\Major Project\\fhs\\Testing\\asd22":"1n078n7vDzuAsyrBWi-m_BlQv74_T_Ode","D:\\Major Project\\fhs\\Testing\\asd22\\asd":"1PSNh13nwQIWWhXp5L30b6PH0mKbRD887"}}}
+
+
+{"code":61,"data":{"RepoID":"4","folderData":{"D:\\Major Project\\fhs\\Testing":"1occKVxOnlNTF2WnI57IG3PdfU4wMyudO","D:\\Major Project\\fhs\\Testing\\asd22":"1hJGQqvI4raTEaUpOXSYVkiDiyZ6rNeXW","D:\\Major Project\\fhs\\Testing\\asd22\\asd":"1lrUlMWIlv3SdlCh6n_9_htnU2zrGx0ky"}}}
+
+
+{"code":61,"data":{"RepoID":"2","folderData":{"D:\\Major Project\\fhs\\Testing":"1dBTvhqjz9Y2tzCrPZnNSAcQ8ZLdmJLkn","D:\\Major Project\\fhs\\Testing\\asd22":"1kzTST9pX1vVwaBRi_54CNiYgZZXgepiM","D:\\Major Project\\fhs\\Testing\\asd22\\asd":"1jjnMN57baFZdaAwZT2IoWZM2S5hC3_FY"}}}
+
+
+{"code":53,"data":{"RepoID":"3","driveID":"1bt_ruOFJm_0Mtgd1v689pZ_nDgSRUREC","fileName":"3.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"3","driveID":"1gmB0xr7NaDz60KosYv2xOYru2y-aaLnn","fileName":"3.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"3","driveID":"1F1F7DWlLL0OXOB8o2R8oY5fBGxk-n3Mm","fileName":"1.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"3","driveID":"1zG2ROnx7IxC4-VU1YmO-b799flyiDXls","fileName":"43.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"3","driveID":"1tqna3jVkYhmSsBVgyEi7QhgHuJGlurh3","fileName":"2.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"3","driveID":"1RfZicuuEDrmudZgneCeFH3n4yAflUnhI","fileName":"44.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"15b0CS_vw3P8T2C7YHewvUlZ4TAI9iEer","fileName":"3.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"1esWHZyYIozKDbTjPRyGf74hf2E_wt_bT","fileName":"45.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"184_T-2oELD5_Csm9QiFABlhY7nJXogFN","fileName":"44.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"1SkyciX5fEQnZQ5UQhG5Ali06z40guORa","fileName":"43.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"1xkvL1LArTVQVRUG1xMEkzGUegUC-PizX","fileName":"3.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"18zM-pfIW9QZyOtoGiecKf5QE0FmkVmWF","fileName":"1.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"2","driveID":"1jMzVIF3QadLmseLawoKdQ0Khmuf_OSh7","fileName":"2.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"3","driveID":"1yWOvy3tnVmhmqaZiz2MNJu-nnVhC7-Qb","fileName":"45.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"4","driveID":"1dTRoS0zq_hnTXlTgyp06ifaAUtxE53-m","fileName":"3.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"4","driveID":"1lswyhRaDR7BFwgbRet5ax0ep7I9v1KN-","fileName":"43.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"4","driveID":"1TSE22fEZ1r6nZk4J9U7Y6J75ysoKf9rf","fileName":"45.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"4","driveID":"167ukL8xhmyHZ0GB5e4Ut1Pqs9ZmL_lmk","fileName":"44.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22"}}
+
+
+{"code":53,"data":{"RepoID":"4","driveID":"1aTmpHkZ7f1ZeBOO_sRH4VEHcHW71tljv","fileName":"3.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"4","driveID":"1O_62TpdPzS04Fcn_NaO4GGZWpwhAIZoi","fileName":"1.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
+
+
+{"code":53,"data":{"RepoID":"4","driveID":"1hXT1pQsecMR1v4qbxI-jTGol_cFsjRJi","fileName":"2.txt","parentPath":"D:\\Major Project\\fhs\\Testing\\asd22\\asd"}}
 
 

@@ -59,12 +59,12 @@ const shouldShowRepo = (
   FinishedQueue: FinishedQueueInterface,
   RepoID: number | string
 ) => {
-  return (
-    !DoingQueue_.find((val) => val.RepoID === RepoID) &&
-    !DoingQueue_.length &&
-    !(WaitingQueue[RepoID] && WaitingQueue[RepoID].length) &&
-    !(FinishedQueue[RepoID] && FinishedQueue[RepoID].length)
-  );
+  return true;
+  // return (
+  //   DoingQueue_.find((val) => val.RepoID == RepoID) == -1 ||
+  //   !WaitingQueue[RepoID]?.length ||
+  //   !FinishedQueue[RepoID]?.length
+  // );
 };
 
 const CustomSpin = ({ children, RepoData }: any) => {
@@ -191,60 +191,64 @@ const UploadsDrawer = () => {
 
   return (
     <Collapse bordered={false} style={{ margin: 0, padding: 0, width: 300 }}>
-      {Object.keys(RepoData).map((RepoID) =>
-        shouldShowRepo(
-          uploadingQueue,
-          uploadWatingQueue,
-          uploadFinishedQueue,
-          RepoID
-        ) ? null : (
-          <Collapse.Panel header={UserRepos[RepoID].displayName} key={nanoid()}>
-            <CustomSpin RepoData={RepoData} key={nanoid()}>
-              {uploadingQueue.length ? (
-                <List
-                  dataSource={uploadingQueue}
-                  renderItem={(data) =>
-                    !(data.RepoID === RepoID) ? null : (
-                      <List.Item.Meta
-                        avatar={getStatusIcon(data.status)}
-                        title={data.fileName}
-                      />
-                    )
-                  }
-                />
-              ) : null}
+      {Object.keys(RepoData).map(
+        (RepoID) =>
+          shouldShowRepo(
+            uploadingQueue,
+            uploadWatingQueue,
+            uploadFinishedQueue,
+            RepoID
+          ) && (
+            <Collapse.Panel
+              header={UserRepos[RepoID].displayName}
+              key={nanoid()}
+            >
+              <CustomSpin RepoData={RepoData} key={nanoid()}>
+                {uploadingQueue.length ? (
+                  <List
+                    dataSource={uploadingQueue}
+                    renderItem={(data) =>
+                      !(data.RepoID === RepoID) ? null : (
+                        <List.Item.Meta
+                          avatar={getStatusIcon(data.status)}
+                          title={data.fileName}
+                        />
+                      )
+                    }
+                  />
+                ) : null}
 
-              {/* <Divider /> */}
-              {(uploadWatingQueue[RepoID] &&
-                uploadWatingQueue[RepoID].length && (
-                  <List
-                    dataSource={uploadWatingQueue[RepoID]}
-                    renderItem={(data) => (
-                      <List.Item.Meta
-                        avatar={getStatusIcon(data.status)}
-                        title={data.fileName}
-                      />
-                    )}
-                  />
-                )) ||
-                null}
-              {/* <Divider /> */}
-              {(uploadFinishedQueue[RepoID] &&
-                uploadFinishedQueue[RepoID].length && (
-                  <List
-                    dataSource={uploadFinishedQueue[RepoID]}
-                    renderItem={(data) => (
-                      <List.Item.Meta
-                        avatar={getStatusIcon('FINISHED')}
-                        title={data.fileName}
-                      />
-                    )}
-                  />
-                )) ||
-                null}
-            </CustomSpin>
-          </Collapse.Panel>
-        )
+                {/* <Divider /> */}
+                {(uploadWatingQueue[RepoID] &&
+                  uploadWatingQueue[RepoID].length && (
+                    <List
+                      dataSource={uploadWatingQueue[RepoID]}
+                      renderItem={(data) => (
+                        <List.Item.Meta
+                          avatar={getStatusIcon(data.status)}
+                          title={data.fileName}
+                        />
+                      )}
+                    />
+                  )) ||
+                  null}
+                {/* <Divider /> */}
+                {(uploadFinishedQueue[RepoID] &&
+                  uploadFinishedQueue[RepoID].length && (
+                    <List
+                      dataSource={uploadFinishedQueue[RepoID]}
+                      renderItem={(data) => (
+                        <List.Item.Meta
+                          avatar={getStatusIcon('FINISHED')}
+                          title={data.fileName}
+                        />
+                      )}
+                    />
+                  )) ||
+                  null}
+              </CustomSpin>
+            </Collapse.Panel>
+          )
       )}
     </Collapse>
   );

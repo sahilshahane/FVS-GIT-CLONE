@@ -53,7 +53,12 @@ def startGoogleLogin(task=None):
 
 def Init_Dir(task):
   DIR_PATH = task["data"]["path"]
-  main.initialize(CCODES,APP_SETTINGS,DIR_PATH,force = task.get('force'))
+  if(task['data'].get('force')):
+    try:
+      shutil.rmtree(os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_FOLDER_PATH"]))
+    except:pass
+
+  main.initialize(CCODES,APP_SETTINGS,DIR_PATH,force = task['data'].get('force'))
 
 
 def uploadFile(task):

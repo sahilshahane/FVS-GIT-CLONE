@@ -8,13 +8,11 @@ import User_Repository_Reducer, {
 } from './UserRepositorySlicer';
 import SynchronizationSlice, {
   SYNC_DATA_STRUCTURE,
-  SYNC_ACTIONS,
   allocateRepoData,
-  updateUploadingQueue,
   addUploadFinishedQueue,
   ReAddFailedUpload,
   addDownloadFinishedQueue,
-  ReAddFailedDownload
+  ReAddFailedDownload,
 } from './SynchronizationSlicer';
 import {
   LOAD_UPLOADS_FROM_REPOSITORY,
