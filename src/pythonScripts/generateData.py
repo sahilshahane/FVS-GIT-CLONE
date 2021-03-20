@@ -1,25 +1,21 @@
-import os,json
-from typing import Dict
-
-import orjson
+import os
+from sqlite3.dbapi2 import Connection
 from HashGen import generateFileHash
 
 class generateMetaData():
     ignore = None
     totalFiles = 0
     totalFolders = 0
-    FILE_NAME = None
-    FILE_PATH = None
-    HASH = None
+    DB_CONNECTION: Connection = None
     DIR_PATH = None
-    GFID_DATA = None
+    HASH = None
 
-    def __init__(self,DIR_PATH,FILE_NAME,HASH="md5",ignore=None):
-        self.FILE_NAME = FILE_NAME
-        self.FILE_PATH = os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_DATA_FOLDER_PATH"],FILE_NAME)
+    def __init__(self,CCODES, DIR_PATH, DB_CONNECTION:Connection ,HASH="md5",ignore=None):
         self.ignore = ignore
-        self.HASH = HASH
+        self.DB_CONNECTION = DB_CONNECTION
         self.DIR_PATH = DIR_PATH
+        self.HASH = HASH
+        self.generate(CCODES)
 
     def ignoreFunc(self,ParentDirectory,folderName=None,fileName=None):
       uspFolderPath = os.path.join(self.DIR_PATH,os.environ["DEFAULT_REPO_FOLDER_PATH"])
@@ -46,76 +42,60 @@ class generateMetaData():
       return False
 
     def generate(self,CCODES,indent=None):
-      with open(self.FILE_PATH,'w') as file_:
-          file_.write("{")
-          DATA = dict()
-          self.GFID_DATA = dict()
+      DB_CURSOR = self.DB_CONNECTION.cursor()
+     
+      for directory,folders,files in os.walk(self.DIR_PATH):
+        folderName = os.path.basename(directory)
 
-          for directory,folders,files in os.walk(self.DIR_PATH):
+        if self.ignoreFunc(directory,folderName): continue
+        
+        # FILTER FILES WITH IGNORE DATA [data input = .uspignore file]
+        files = [fileName for fileName in files if not (self.ignoreFunc(directory,fileName=fileName))]
 
-              if self.ignoreFunc(directory,folderName=os.path.basename(directory)): continue
+        fileQuery = '''INSERT INTO files 
 
-              # FILTER FOLDERS WITH IGNORE DATA [data input = .uspignore file]
-              folders = [folderName for folderName in folders if not self.ignoreFunc(directory,folderName=folderName)]
+                        (name, 
+                        folder_id, 
+                        fileHash, 
+                        modified_time,
+                        downloaded) 
 
-              # FILTER FILES WITH IGNORE DATA [data input = .uspignore file]
-              files = [fileName for fileName in files if not (self.ignoreFunc(directory,fileName=fileName))]
+                        VALUES (?,?,?,?,?)
+                    '''
 
-              self.GFID_DATA[directory] = {"files":files, "folders": folders}
+        self.totalFolders+=1
 
-              for fileName in files:
-                  filePath = os.path.join(directory, fileName)
+        folderQuery = '''INSERT INTO folders 
 
-                  DATA = {
-                      filePath : {
-                        "fileName":fileName,
-                        "hash":generateFileHash(filePath,self.HASH),
-                        "dirLoc":directory,
-                      }
-                  }
+                          (name,
+                            folder_id,
+                            parentPath)
 
+                          VALUES (?,?,?)
+                      '''
 
-                  DATA = json.dumps(DATA,indent=indent)[1:-1]
+        parentDirPath = os.path.dirname(directory)
+        
+        # FIX FOR ROOT FOLDER's PARENT NOT SHOWING UP
+        # if(not parentDirPath): parentDirPath = directory
 
-                  file_.write(DATA+",")
+        DB_CURSOR.execute(folderQuery,(folderName,self.totalFolders,parentDirPath))
+        
+        for fileName in files:
+          filePath = os.path.join(directory, fileName)
+          modified_time = os.path.getmtime(filePath)
+          fileHash = generateFileHash(filePath,self.HASH)
+          
+          DB_CURSOR.execute(fileQuery,(fileName,self.totalFolders,fileHash,modified_time,1))
 
-                  del DATA
+          self.totalFiles+=1
 
-                  self.totalFiles+=1
-
-          self.totalFolders = len(self.GFID_DATA)
-          file_.seek(file_.tell() - 1, os.SEEK_SET)
-          file_.write("}")
-          file_.close()
+      DB_CURSOR.close()
+      
+      self.DB_CONNECTION.commit()
 
     def getInfo(self):
         return {
-            "fileName":self.FILE_NAME,
-            "RepositoryPath":self.DIR_PATH,
-            "totalFiles":self.totalFiles,
-            "totalFolders":self.totalFolders,
-            "fileHash":generateFileHash(self.FILE_PATH),
-            "hashType":self.HASH
+          "totalFiles":self.totalFiles,
+          "totalFolders":self.totalFolders,
         }
-
-    def convertToGFID_data(self):
-
-      for (ParentDir,valueDict) in self.GFID_DATA.items():
-        for (index, fileName) in enumerate(valueDict["files"]):
-          valueDict["files"][index] = {
-            "fileName": fileName,
-            "isDownloaded": True
-          }
-
-        # NO NEED FOR FOLDERS BECAUSE, OUR MAIN KEY / PROPERTY IS FOLDER PATH
-        # for (index, folderName) in enumerate(valueDict["folders"]):
-        #   valueDict["folders"][index] = {
-        #     "name": folderName,
-        #     "isUpdated": False
-        #   }
-
-        self.GFID_DATA[ParentDir] = valueDict
-
-
-      return self.GFID_DATA
-

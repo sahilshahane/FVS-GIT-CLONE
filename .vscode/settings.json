@@ -23,37 +23,6 @@
     "npm-debug.log.*": true,
     "test/**/__snapshots__": true,
     "yarn.lock": true,
-    "*.{css,sass,scss}.d.ts": true,
-    "**/__pycache__": true,
-    "src/pythonScripts/.venv": true
-  },
-  "git.ignoreLimitWarning": true,
-  "files.exclude": {
-    "**/.git": true,
-    "**/.svn": true,
-    "**/.hg": true,
-    "**/CVS": true,
-    "**/.DS_Store": true,
-    "**/.git/objects/**": true,
-    "**/.git/subtree-cache/**": true,
-    "**/node_modules": true,
-    ".editorconfig": true,
-    ".eslintignore": true,
-    ".eslintrc.js": true,
-    ".gitattributes": true,
-    ".npmrc": true,
-    "babel.config.js": true,
-    "**/package-lock.json": true,
-    "**/yarn.lock": true,
-    "assets/icon.icns": true,
-    "assets/icon.ico": true,
-    "assets/icon.png": true,
-    "assets/icon.svg": true,
-    ".erb": false,
-    "src/main.prod.js.LICENSE.txt": true,
-    "**/__pycache__": true,
-    "src/pythonScripts/.venv": true
-  },
-  "python.formatting.provider": "autopep8",
-  "python.pythonPath": "src\\pythonScripts\\.venv\\Scripts\\python.exe"
+    "*.{css,sass,scss}.d.ts": true
+  }
 }

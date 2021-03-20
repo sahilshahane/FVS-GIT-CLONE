@@ -1,45 +1,46 @@
 import './App.global.css';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { render } from 'react-dom';
 import { Provider, useSelector } from 'react-redux';
 import {
   HashRouter as Router,
   Switch,
   Route,
+  Redirect,
   useHistory,
 } from 'react-router-dom';
-import store from './Pages/modules/Redux/store';
-import log from './Pages/modules/log';
-import { CurrentSettings } from './Pages/modules/Redux/AppSettingsSlicer';
+import { ipcRenderer } from 'electron';
+import Store, { store } from './Redux/store';
 import App from './App';
 import Login from './Pages/Login';
-import { CCODES } from './Pages/modules/get_AppData';
+import GlobalScriptHandler from './modules/GlobalHandler';
 
 // Top Routes
 const MAIN = () => {
-  log('Rendering Routes.tsx');
   const history = useHistory();
-  const Appsettings = useSelector(CurrentSettings);
 
   useEffect(() => {
-    if (!Appsettings.cloudLoginStatus.googleDrive) {
-      // eslint-disable-next-line react/prop-types
-      history.push('/login');
-    } else {
-      history.push('/');
-    }
+    ipcRenderer.on('scheduler-response', (evt, reposnse) =>
+      GlobalScriptHandler(reposnse, history)
+    );
   }, []);
+
+  const isGoogleLoggedIN = useSelector(
+    (state: store) => state.AppSettings.cloudLoginStatus.googleDrive
+  );
 
   return (
     <Switch>
       <Route exact path="/login" component={Login} />
-      <Route path="*" component={App} />
+      <Route path="*">
+        {isGoogleLoggedIN ? <App /> : <Redirect to="/login" />}
+      </Route>
     </Switch>
   );
 };
 
 render(
-  <Provider store={store}>
+  <Provider store={Store}>
     <Router>
       <MAIN />
     </Router>
