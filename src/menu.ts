@@ -5,6 +5,7 @@ import {
   BrowserWindow,
   MenuItemConstructorOptions,
 } from 'electron';
+import fs from 'fs-extra';
 import { Create_PythonScheduler } from './main.dev';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {

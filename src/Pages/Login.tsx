@@ -1,19 +1,10 @@
 /* eslint-disable default-case */
 import React, { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { useHistory } from 'react-router-dom';
 import { Modal, Col, Button, Space } from 'antd';
-import {
-  saveGoogleLogin,
-  saveRepositorySettings,
-} from './modules/Redux/AppSettingsSlicer';
-import log from './modules/log';
-import {
-  CCODES,
-  setSchedulerHandler,
-  sendSchedulerTask,
-  Scheduler,
-} from './modules/get_AppData';
+import { Redirect } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { CCODES, sendSchedulerTask } from '../modules/get_AppData';
+import { store } from '../Redux/store';
 
 const showWarning = async () => {
   Modal.info({
@@ -35,39 +26,18 @@ const showWarning = async () => {
 };
 
 const Login = () => {
-  log('Rendering Login.tsx');
-  const dispatch = useDispatch();
-  const history = useHistory();
-
-  const SaveLoginInfo = (INFO_OBJ: any) => {
-    dispatch(saveGoogleLogin(INFO_OBJ));
-    dispatch(saveRepositorySettings());
-    history.push('/');
-  };
-
-  const SCRIPT_HANDLER = (data: any) => {
-    switch (data.code) {
-      case CCODES.GOOGLE_LOGIN_SUCCESS:
-        // eslint-disable-next-line no-case-declarations
-        const USER_INFO = data.data;
-        SaveLoginInfo(USER_INFO);
-        Modal.destroyAll();
-        Scheduler.removeAllListeners('message');
-        break;
-      case CCODES.GOOGLE_LOGIN_FAILED:
-        break;
-    }
-  };
-
   const startLogin = () => {
     showWarning();
     sendSchedulerTask({ code: CCODES.START_GOOGLE_LOGIN });
   };
-
+  const isGoogleLoggedIN = useSelector(
+    (state: store) => state.AppSettings.cloudLoginStatus.googleDrive
+  );
   useEffect(() => {
-    setSchedulerHandler(SCRIPT_HANDLER);
-  }, []);
-
+    if (isGoogleLoggedIN) {
+      Modal.destroyAll();
+    }
+  }, [isGoogleLoggedIN]);
   return (
     <div
       style={{
@@ -79,6 +49,7 @@ const Login = () => {
         alignItems: 'center',
       }}
     >
+      {isGoogleLoggedIN && <Redirect to="/" />}
       <Col
         className="component-bg"
         style={{

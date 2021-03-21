@@ -5,8 +5,10 @@ from pathlib import Path
 
 def GET_APP_FOLDER_PATH():
   isDev = os.environ.get("development",False)
-
-  if(isDev):
+  isGUI = os.environ.get("isGUI",False)
+  if(isDev and not isGUI):
+    return os.path.join('..','..',"assets", "installation", ".usp")
+  elif(isDev):
     return os.path.join("assets", "installation", ".usp")
   else:
     return os.path.join(Path.home(),".usp")

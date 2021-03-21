@@ -12,6 +12,10 @@ export default {
   module: {
     rules: [
       {
+        test: /\.node$/,
+        loader: 'node-loader',
+      },
+      {
         test: /\.tsx?$/,
         exclude: /node_modules/,
         use: {

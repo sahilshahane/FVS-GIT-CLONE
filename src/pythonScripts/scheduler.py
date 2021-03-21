@@ -1,12 +1,10 @@
-from os import path
 import sys
 import os
 import argparse
-import orjson
 import threading
-import shutil
-
-from utils import output
+from typing import Dict
+import orjson
+from utils import output, loadJSON
 from LoadData import LOAD_COMMUNICATION_CODES,LOAD_APP_SETTINGS,GET_APP_FOLDER_PATH
 from DrivePart import GoogleDrive
 import main
@@ -14,24 +12,32 @@ import main
 args_const = argparse.ArgumentParser()
 args_const.add_argument('-dev',"--development", action="store_true")
 args_const.add_argument('-node',"--isGUI", action="store_true")
-args = args_const.parse_args()
+launchArgs = args_const.parse_args()
 
-APP_FOLDER_PATH = None # APP's Main Folder, Where we are going to store App related Files # APP's Main Folder, Where we are going to store App related Files
 CCODES = None # COMMUNICATION CODES
 APP_SETTINGS = None # APP SETTINGS
 
-if args.development: os.environ["development"] = "1"
+if launchArgs.development: os.environ["development"] = "1"
+if launchArgs.isGUI: os.environ["isGUI"] = "1"
 
 CCODES = LOAD_COMMUNICATION_CODES()
 APP_SETTINGS = LOAD_APP_SETTINGS()
 
 os.environ["APP_HOME_PATH"] = GET_APP_FOLDER_PATH()
 os.environ["DEFAULT_REPO_FOLDER_PATH"] = ".usp"
-os.environ["DEFAULT_REPO_DATA_FOLDER_PATH"] = os.path.join(os.environ["DEFAULT_REPO_FOLDER_PATH"],"data")
-os.environ["DEFAULT_REPO_LOG_FOLDER_PATH"] =  os.path.join(os.environ["DEFAULT_REPO_FOLDER_PATH"],"logs")
-os.environ["DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH"] =  os.path.join(os.environ["DEFAULT_REPO_FOLDER_PATH"],"c_storage")
-os.environ["DEFAULT_REPO_SETTINGS_FILE_PATH"] = os.path.join(os.environ["DEFAULT_REPO_FOLDER_PATH"],"repositorySettings.json")
-os.environ["DEFAULT_REPO_COMMIT_FILE_PATH"] = os.path.join(os.environ["DEFAULT_REPO_FOLDER_PATH"],"commit.json")
+os.environ["DEFAULT_DB_FILE_NAME"] = "database.db"
+os.environ["TESTING_FOLDER"] =  os.path.join('..','..',"Testing")
+
+def defaultWrapper(callback, task:Dict):
+  response = {}
+
+  try:
+    response = callback(task)
+  except Exception as e:
+    response = {"code":task["code"], "failed": True,  "exception": {"msg":str(e),"type": str(e.__class__.__name__)}}
+    if(task.get('data')): response["data"] = task["data"]
+
+  output(response)
 
 GDRIVE_SERVICE = None
 
@@ -49,12 +55,22 @@ def getGDriveService():
 def startGoogleLogin(task=None):
   GoogleDrive.startLogin(CCODES)
   userInfo = GoogleDrive.getUSERInfo(CCODES)
-  output({"code":CCODES["GOOGLE_LOGIN_SUCCESS"],"msg":"Google Login Was Successfull!","data": userInfo})
+  return {"code":CCODES["GOOGLE_LOGIN_SUCCESS"],"msg":"Google Login Was Successfull!","data": userInfo}
 
 def Init_Dir(task):
-  DIR_PATH = task["data"]["path"]
-  main.initialize(CCODES,APP_SETTINGS,DIR_PATH,force = task.get('force'))
+  DIR_PATH = task["data"]["localPath"]
 
+  try:
+
+    main.initialize(CCODES,APP_SETTINGS,DIR_PATH,force = task['data'].get('force'))
+
+    # DEFAULT REPOSITORY NAME
+    task["data"]['RepositoryName'] = os.path.basename(DIR_PATH)
+
+    # FINALLY NOTIFY THE CALLER / GUI / NODEjs
+    return {"code":CCODES["INIT_DONE"],"msg":"Repository Initialization Completed","data": task["data"]}
+  except FileExistsError as e:
+    return {"code":CCODES["INIT_FAILED"],"msg":"Repository Initialization Failed","data":task["data"] , "exception":{"code":e.errno,"type": e.__class__.__name__}}
 
 def uploadFile(task):
   RepoID = task["data"]["RepoID"]
@@ -66,17 +82,17 @@ def uploadFile(task):
   try:
     driveID = GoogleDrive.uploadFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID)
 
-    output({
+    return {
     "code":CCODES["UPLOAD_SUCCESS"],
     "data" : {
       "RepoID" : RepoID,
       "driveID" : driveID,
       "fileName" : fileName,
       "parentPath" : os.path.dirname(filePath)
-    }})
+    }}
 
   except Exception as e:
-    output({ "code":CCODES["UPLOAD_FAILED"], "data" : task["data"], "exception": {"msg":str(e),"type": str(e.__class__.__name__)}})
+    return { "code":CCODES["UPLOAD_FAILED"], "data" : task["data"], "exception": {"msg":str(e),"type": str(e.__class__.__name__)}}
 
 def downloadFile(task):
   RepoID = task["data"]["RepoID"]
@@ -87,29 +103,29 @@ def downloadFile(task):
   try:
     GoogleDrive.downloadFile(CCODES, driveID, fileName, filePath, RepoID)
 
-    output({
+    return {
       "code": CCODES["DOWNLOAD_SUCCESS"],
       "data": {
         "RepoId": RepoID,
         "fileName" : fileName,
         "parentPath" : os.path.dirname(filePath)
       }
-    })
+    }
   except Exception as e:
-    output({
+    return {
       "code": CCODES["DOWNLOAD_FAILED"],
       "data": task["data"],
       "exception": {
         "msg":str(e),
         "type": str(e.__class__.__name__)
       }
-    })
+    }
 
 def generateGDriveID(task):
   count = task["data"]["count"]
   RepoID = task["data"]["RepoID"]
   ids = GoogleDrive.generateIDs(CCODES,count)
-  output({"code":CCODES["GENERATE_IDS"], "data" : {"ids" : ids, "RepoID" : RepoID}})
+  return {"code":CCODES["GENERATE_IDS"], "data" : {"ids" : ids, "RepoID" : RepoID}}
 
 def allocateIDs(task):
   DIR_PATH = task["data"]["path"]
@@ -134,9 +150,9 @@ def createRepoFolders(task):
   folderData = task["data"]["folderData"]
   try:
     folderData = GoogleDrive.createRepoFolders(CCODES,RepoID,rootFolderName, rootFolderPath, folderData)
-    output({"code": CCODES["FOLDERS_CREATED"], "data": {"RepoID" : RepoID, "folderData":folderData}})
+    return {"code": CCODES["FOLDERS_CREATED"], "data": {"RepoID" : RepoID, "folderData":folderData}}
   except Exception as e:
-    output({"code": CCODES["FAILED_TO_CREATE_FOLDERS"], "data": {"RepoID" : RepoID}, "exception" : {"msg" : str(e), "type" :  str(e.__class__.__name__)}})
+    return {"code": CCODES["FAILED_TO_CREATE_FOLDERS"], "data": {"RepoID" : RepoID}, "exception" : {"msg" : str(e), "type" :  str(e.__class__.__name__)}}
 
 TASKS_DEFINITIONS = {
   CCODES["START_GOOGLE_LOGIN"] : startGoogleLogin,
@@ -150,18 +166,9 @@ TASKS_DEFINITIONS = {
 
 def addTask(task):
   # TASK_QUEUE.append(TASKS_DEFINITIONS[task.code])
-  threading.Thread(target=TASKS_DEFINITIONS[task["code"]],args=[task]).start()
 
-def nodeMain():
-  # MAIN LOOP
-  while(True):
-    task = sys.stdin.readline()[:-1]
+  threading.Thread(target=defaultWrapper,args=[TASKS_DEFINITIONS[task["code"]],task]).start()
 
-    try:
-      task = orjson.loads(task)
-      if(task): addTask(task)
-    except:
-      pass
 
 def aloneMain():
   DIR_PATH = os.path.abspath("Testing")
@@ -169,32 +176,24 @@ def aloneMain():
   # os.environ["SHOW_NODE_OUTPUT"] = 'sdf'
 
   task = {
-    "data": {"filePath": "/home/uttkarsh/Programming/Delete/5/node_modules/notepadIG.exe", "fileName": "insideNodeM.txt", "driveID": "1brPUqYUgntRrZLwZWcjhTOfkzJ7t9svA", "RepoID": "101"},
-    # "data":{"folderPath":DIR_PATH, "RepoID":1,"RepoName":"Yo Yo Bantai", "folderData":{
-    # DIR_PATH : {
-    #   "driveID" : None
-    # },
-    # os.path.join(DIR_PATH,'asd22') : {
-    #   "driveID" : None
-    # },
-    # os.path.join(DIR_PATH,'asd22','asd') : {
-    #   "driveID" : None
-    # },
-    # }}
+    "data": {"path" : "Testing", "force": True},
+    "code": CCODES["INIT_DIR"]
   }
 
-  # try:
-  #   shutil.rmtree(os.path.join(DIR_PATH,'.usp'))
-  # except Exception:
-  #   pass
+  addTask(task)
 
-  # Init_Dir(task)
-  # allocateIDs(task)
-  # uploadRepository(task)
-  # createRepoFolders(task)
-  downloadFile(task)
+def GUI_LAUNCH():
+  f = open('test.txt',"w+")
+  # MAIN LOOP
+  while(True):
+    task = sys.stdin.readline()[:-1]
+    try:
+      task = orjson.loads(task)
+      if(task): addTask(task)
+    except:
+      pass
 
-if(args.isGUI):
-  nodeMain()
-elif(not args.isGUI and args.development):
+if(launchArgs.isGUI):
+  GUI_LAUNCH()
+elif(not launchArgs.isGUI and launchArgs.development):
   aloneMain()

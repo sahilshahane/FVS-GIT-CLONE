@@ -17,7 +17,6 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { PythonShell } from 'python-shell';
 import fs from 'fs';
-import logApp from './Pages/modules/log';
 
 export default class AppUpdater {
   constructor() {
@@ -50,7 +49,8 @@ const Load_CCODES = () => {
     VALUE.CCODES_PATH = path.join(APP_HOME_PATH, 'Communication_Codes.json');
     VALUE.CCODES = JSON.parse(fs.readFileSync(VALUE.CCODES_PATH).toString());
   } catch (e_) {
-    logApp('Could not Load Communication Codes', e_.message);
+    log.error('Could not Load Communication Codes', e_.message);
+
     dialog.showErrorBox('Could not Load Communication Codes', e_.message);
     QUIT();
   }
@@ -61,6 +61,13 @@ const Error_Dialog = (title: string, message: string) => {
   dialog.showErrorBox(title, message);
 };
 
+let mainWindow: BrowserWindow = null;
+const CCODES = Load_CCODES();
+const APP_HOME_PATH = getAppHomePath();
+
+// ------------------------------PYTHON_SERVER---------------------------------------------------------
+// ------------------------------PYTHON_SERVER---------------------------------------------------------
+// ------------------------------PYTHON_SERVER---------------------------------------------------------
 export const Create_PythonScheduler = () => {
   try {
     fs.unlinkSync('scheduler-logs.txt');
@@ -81,64 +88,30 @@ export const Create_PythonScheduler = () => {
   const serverScript = new PythonShell('scheduler.py', OPTIONS);
 
   serverScript.on('error', (err) => {
+    log.error(err);
     Error_Dialog('Error', String(err));
   });
 
   serverScript.on('message', (data) => {
-    console.log(data);
-    fs.appendFile(
-      'scheduler-logs.txt',
-      `${JSON.stringify(data, null)}\n\n\n`,
-      () => {}
-    );
+    log.info('Received response : ', data);
+
+    mainWindow.webContents.send('scheduler-response', data);
   });
 
   serverScript.on('stderr', (err) => {
-    fs.appendFile(
-      'scheduler-logs.txt',
-      `${JSON.stringify(err, null)}\n\n\n`,
-      () => {}
-    );
+    log.error(err);
+  });
 
-    console.error(err);
+  ipcMain.on('scheduler-task', (evt, task) => {
+    log.info('Received a Task', task);
+    serverScript.send(task);
   });
 
   return serverScript;
 };
-
-// ---------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------
-
-let mainWindow: BrowserWindow = null;
-const CCODES = Load_CCODES();
-let Scheduler = Create_PythonScheduler();
-const APP_HOME_PATH = getAppHomePath();
-
-Object.defineProperty(global, 'CCODES', {
-  get() {
-    return CCODES;
-  },
-});
-
-Object.defineProperty(global, 'PyScheduler', {
-  get() {
-    return Scheduler;
-  },
-  set(val) {
-    Scheduler = val;
-  },
-});
-
-Object.defineProperty(global, 'APP_HOME_PATH', {
-  get() {
-    return APP_HOME_PATH;
-  },
-});
-
-// ---------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------
+// ------------------------------_____________---------------------------------------------------------
+// ------------------------------_____________---------------------------------------------------------
+// ------------------------------_____________---------------------------------------------------------
 
 if (
   process.env.NODE_ENV === 'development' ||
@@ -188,10 +161,11 @@ const createWindow = async () => {
     },
   });
 
+  // ASSIGN PYTHON SCHEDULER ///////////////////////////////////////////
+  Create_PythonScheduler(); // /////////////////////////////////////////
+  // //////////////////////////////////////////////////////////////////
   mainWindow.loadURL(`file://${__dirname}/index.html`);
 
-  // @TODO: Use 'ready-to-show' event
-  //        https://github.com/electron/electron/blob/master/docs/api/browser-window.md#using-ready-to-show-event
   mainWindow.webContents.on('did-finish-load', () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');
@@ -208,18 +182,15 @@ const createWindow = async () => {
     e.preventDefault();
   });
 
-  // const menuBuilder = new MenuBuilder(mainWindow);
-  // menuBuilder.buildMenu();
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 
   // Open urls in the user's browser
   mainWindow.webContents.on('new-window', (event, url) => {
     event.preventDefault();
     shell.openExternal(url);
   });
-
-  // Remove this if your app does not use auto updates
-  // eslint-disable-next-line
-  // new AppUpdater();
 };
 
 /**
@@ -262,4 +233,8 @@ ipcMain.on('quit', (_, args) => {
 
 ipcMain.on('get-CCODES', (evt) => {
   evt.returnValue = CCODES;
+});
+
+ipcMain.on('get-APP_HOME_PATH', (evt) => {
+  evt.returnValue = APP_HOME_PATH;
 });

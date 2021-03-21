@@ -1,11 +1,14 @@
 # SYSTEM IMPORTS
 import os
+from sqlite3.dbapi2 import Connection
 import time
 import orjson
 import io
 from utils import output
 from utils import loadJSON, saveJSON
 from generateData import generateMetaData
+import sqlite3
+import shutil
 
 # AVAILABLE HASHES, DEFAULT = xxh64
 # [blake2b, blake2s, md5,
@@ -14,8 +17,6 @@ from generateData import generateMetaData
 # sha3_384,sha3_512, sha512,
 # shake_128, shake_256]
 
-# .GDFID is a file extention to store Google Drive Folder IDs
-# ummmm
 def Get_log(DIR_PATH,FILE_NAME):
     LOG_FILE_PATH = os.path.join(DIR_PATH,FILE_NAME,'.json')
 
@@ -100,52 +101,10 @@ def LOAD_IGNORE_DATA(CCODES,APP_SETTINGS,DIR_PATH):
   output({"code":CCODES["IGNORE_DATA_LOADED"],"data":ignores,"msg":"Ignore Data Loaded"})
   return ignores
 
-def GEN_MetaData(CCODES,APP_SETTINGS,DIR_PATH,):
+def GEN_MetaData(CCODES,APP_SETTINGS,DIR_PATH,DB_CONNECTION ):
   ignores = LOAD_IGNORE_DATA(CCODES,APP_SETTINGS,DIR_PATH)
 
-  MD_FILE_NAME = str(int(time.time()))+'.json'
-
-  MD_ = generateMetaData( DIR_PATH,
-                          FILE_NAME=MD_FILE_NAME,
-                          HASH="xxh3_64",
-                          ignore=ignores)
-
-  # for outputData in MD_.generate(CCODES):
-        # output_direct(f"{{\"code\":{tmp},\"data\":{{{outputData}}}}}")
-        # output({"code":self.CCODES["FILE_DATA_CREATED"],"data":data})
-
-  MD_.generate(CCODES)
-  FILE_INFO = MD_.getInfo()
-  GFID_DATA = MD_.convertToGFID_data()
-
-  del MD_
-
-  GFID_FILE_PATH = os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH"],FILE_INFO["fileName"])
-
-  # SAVE THE GENERATED DATA
-  with open(GFID_FILE_PATH,"w") as file_:
-    file_.write(orjson.dumps(GFID_DATA).decode('utf-8'))
-    file_.close()
-
-
-  return (FILE_INFO,GFID_DATA)
-
-def PRE_initialize_repository(CCODES,DIR_PATH):
-    try:
-        os.mkdir(os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_FOLDER_PATH"]))
-        os.mkdir(os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_DATA_FOLDER_PATH"]))
-        os.mkdir(os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH"]))
-
-        with open(os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_SETTINGS_FILE_PATH"]),"w") as file_:
-            file_.write(orjson.dumps({'abs_path':os.getcwd()}).decode('utf-8'))
-
-        with open(os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_COMMIT_FILE_PATH"]),"w") as file_:
-            file_.write(orjson.dumps({"total":0}).decode('utf-8'))
-
-    except Exception as e:
-        return {"code":CCODES["REPO_EXISTS"],"msg":str(e),"msg2":"An .usp/ folder Already Exists"}
-
-    return {"code":CCODES["PRE_INIT_DONE"], "msg":"Created Necessary Files and Folders inorder to run the App"}
+  generateMetaData(CCODES, DIR_PATH, DB_CONNECTION, HASH="xxh3_64", ignore=ignores)
 
 def detectChange(CCODES,NEW_MD_FILE_PATH,OLD_MD_FILE_PATH):
   with open(NEW_MD_FILE_PATH,'rb') as file_:
@@ -213,21 +172,46 @@ def update_locally(CCODES, APP_SETTINGS, DIR_PATH, force=False):
             output(CHANGES)
 
 def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
-    # Checks if a Folder / Repo is already Initialized
+  REPO_PATH = os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_FOLDER_PATH"])
 
-    result = PRE_initialize_repository(CCODES,DIR_PATH)
+  if(force):
+    try:
+      shutil.rmtree(REPO_PATH)
+    except:pass
 
-    if (not force) and (result["code"] == CCODES["REPO_EXISTS"]):
-        output(result)
-        # UPDATE LOCALLY
-        update_locally(CCODES,APP_SETTINGS,DIR_PATH)
-    else:
-        # First Commit
-        (FILE_INFO , GFID_DATA) = GEN_MetaData(CCODES,APP_SETTINGS,DIR_PATH)
-        output({"code":CCODES["INIT_DONE"],"msg":"Repository Initialization Completed","data":{"folderName":os.path.basename(DIR_PATH),"localPath":DIR_PATH}})
-        commit(CCODES,DIR_PATH,MD_FILE_INFO=FILE_INFO)
+  # CREATE A DIRECTORY
+  os.mkdir(REPO_PATH)
 
-        # createLOG(CCODES,DIR_PATH,MD_FILE_INFO=FILE_INFO)
+  DB_PATH = os.path.join(REPO_PATH,os.environ["DEFAULT_DB_FILE_NAME"])
+
+  DB_CONNECTION = sqlite3.connect(DB_PATH)
+  cur = DB_CONNECTION.cursor()
+
+  # FILES TABLE
+  cur.execute(f'''CREATE TABLE files (
+                      name text ,
+                      folder_id INTEGER NOT NULL,
+                      drive_id TEXT,
+                      uploaded INTEGER,
+                      downloaded INTEGER,
+                      fileHash TEXT,
+                      modified_time REAL
+                      )''')
+
+  # FOLDERS TABLE
+  cur.execute(f'''CREATE TABLE folders (
+                      name TEXT NOT NULL,
+                      folder_id INTEGER PRIMARY KEY,
+                      drive_id TEXT,
+                      parentPath TEXT NOT NULL
+                      )''')
+
+  cur.close()
+
+  DB_CONNECTION.commit()
+
+  # GENERATE DATA
+  GEN_MetaData(CCODES,APP_SETTINGS,DIR_PATH, DB_CONNECTION)
 
 def getGFID_FILE_DATA(DIR_PATH : str , fileName : str):
   GFID_FILE_PATH = os.path.join(DIR_PATH, os.environ["DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH"], fileName)

@@ -55,5 +55,5 @@ Testing/.usp
 __pycache__
 test.py
 scheduler-logs.txt
-Testing/.usp/commit.json
 assets/installation/.usp/token.pickle
+assets/installation/.usp/info.json
