@@ -80,16 +80,11 @@ def uploadFile(task):
   parentDriveID = task["data"]["parentDriveID"]
 
   try:
-    driveID = GoogleDrive.uploadFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID)
+    task["data"]["driveID"] = GoogleDrive.uploadFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID)
 
     return {
     "code":CCODES["UPLOAD_SUCCESS"],
-    "data" : {
-      "RepoID" : RepoID,
-      "driveID" : driveID,
-      "fileName" : fileName,
-      "parentPath" : os.path.dirname(filePath)
-    }}
+    "data" : task["data"]}
 
   except Exception as e:
     return { "code":CCODES["UPLOAD_FAILED"], "data" : task["data"], "exception": {"msg":str(e),"type": str(e.__class__.__name__)}}
@@ -145,11 +140,11 @@ def retriveUploads(task):
 
 def createRepoFolders(task):
   RepoID = task["data"]["RepoID"]
-  rootFolderName = task["data"]["RepoName"]
-  rootFolderPath = task["data"]["folderPath"]
+  repoFolderData = task["data"]["repoFolderData"]
   folderData = task["data"]["folderData"]
+
   try:
-    folderData = GoogleDrive.createRepoFolders(CCODES,RepoID,rootFolderName, rootFolderPath, folderData)
+    folderData = GoogleDrive.createRepoFolders(CCODES, RepoID, repoFolderData, folderData)
     return {"code": CCODES["FOLDERS_CREATED"], "data": {"RepoID" : RepoID, "folderData":folderData}}
   except Exception as e:
     return {"code": CCODES["FAILED_TO_CREATE_FOLDERS"], "data": {"RepoID" : RepoID}, "exception" : {"msg" : str(e), "type" :  str(e.__class__.__name__)}}
@@ -189,6 +184,7 @@ def GUI_LAUNCH():
     task = sys.stdin.readline()[:-1]
     try:
       task = orjson.loads(task)
+
       if(task): addTask(task)
     except:
       pass

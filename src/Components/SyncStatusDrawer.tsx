@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Drawer, List, Collapse, Spin, Empty } from 'antd';
+import { Drawer, List, Collapse, Spin } from 'antd';
 import { nanoid } from '@reduxjs/toolkit';
 import {
   LoadingOutlined,
@@ -10,15 +10,15 @@ import {
   PauseCircleTwoTone,
   CloseCircleTwoTone,
 } from '@ant-design/icons';
+import log from 'electron-log';
 import {
   closeSyncDrawer,
-  SYNC_INPUT,
-  SYNC_DATA_STRUCTURE,
   DoingQueue,
   WatingQueueInterface,
   FinishedQueueInterface,
 } from '../Redux/SynchronizationSlicer';
 import { store } from '../Redux/store';
+import { getRemainingUploadsName } from '../modules/Database';
 
 // ////////////////////////////////////////////////////////////////////////////////////
 const getStatusIcon = (
@@ -172,10 +172,6 @@ const DownloadsDrawer = () => {
 // ////////////////////////////////////////////////////////////////////////////////////
 
 const UploadsDrawer = () => {
-  const uploadWatingQueue = useSelector(
-    (state: store) => state.Sync.uploadWatingQueue
-  );
-
   const uploadingQueue = useSelector(
     (state: store) => state.Sync.uploadingQueue
   );
@@ -190,14 +186,17 @@ const UploadsDrawer = () => {
 
   return (
     <Collapse bordered={false} style={{ margin: 0, padding: 0, width: 300 }}>
-      {Object.keys(RepoData).map(
-        (RepoID) =>
-          shouldShowRepo(
-            uploadingQueue,
-            uploadWatingQueue,
-            uploadFinishedQueue,
-            RepoID
-          ) && (
+      {Object.keys(UserRepos).map((RepoID) => {
+        const uploadWatingQueue = getRemainingUploadsName(RepoID);
+        const shouldShow = shouldShowRepo(
+          uploadingQueue,
+          uploadWatingQueue,
+          uploadFinishedQueue,
+          RepoID
+        );
+
+        if (shouldShow)
+          return (
             <Collapse.Panel
               header={UserRepos[RepoID].displayName}
               key={nanoid()}
@@ -209,7 +208,7 @@ const UploadsDrawer = () => {
                     renderItem={(data) =>
                       !(data.RepoID === RepoID) ? null : (
                         <List.Item.Meta
-                          avatar={getStatusIcon(data.status)}
+                          avatar={getStatusIcon('RUNNING')}
                           title={data.fileName}
                         />
                       )
@@ -218,19 +217,17 @@ const UploadsDrawer = () => {
                 ) : null}
 
                 {/* <Divider /> */}
-                {(uploadWatingQueue[RepoID] &&
-                  uploadWatingQueue[RepoID].length && (
-                    <List
-                      dataSource={uploadWatingQueue[RepoID]}
-                      renderItem={(data) => (
-                        <List.Item.Meta
-                          avatar={getStatusIcon(data.status)}
-                          title={data.fileName}
-                        />
-                      )}
-                    />
-                  )) ||
-                  null}
+                {uploadWatingQueue.length ? (
+                  <List
+                    dataSource={uploadWatingQueue}
+                    renderItem={({ fileName }) => (
+                      <List.Item.Meta
+                        avatar={getStatusIcon('WAITING')}
+                        title={fileName}
+                      />
+                    )}
+                  />
+                ) : null}
                 {/* <Divider /> */}
                 {(uploadFinishedQueue[RepoID] &&
                   uploadFinishedQueue[RepoID].length && (
@@ -247,8 +244,10 @@ const UploadsDrawer = () => {
                   null}
               </CustomSpin>
             </Collapse.Panel>
-          )
-      )}
+          );
+
+        return null;
+      })}
     </Collapse>
   );
 };

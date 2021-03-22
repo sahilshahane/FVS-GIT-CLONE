@@ -290,24 +290,37 @@ def uploadRepository(CCODES,DIR_PATH, service = None):
   with open(GFID_FILE_PATH,"w") as file_:
     file_.write(orjson.dumps(GFID_DATA).decode('utf-8'))
 
-def createRepoFolders(CCODES, RepoID, rootFolderName, rootFolderPath, folderData):
+def createRepoFolders(CCODES, _, repoFolderData, folderData):
   service = getService(CCODES)
 
-  # CHECK IF ROOT FOLDER IS PRESENT
-  if not folderData[rootFolderPath]:
-    folderData[rootFolderPath] = createFolder(CCODES,rootFolderName,service=service)
+  repoFolderName = repoFolderData["RepoName"]
+  repoFolderPath = repoFolderData["folderPath"]
+  repoFolderID = repoFolderData["driveID"]
+  db_repo_folder_id = repoFolderData["folder_id"]
 
-  for folderPath in folderData:
-    if not folderData[folderPath]:
+  CREATED_FOLDERS = dict()
+
+  # CHECK IF repo FOLDER IS PRESENT
+  if not repoFolderID:
+    repoFolderID = createFolder(CCODES,repoFolderName,service=service)
+
+  CREATED_FOLDERS[repoFolderPath] = { "driveID": repoFolderID, "folder_id": db_repo_folder_id}
+
+  for folder in folderData:
+    folderPath = folder["folderPath"]
+    db_folder_id = folder["folder_id"]
+
+    if not CREATED_FOLDERS.get(folderPath):
       parentPath = os.path.dirname(folderPath)
       folderName = os.path.basename(folderPath)
-      try:
-        parentID = folderData[parentPath]
-        if parentID:
-          folderData[folderPath] = createFolder(CCODES,folderName,parentID=parentID,service=service)
-      except KeyError: pass
+      parentID = CREATED_FOLDERS.get(parentPath,dict()).get("driveID")
 
-  return folderData
+      if parentID:
+        CREATED_FOLDERS[folderPath] = {"driveID": createFolder(CCODES,folderName,parentID=parentID,service=service),
+                                       "folder_id": db_folder_id}
+
+
+  return CREATED_FOLDERS
 
 def downloadGoogleWorkspaceFile(CCODES, driveID, filePath, repoID, newMime, service):
   fileExtension = {

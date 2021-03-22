@@ -1,13 +1,10 @@
 import { batch } from 'react-redux';
-import { Modal } from 'antd';
 import log from 'electron-log';
 import ReduxStore from '../Redux/store';
 import { addRepository } from '../Redux/UserRepositorySlicer';
 import {
-  allocateRepoData,
   updateUploadingQueue,
   addUploadFinishedQueue,
-  ReAddFailedUpload,
 } from '../Redux/SynchronizationSlicer';
 import { CCODES } from './get_AppData';
 import ShowError, { ShowInfo } from './ErrorPopup_dialog';
@@ -15,6 +12,8 @@ import {
   saveGoogleLogin,
   saveRepositorySettings,
 } from '../Redux/AppSettingsSlicer';
+import { createRepoFoldersInDrive } from './backgroundTasks';
+import { updateFilesDriveID, updateFolderDriveID } from './Database';
 
 const { dispatch } = ReduxStore;
 
@@ -36,18 +35,33 @@ const Handler = (
           RepoID: response.data.RepoID,
         })
       );
-      break;
-    case CCODES.FOLDER_CREATED:
-      dispatch(
-        allocateRepoData({
-          RepoID: response.data.RepoID,
-          folderData: response.data.folderData,
-        })
+
+      // CREATE FOLDERS
+      createRepoFoldersInDrive(
+        response.data.RepoID,
+        response.data.RepositoryName
       );
+
       break;
-    case CCODES.ADD_UPLOAD:
+    case CCODES.INIT_FAILED:
+      log.error('Failed to Initialize Repository', response);
       break;
-    case CCODES.ADD_DOWNLOAD:
+    case CCODES.FOLDERS_CREATED:
+      log.info('Folders created in drive', response.data);
+      updateFolderDriveID(response.data.RepoID, response.data.folderData)
+        .then(() => {
+          const { UserRepoData } = ReduxStore.getState();
+          dispatch(updateUploadingQueue(UserRepoData));
+          return null;
+        })
+        .catch((exception) =>
+          log.error('Failed to Update folder data locally', {
+            response,
+            exception,
+          })
+        );
+      // dispatch(updateUploadingQueue());
+
       break;
     case CCODES.REPO_EXISTS:
       if (process.env.NODE_ENV === 'development')
@@ -58,27 +72,42 @@ const Handler = (
       break;
     case CCODES.FAILED_CREATE_FOLDERS:
       ShowError(
-        'Failed to Allocated Folders!',
+        'Failed to allocated folders in drive.',
         `${response.exception?.type} : ${response.exception?.msg}`
       );
       break;
     case CCODES.UPLOAD_SUCCESS:
-      dispatch(
-        addUploadFinishedQueue({
-          RepoID: response.data.RepoID,
-          driveID: response.data.driveID,
-          fileName: response.data.fileName,
-          parentPath: response.data.parentPath,
+      updateFilesDriveID(response.data.RepoID, {
+        folder_id: response.data.folder_id,
+        driveID: response.data.driveID,
+        fileName: response.data.fileName,
+      })
+        .then(() => {
+          dispatch(
+            addUploadFinishedQueue({
+              RepoID: response.data.RepoID,
+              driveID: response.data.driveID,
+              fileName: response.data.fileName,
+              filePath: response.data.filePath,
+            })
+          );
+          return null;
         })
-      );
+        .catch((err) =>
+          log.error('Failed Updating Uploaded file locally', {
+            response,
+            exception: err,
+          })
+        );
+
       break;
     case CCODES.UPLOAD_FAILED:
-      dispatch(ReAddFailedUpload(response.data));
-      if (process.env.NODE_ENV === 'development')
-        ShowError(
-          'Upload Failed',
-          `${response.data.fileName}\n${response.exception?.type} : ${response.exception?.msg}`
-        );
+      // dispatch(ReAddFailedUpload(response.data));
+      // if (process.env.NODE_ENV === 'development')
+      //   ShowError(
+      //     'Upload Failed',
+      //     `${response.data.fileName}\n${response.exception?.type} : ${response.exception?.msg}`
+      //   );
       break;
     case CCODES.GOOGLE_LOGIN_SUCCESS:
       batch(() => {
@@ -86,8 +115,6 @@ const Handler = (
         dispatch(saveRepositorySettings());
       });
 
-      break;
-    case CCODES.GOOGLE_LOGIN_FAILED:
       break;
   }
 };
