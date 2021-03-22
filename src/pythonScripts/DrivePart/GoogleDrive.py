@@ -2,12 +2,12 @@ import pickle,os,socket,sys
 from google.auth import credentials
 from google.auth.environment_vars import CREDENTIALS
 import googleapiclient
-from googleapiclient.discovery import build
+from googleapiclient.discovery import Resource, build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
-from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
+from googleapiclient.http import BatchHttpRequest, MediaFileUpload, MediaIoBaseDownload
 import orjson
-from utils import output
+from utils import output, saveJSON
 import webbrowser
 import wsgiref.simple_server
 import wsgiref.util
@@ -20,7 +20,7 @@ import mimetypes
 import io
 
 CREDENTIALS = None
-service = None
+service:Resource = None
 
 class _WSGIRequestHandler(wsgiref.simple_server.WSGIRequestHandler):
     def log_message(self, format, *args):
@@ -89,7 +89,7 @@ def startLogin(CCODES):
   output({"code": CCODES["GOOGLE_LOGIN_STARTED"],"msg":"Google Login Started"})
 
   try:
-    SCOPES = ["https://www.googleapis.com/auth/drive","https://www.googleapis.com/auth/drive.appdata"]
+    SCOPES = ["https://www.googleapis.com/auth/drive","https://www.googleapis.com/auth/drive.appdata","https://www.googleapis.com/auth/drive.activity.readonly"]
     CREDS_FILE_PATH = str(os.path.join(os.environ["APP_HOME_PATH"],"credentials.json"))
     TOKEN_FILE_PATH = str(os.path.join(os.environ["APP_HOME_PATH"],"token.pickle"))
 
@@ -201,7 +201,7 @@ def allocateGFID(CCODES, DIR_PATH, service = None):
   file_.close()
   return (GFID_DATA, MD_FILE_INFO)
 
-def createFolder(CCODES, folderName, GdriveID = None, parentID = None, service = None):
+def createFolder(CCODES, folderName, GdriveID = None, parentID = None, fields="id", service = None):
   folder_metadata = {
     "id": GdriveID,
     "name": folderName,
@@ -210,7 +210,7 @@ def createFolder(CCODES, folderName, GdriveID = None, parentID = None, service =
 
   if parentID: folder_metadata["parents"] = [parentID]
 
-  return service.files().create(body=folder_metadata, fields='id').execute()['id']
+  return service.files().create(body=folder_metadata, fields=fields)
 
 def uploadFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID):
   service = getService(CCODES)
@@ -239,6 +239,9 @@ def uploadFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID):
   #   driveID = file['id']
 
   return driveID
+
+def getStartPageToken(service):
+  return service.changes().getStartPageToken(fields="startPageToken")
 
 # Are you even using this method.
 # NOPE - it was a naive attempt to upload files
@@ -290,8 +293,17 @@ def uploadRepository(CCODES,DIR_PATH, service = None):
   with open(GFID_FILE_PATH,"w") as file_:
     file_.write(orjson.dumps(GFID_DATA).decode('utf-8'))
 
-def createRepoFolders(CCODES, _, repoFolderData, folderData):
+def createRootFolder(task,CCODES,repoFolderName):
+
+  return
+
+def createRepoFolders(CCODES, task):
   service = getService(CCODES)
+
+  repoFolderData = task["data"]["repoFolderData"]
+  folderData = task["data"]["folderData"]
+
+  RepoID = task["data"]["RepoID"]
 
   repoFolderName = repoFolderData["RepoName"]
   repoFolderPath = repoFolderData["folderPath"]
@@ -300,27 +312,55 @@ def createRepoFolders(CCODES, _, repoFolderData, folderData):
 
   CREATED_FOLDERS = dict()
 
+
+
+
   # CHECK IF repo FOLDER IS PRESENT
   if not repoFolderID:
-    repoFolderID = createFolder(CCODES,repoFolderName,service=service)
+    repoCreatedTime = None
+    pageToken = None
 
-  CREATED_FOLDERS[repoFolderPath] = { "driveID": repoFolderID, "folder_id": db_repo_folder_id}
+    def assignResponse(req_id,response,err):
+        nonlocal repoFolderID
+        nonlocal repoCreatedTime
+        nonlocal pageToken
+
+        if req_id == '1':
+          if(err): raise err
+          repoFolderID = response["id"]
+          repoCreatedTime = response["createdTime"]
+        elif req_id == '2':
+          pageToken = response["startPageToken"]
+
+
+    batch = service.new_batch_http_request(callback=assignResponse)
+    batch.add(createFolder(CCODES,repoFolderName,fields="id, createdTime",service=service))
+    batch.add(getStartPageToken(service))
+    batch.execute()
+
+    trackingInfo = {"lastChecked": repoCreatedTime, "pageToken": pageToken}
+
+    # NOTIFY GUI
+    output({"code":CCODES["REPO_FOLDER_CREATED_DRIVE"],"data": {"RepoID":RepoID, "trackingInfo": trackingInfo,"folder_id": db_repo_folder_id, "driveID": repoFolderID }})
+
+
+  CREATED_FOLDERS[repoFolderPath] = repoFolderID
 
   for folder in folderData:
     folderPath = folder["folderPath"]
     db_folder_id = folder["folder_id"]
 
-    if not CREATED_FOLDERS.get(folderPath):
-      parentPath = os.path.dirname(folderPath)
-      folderName = os.path.basename(folderPath)
-      parentID = CREATED_FOLDERS.get(parentPath,dict()).get("driveID")
+    parentPath = os.path.dirname(folderPath)
+    folderName = os.path.basename(folderPath)
+    parentID = CREATED_FOLDERS.get(parentPath)
 
-      if parentID:
-        CREATED_FOLDERS[folderPath] = {"driveID": createFolder(CCODES,folderName,parentID=parentID,service=service),
-                                       "folder_id": db_folder_id}
+    if parentID:
+      driveID = createFolder(CCODES,folderName,parentID=parentID,service=service).execute()['id']
+      CREATED_FOLDERS[folderPath] = driveID
 
+      # NOTIFY GUI
+      output({"code":CCODES["FOLDER_CREATED_DRIVE"],"data": {"RepoID":RepoID, "folder_id": db_folder_id, "driveID": driveID}})
 
-  return CREATED_FOLDERS
 
 def downloadGoogleWorkspaceFile(CCODES, driveID, filePath, repoID, newMime, service):
   fileExtension = {
@@ -344,7 +384,6 @@ def downloadGoogleWorkspaceFile(CCODES, driveID, filePath, repoID, newMime, serv
   filePath = filePath[:-len(extName)]+fileExtension[newMime]
 
   return [fileBytes, filePath]
-
 
 def downloadFile(CCODES, driveID, fileName, filePath, repoID):
   service = getService(CCODES)
@@ -385,3 +424,125 @@ def downloadFile(CCODES, driveID, fileName, filePath, repoID):
   #   page_token = response.get("nextPageToken", None)
   #   if page_token is None:
   #     break
+
+def getActivities_API(activityService, repoDriveId, trackingTime):
+  if not trackingTime: trackingTime = 0
+
+  timeFilter = f'time >= {trackingTime}'
+
+  results = activityService.activity().query(
+    body={
+      # 'pageSize': 10,
+      "ancestorName": f"items/{repoDriveId}",
+      "filter": timeFilter
+    },
+  ).execute()
+
+  activities = results.get('activities', [])
+  activityChanges = []
+
+  for activity in activities:
+      primaryActionDetail = activity["primaryActionDetail"]
+      driveItems = activity["targets"][0]["driveItem"]
+      timestamp = activity["timestamp"]
+      change = {
+        "primaryActionDetail": primaryActionDetail,
+        "driveItems": driveItems,
+        "timestamp": timestamp
+      }
+      activityChanges.append(change)
+
+  return activityChanges
+
+def getChanges_API(service, pageToken):
+  if not pageToken: pageToken = getStartPageToken(service)
+
+  CHANGES = []
+
+  while pageToken is not None:
+    response = service.changes().list(
+    pageToken=pageToken,
+    fields="changes(kind, type, changeType, time, removed, fileId, file(mimeType, name, parents))",
+    spaces='drive',
+    includeRemoved=True).execute()
+
+    CHANGES.extend(change for change in response.get('changes'))
+
+    if 'newStartPageToken' in response: saved_start_page_token = response.get('newStartPageToken')
+
+    pageToken = response.get('nextPageToken')
+
+  print(CHANGES)
+  return CHANGES
+
+def checkChanges(CCODES, repoDriveId, lastCheckedTime, pageToken):
+  service = getService(CCODES)
+
+  # CHANGES_API = getChanges_API(service, pageToken)
+  # ACTIVITIES_API = getActivities_API(service, repoDriveId, lastCheckedTime)
+
+  ALL_CHANGES = []
+
+
+  # print(CHANGES_API)
+  # print(ACTIVITIES_API)
+
+  # hierchy = {
+  #   "restore":0,
+  #   "delete": 1,
+  #   "create": 2,
+  #   "rename": 3,
+  #   "edit": 3,
+  #   "move": 3,
+  # }
+
+  # for change in CHANGES_API:
+  #   for activity in ACTIVITIES_API:
+
+  #     if(change["fileId"] != activity["driveItems"]["name"][6:]):
+  #       continue
+  #     if(change["removed"] == True):
+  #       ALL_CHANGES.append({
+  #         "id": change["fileId"],
+  #         "name": activity["driveItems"]["title"],
+  #         "time": change["time"],
+  #         "removed": True,
+  #         "mimeType": activity["driveItems"]["mimeType"],
+  #       })
+  #       break
+  #     change_present_in_integrated_changes = False
+
+  #     for integratedChange in ALL_CHANGES:
+  #       if(integratedChange["id"] == change["fileId"]):
+  #         change_present_in_integrated_changes = True
+  #         activityAction = list(activity["primaryActionDetail"].keys())[0]   # this is a single activity
+  #         if(activityAction in integratedChange["primaryActionDetail"].keys()): # this means that there is an action already present in the integratedChange object
+  #           if(activity["timestamp"] > integratedChange["timestamp"]):
+  #             integratedChange[activityAction] = activity["primaryActionDetail"]   # to replace the current existing action with the latest action
+
+  #         else:  # this indicates that the action is not present in the actionChange so accrding to their hierchy add them
+  #           lowestHierchy = int(integratedChange["lowestHierchy"])
+  #           if(hierchy[list(activity["primaryActionDetail"].keys())[0]] < lowestHierchy):
+  #             temp = integratedChange["primaryActionDetail"].copy()   # this is just made to avoid "dictionary changed size during iteration" exception
+  #             for action in temp.keys():
+  #               del integratedChange["primaryActionDetail"][action]
+  #             integratedChange["primaryActionDetail"] = activity["primaryActionDetail"]
+  #             integratedChange["lowestHierchy"] = hierchy[activity["primaryActionDetail"]]
+
+  #           if(hierchy[list(activity["primaryActionDetail"].keys())[0]] == lowestHierchy):
+  #             integratedChange["primaryActionDetail"].update(activity["primaryActionDetail"])
+
+  #     if(change_present_in_integrated_changes == False): # this means that the change was not alrecy present in the integratedChanges
+  #       ALL_CHANGES.append({
+  #         "id": change["fileId"],
+  #         "name": change["file"]["name"],
+  #         "mimeType": change["file"]["mimeType"],
+  #         "removed": False,
+  #         "timestamp": activity["timestamp"],
+  #         "parents": change["file"]["parents"],
+  #         "primaryActionDetail": activity["primaryActionDetail"],
+  #         "lowestHierchy": str(hierchy[list(activity["primaryActionDetail"].keys())[0]]),
+  #       })
+
+  return ALL_CHANGES
+

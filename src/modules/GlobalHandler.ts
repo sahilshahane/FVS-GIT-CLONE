@@ -1,7 +1,10 @@
 import { batch } from 'react-redux';
 import log from 'electron-log';
 import ReduxStore from '../Redux/store';
-import { addRepository } from '../Redux/UserRepositorySlicer';
+import {
+  addRepository,
+  setRepositoryTrackingInfo,
+} from '../Redux/UserRepositorySlicer';
 import {
   updateUploadingQueue,
   addUploadFinishedQueue,
@@ -46,23 +49,48 @@ const Handler = (
     case CCODES.INIT_FAILED:
       log.error('Failed to Initialize Repository', response);
       break;
-    case CCODES.FOLDERS_CREATED:
-      log.info('Folders created in drive', response.data);
-      updateFolderDriveID(response.data.RepoID, response.data.folderData)
+    case CCODES.ALL_FOLDERS_CREATED_DRIVE:
+      log.info('All Folders are created in drive', response.data);
+
+      // UPDATE UPLOADS
+      dispatch(updateUploadingQueue(ReduxStore.getState().UserRepoData));
+
+      break;
+    case CCODES.FOLDER_CREATED_DRIVE:
+      updateFolderDriveID(response.data.RepoID, {
+        folder_id: response.data.folder_id,
+        driveID: response.data.driveID,
+      }).catch((exception) =>
+        log.error("Failed to Update folder's data locally", {
+          response,
+          exception,
+        })
+      );
+
+      break;
+    case CCODES.REPO_FOLDER_CREATED_DRIVE:
+      updateFolderDriveID(response.data.RepoID, {
+        folder_id: response.data.folder_id,
+        driveID: response.data.driveID,
+      })
         .then(() => {
-          const { UserRepoData } = ReduxStore.getState();
-          dispatch(updateUploadingQueue(UserRepoData));
+          dispatch(
+            setRepositoryTrackingInfo({
+              RepoID: response.data.RepoID,
+              trackingInfo: response.data.trackingInfo,
+            })
+          );
           return null;
         })
         .catch((exception) =>
-          log.error('Failed to Update folder data locally', {
+          log.error("Failed to Update Repository's driveID data locally", {
             response,
             exception,
           })
         );
-      // dispatch(updateUploadingQueue());
 
       break;
+
     case CCODES.REPO_EXISTS:
       if (process.env.NODE_ENV === 'development')
         ShowInfo(
@@ -70,12 +98,7 @@ const Handler = (
           'Please Remove the .usp folder [This Dialog will only be shown in Development mode]'
         );
       break;
-    case CCODES.FAILED_CREATE_FOLDERS:
-      ShowError(
-        'Failed to allocated folders in drive.',
-        `${response.exception?.type} : ${response.exception?.msg}`
-      );
-      break;
+
     case CCODES.UPLOAD_SUCCESS:
       updateFilesDriveID(response.data.RepoID, {
         folder_id: response.data.folder_id,
@@ -102,12 +125,9 @@ const Handler = (
 
       break;
     case CCODES.UPLOAD_FAILED:
-      // dispatch(ReAddFailedUpload(response.data));
-      // if (process.env.NODE_ENV === 'development')
-      //   ShowError(
-      //     'Upload Failed',
-      //     `${response.data.fileName}\n${response.exception?.type} : ${response.exception?.msg}`
-      //   );
+      // UPDATE UPLOADS
+      dispatch(updateUploadingQueue(ReduxStore.getState().UserRepoData));
+
       break;
     case CCODES.GOOGLE_LOGIN_SUCCESS:
       batch(() => {

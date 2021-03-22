@@ -182,6 +182,13 @@ def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
   # CREATE A DIRECTORY
   os.mkdir(REPO_PATH)
 
+  # CREATE REPOSITORY DATA
+  REPO_DATA_PATH = os.path.join(REPO_PATH,os.environ["DEFAULT_REPO_DATA_FILE_NAME"])
+  REPO_DATA = dict()
+  REPO_DATA["RepoPath"] = DIR_PATH
+
+  saveJSON(REPO_DATA_PATH, REPO_DATA)
+
   DB_PATH = os.path.join(REPO_PATH,os.environ["DEFAULT_DB_FILE_NAME"])
 
   DB_CONNECTION = sqlite3.connect(DB_PATH)

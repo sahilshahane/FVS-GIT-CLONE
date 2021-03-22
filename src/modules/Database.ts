@@ -46,7 +46,7 @@ export const getRemainingUploadsName = (RepoID: string | number) => {
   return response;
 };
 
-export const getFinishedUploadsName = (RepoID: string | number) => {
+export const getFinishedUploadsName = (RepoID: number) => {
   const DB = getDB(RepoID);
 
   // THIS STATEMENT RETURNS fileName, directoryName, parentPath
@@ -62,7 +62,7 @@ export const getFinishedUploadsName = (RepoID: string | number) => {
   return response;
 };
 
-export const getRemainingUploads = (RepoID: number | string, limit = -1) => {
+export const getRemainingUploads = (RepoID: string, limit = -1) => {
   const DB = getDB(RepoID);
 
   const file_data = DB.prepare(
@@ -84,7 +84,7 @@ export const getRemainingUploads = (RepoID: number | string, limit = -1) => {
   return response;
 };
 
-export const getNonCreatedFolder = (RepoID: number | string) => {
+export const getNonCreatedFolder = (RepoID: string) => {
   const DB = getDB(RepoID);
 
   const repoFolderData = DB.prepare(
@@ -99,11 +99,11 @@ export const getNonCreatedFolder = (RepoID: number | string) => {
 };
 
 type updateFolderDriveID_ = (
-  RepoID: number | string,
-  data: Array<{
+  RepoID: string,
+  data: {
     folder_id: number;
     driveID: string;
-  }>
+  }
 ) => Promise<void>;
 
 export const updateFolderDriveID: updateFolderDriveID_ = async (
@@ -113,13 +113,11 @@ export const updateFolderDriveID: updateFolderDriveID_ = async (
   const DB = getDB(RepoID);
 
   const stmt = DB.prepare(
-    `UPDATE folders SET driveID = @driveID WHERE folder_id = (@folder_id)`
+    `UPDATE folders SET driveID = @driveID WHERE folder_id = @folder_id`
   );
 
   const run = DB.transaction(() => {
-    Object.values(data).forEach((val) => {
-      stmt.run(val);
-    });
+    stmt.run(data);
   });
 
   // RUN THE TRANSACTION
@@ -158,3 +156,17 @@ export const updateFilesDriveID: updateFilesDriveID_ = async (RepoID, data) => {
 
   log.info('Updated File Data Succesfully', { RepoID, data });
 };
+
+// export const getFinishedUploadsName = (RepoID: string | number) => {
+//   const DB = getDB(RepoID);
+
+//   // THIS STATEMENT RETURNS fileName, directoryName, parentPath
+//   const stmt = DB.prepare(`SELECT name as fileName,
+//                           (SELECT name from folders WHERE folder_id = files.folder_id ) AS folderName,
+//                           (SELECT parentPath from folders WHERE folder_id = files.folder_id ) AS parentPath FROM files
+//                             WHERE uploaded IS NULL`);
+
+//   const response = stmt.all();
+
+//   return response;
+// };

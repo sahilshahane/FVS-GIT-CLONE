@@ -12,11 +12,9 @@ import {
 import Reduxstore from '../Redux/store';
 
 import { getNonCreatedFolder } from './Database';
+import path from 'path';
 
-export const createRepoFoldersInDrive = (
-  RepoID: string | number,
-  RepoName: string
-) => {
+export const createRepoFoldersInDrive = (RepoID: string, RepoName: string) => {
   const folderData = getNonCreatedFolder(RepoID);
   log.info('Creating Folders in Drive', { RepoID, folderData });
   folderData.repoFolderData.RepoName = RepoName;
@@ -40,6 +38,14 @@ export const checkRepoFolders = () => {
     // CREATE FOLDERS IN DRIVE
     createRepoFoldersInDrive(RepoID, RepoName);
   });
+};
+
+export const getRepositoryTrackingInfo = (RepoID: string) => {
+  const { UserRepoData } = Reduxstore.getState();
+
+  const { trackingInfo } = UserRepoData.info[RepoID];
+
+  return trackingInfo;
 };
 
 // eslint-disable-next-line import/prefer-default-export

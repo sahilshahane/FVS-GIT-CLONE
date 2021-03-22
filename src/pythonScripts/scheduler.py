@@ -26,6 +26,7 @@ APP_SETTINGS = LOAD_APP_SETTINGS()
 os.environ["APP_HOME_PATH"] = GET_APP_FOLDER_PATH()
 os.environ["DEFAULT_REPO_FOLDER_PATH"] = ".usp"
 os.environ["DEFAULT_DB_FILE_NAME"] = "database.db"
+os.environ["DEFAULT_REPO_DATA_FILE_NAME"] = "data.json"
 os.environ["TESTING_FOLDER"] =  os.path.join('..','..',"Testing")
 
 def defaultWrapper(callback, task:Dict):
@@ -140,14 +141,27 @@ def retriveUploads(task):
 
 def createRepoFolders(task):
   RepoID = task["data"]["RepoID"]
-  repoFolderData = task["data"]["repoFolderData"]
-  folderData = task["data"]["folderData"]
 
   try:
-    folderData = GoogleDrive.createRepoFolders(CCODES, RepoID, repoFolderData, folderData)
-    return {"code": CCODES["FOLDERS_CREATED"], "data": {"RepoID" : RepoID, "folderData":folderData}}
+    GoogleDrive.createRepoFolders(CCODES, task)
+
+    return {"code": CCODES["ALL_FOLDERS_CREATED_DRIVE"], "data": {"RepoID" : RepoID }}
   except Exception as e:
     return {"code": CCODES["FAILED_TO_CREATE_FOLDERS"], "data": {"RepoID" : RepoID}, "exception" : {"msg" : str(e), "type" :  str(e.__class__.__name__)}}
+
+def checkChanges(task):
+  repoDriveId = task["data"]["driveID"]
+  trackingInfo = task["data"].get("trackingInfo",dict())
+  trackingTime = trackingInfo.get("time")
+  trackingToken = trackingInfo.get("token")
+
+  try:
+    changes = GoogleDrive.checkChanges(CCODES, repoDriveId, trackingTime, trackingToken)
+
+    return {"code": CCODES["CHANGES_CHECKED"], "data": {"RepoID" : repoDriveId, "changes": changes}}
+  except Exception as e:
+    return {"code": CCODES["CHECK_CHANGES_FAILED"], "data": {"RepoID" : repoDriveId}, "exception" : {"msg" : str(e), "type" :  str(e.__class__.__name__)}}
+
 
 TASKS_DEFINITIONS = {
   CCODES["START_GOOGLE_LOGIN"] : startGoogleLogin,
@@ -156,7 +170,8 @@ TASKS_DEFINITIONS = {
   CCODES["GENERATE_IDS"]: generateGDriveID,
   CCODES["RETRIVE_REPO_UPLOADS"] : retriveUploads,
   CCODES["CREATE_FOLDERS"] : createRepoFolders,
-  CCODES["DOWNLOAD_FILE"]: downloadFile
+  CCODES["DOWNLOAD_FILE"]: downloadFile,
+  CCODES["CHECK_CHANGES"]: checkChanges
 }
 
 def addTask(task):
@@ -171,8 +186,36 @@ def aloneMain():
   # os.environ["SHOW_NODE_OUTPUT"] = 'sdf'
 
   task = {
-    "data": {"path" : "Testing", "force": True},
-    "code": CCODES["INIT_DIR"]
+    "code": CCODES["CREATE_FOLDERS"],
+    "data":{
+      "RepoID": 'Ai0asjd7wgbn6c38h',
+
+      "repoFolderData":{
+          "folder_id": 1,
+          "folderPath": 'D:\\Major Project\\fhs_sql\\Testing',
+          "driveID": None,
+          "RepoName": 'TestingAlone'
+      },
+
+    "folderData":[
+      {
+        "folderPath":"D:\\Major Project\\fhs_sql\Testing\\asd22",
+        "folder_id": 2
+      },
+      {
+        "folderPath":"D:\\Major Project\\fhs_sql\Testing\\asd22\\asd",
+        "folder_id": 3
+      },
+      {
+        "folderPath":"D:\\Major Project\\fhs_sql\Testing\\asd22\\asd\\asd2",
+        "folder_id": 4
+      },
+      {
+        "folderPath":"D:\\Major Project\\fhs_sql\Testing\\asd22\\asd\\asd3",
+        "folder_id": 5
+      },
+      ]
+    }
   }
 
   addTask(task)

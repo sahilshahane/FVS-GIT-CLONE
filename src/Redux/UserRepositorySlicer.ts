@@ -7,10 +7,16 @@ import {
   USER_REPOSITORY_DATA_FILE_PATH,
 } from '../modules/get_AppData';
 
+type trackingInfo_ = {
+  lastChecked: string;
+  pageToken: number;
+};
+
 export interface RepositoryInfo {
   displayName: string;
   localLocation: string;
   syncStatus?: boolean;
+  trackingInfo?: trackingInfo_;
 }
 
 export interface selectedRepo {
@@ -48,6 +54,13 @@ interface setSyncStatus {
   };
 }
 
+interface setRepositoryTrackingInfo_ {
+  payload: {
+    RepoID: string;
+    trackingInfo: trackingInfo_;
+  };
+}
+
 const GET_INITIAL_STATE: () => USER_REPOSITORY_DATA_STRUCTURE = () => {
   const data: USER_REPOSITORY_DATA_STRUCTURE = USER_REPOSITORY_DATA;
 
@@ -71,6 +84,29 @@ export const USER_REPOSITORY_Slice = createSlice({
         displayName: DATA.displayName,
         localLocation: DATA.localLocation,
       };
+    },
+
+    setRepositoryTrackingInfo: (state, action: setRepositoryTrackingInfo_) => {
+      const { RepoID, trackingInfo } = action.payload;
+
+      const dataToBeSaved = {
+        trackingInfo,
+      };
+
+      // UPDATE THE STATE FOR FASTER DATA ACCESS
+      state.info[RepoID].trackingInfo = trackingInfo;
+
+      const localPath = state.info[RepoID].localLocation;
+      const repositoryDataPath = path.join(localPath, '.usp', 'data.json');
+
+      // READ REPO DATA / SETTINGS
+      const repositoryData = fs.readJSONSync(repositoryDataPath);
+
+      // WRITE REPO DATA / SETTINGS
+      fs.writeJSONSync(repositoryDataPath, {
+        ...repositoryData,
+        ...dataToBeSaved,
+      });
     },
     setCurrentDirLocation: (state, action) => {
       if (action.payload.length > 0) state.currentDirLocation = action.payload;
@@ -139,6 +175,7 @@ export const {
   GoTo_Repository,
   setSelectedRepository,
   saveUserRepositoryDataSync,
+  setRepositoryTrackingInfo,
 } = USER_REPOSITORY_Slice.actions;
 
 export default USER_REPOSITORY_Slice.reducer;
