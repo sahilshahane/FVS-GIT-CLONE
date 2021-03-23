@@ -151,9 +151,9 @@ def createRepoFolders(task):
 
 def checkChanges(task):
   repoDriveId = task["data"]["driveID"]
-  trackingInfo = task["data"].get("trackingInfo",dict())
-  trackingTime = trackingInfo.get("time")
-  trackingToken = trackingInfo.get("token")
+  trackingInfo = task["data"].get("trackingInfo")
+  trackingTime = trackingInfo.get("lastChecked")
+  trackingToken = trackingInfo.get("pageToken")
 
   try:
     changes = GoogleDrive.checkChanges(CCODES, repoDriveId, trackingTime, trackingToken)
@@ -192,33 +192,31 @@ def aloneMain():
 
       "repoFolderData":{
           "folder_id": 1,
-          "folderPath": 'D:\\Major Project\\fhs_sql\\Testing',
-          "driveID": None,
-          "RepoName": 'TestingAlone'
+          "folderPath": 'Testing',
+          "driveID": "1Lx-M1E1IGwVmNaTJxSkOIBPmwvqnCFzi",
+          "RepoName": 'Testing'
       },
-
+      # 2021-03-23T13:54:54.732Z
+      # 12590
     "folderData":[
       {
-        "folderPath":"D:\\Major Project\\fhs_sql\Testing\\asd22",
+        "folderPath":"Testing/asd22",
         "folder_id": 2
       },
-      {
-        "folderPath":"D:\\Major Project\\fhs_sql\Testing\\asd22\\asd",
-        "folder_id": 3
-      },
-      {
-        "folderPath":"D:\\Major Project\\fhs_sql\Testing\\asd22\\asd\\asd2",
-        "folder_id": 4
-      },
-      {
-        "folderPath":"D:\\Major Project\\fhs_sql\Testing\\asd22\\asd\\asd3",
-        "folder_id": 5
-      },
-      ]
+    ]
     }
   }
 
-  addTask(task)
+  # addTask(task)
+  task2 = {
+    "code":CCODES["CHECK_CHANGES"],
+    "data":{
+      "RepoID":"asdasdasdasd",
+      "driveID": None,
+      "trackingInfo":{"lastChecked":"2021-03-23T13:58:29Z","pageToken":"12595"}
+      }
+  }
+  addTask(task2)
 
 def GUI_LAUNCH():
   f = open('test.txt',"w+")

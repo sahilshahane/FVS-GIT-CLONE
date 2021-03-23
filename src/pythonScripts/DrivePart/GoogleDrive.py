@@ -18,9 +18,13 @@ from urllib.error import HTTPError
 import httplib2
 import mimetypes
 import io
+import pyrfc3339
+from datetime import datetime
+import pytz
 
 CREDENTIALS = None
 service:Resource = None
+ActivityService = None
 
 class _WSGIRequestHandler(wsgiref.simple_server.WSGIRequestHandler):
     def log_message(self, format, *args):
@@ -48,12 +52,13 @@ def build_request(http, *args, **kwargs):
   new_http = google_auth_httplib2.AuthorizedHttp(credentials=CREDENTIALS, http=httplib2.Http())
   return googleapiclient.http.HttpRequest(new_http, *args, **kwargs)
 
-def getService(CCODES,creds = None):
+def getService(CCODES,creds = None, api=None):
     global CREDENTIALS
     global service
-
+    
     # if CREDENTIALS: return build('drive', 'v3', credentials=CREDENTIALS, requestBuilder=build_request)
-    if service: return service
+    
+    if service and not api: return service
     else:
       TOKEN_FILE_PATH = str(os.path.join(os.environ["APP_HOME_PATH"],"token.pickle"))
       try:
@@ -78,12 +83,27 @@ def getService(CCODES,creds = None):
         # output({"code":CCODES["GOOGLE_ID_FOUND"],'msg':"Found an Google Account"})
         # return Google Drive API service
         CREDENTIALS = creds
-        service = build('drive', 'v3', credentials=creds, requestBuilder=build_request)
-        return service
+
+        if not api: api = {"name": "drive", "version":"v3"}
+
+        API_SERVICE = build(api["name"], api["version"], credentials=creds, requestBuilder=build_request)
+
+        if api["name"]=="drive": service = API_SERVICE
+
+        return API_SERVICE
       except OSError as e:
         output({"code": CCODES["INTERNET_CONNECTION_ERROR"],"msg":str(e)})
       except NoGoogleIDFound as e:
         output({"code": CCODES["GOOGLE_ID_NOT_FOUND"],"msg":str(e)})
+
+def getActivityService(CCODES):
+  global ActivityService
+
+  if ActivityService: return ActivityService
+
+  ActivityService = getService(CCODES,api={ "name":"driveactivity", "version":"v2" })
+
+  return ActivityService
 
 def startLogin(CCODES):
   output({"code": CCODES["GOOGLE_LOGIN_STARTED"],"msg":"Google Login Started"})
@@ -126,7 +146,7 @@ def startLogin(CCODES):
 
     creds = flow.credentials
 
-    return getService(CCODES, creds)
+    return getService(CCODES, creds=creds)
   except OSError as e:
     output({"code": CCODES["INTERNET_CONNECTION_ERROR"],"msg":str(e)})
     output({"code": CCODES["GOOGLE_LOGIN_FAILED"],"msg":str(e)})
@@ -293,10 +313,6 @@ def uploadRepository(CCODES,DIR_PATH, service = None):
   with open(GFID_FILE_PATH,"w") as file_:
     file_.write(orjson.dumps(GFID_DATA).decode('utf-8'))
 
-def createRootFolder(task,CCODES,repoFolderName):
-
-  return
-
 def createRepoFolders(CCODES, task):
   service = getService(CCODES)
 
@@ -360,7 +376,6 @@ def createRepoFolders(CCODES, task):
 
       # NOTIFY GUI
       output({"code":CCODES["FOLDER_CREATED_DRIVE"],"data": {"RepoID":RepoID, "folder_id": db_folder_id, "driveID": driveID}})
-
 
 def downloadGoogleWorkspaceFile(CCODES, driveID, filePath, repoID, newMime, service):
   fileExtension = {
@@ -428,7 +443,7 @@ def downloadFile(CCODES, driveID, fileName, filePath, repoID):
 def getActivities_API(activityService, repoDriveId, trackingTime):
   if not trackingTime: trackingTime = 0
 
-  timeFilter = f'time >= {trackingTime}'
+  timeFilter = f'time >= "{trackingTime}"'
 
   results = activityService.activity().query(
     body={
@@ -472,77 +487,86 @@ def getChanges_API(service, pageToken):
 
     pageToken = response.get('nextPageToken')
 
-  print(CHANGES)
-  return CHANGES
+  updatedPageToken = getStartPageToken(service).execute()["startPageToken"]
+  return {"changes":CHANGES, "updatedPageToken": updatedPageToken}
 
 def checkChanges(CCODES, repoDriveId, lastCheckedTime, pageToken):
   service = getService(CCODES)
+  activityService = getActivityService(CCODES)
 
-  # CHANGES_API = getChanges_API(service, pageToken)
-  # ACTIVITIES_API = getActivities_API(service, repoDriveId, lastCheckedTime)
+  CHANGES_API_RESPONSE = getChanges_API(service, pageToken)
+  ACTIVITIES_API_RESPONSE = getActivities_API(activityService, repoDriveId, lastCheckedTime)
+
+  print(CHANGES_API_RESPONSE)
+
+
+  updatedPageToken = CHANGES_API_RESPONSE["updatedPageToken"]
+  updatedLastChecked = pyrfc3339.generate(datetime.utcnow(),accept_naive=True,utc=True)
 
   ALL_CHANGES = []
 
+  hierchy = {
+    "restore":0,
+    "delete": 1,
+    "create": 2,
+    "rename": 3,
+    "edit": 3,
+    "move": 3,
+  }
 
-  # print(CHANGES_API)
-  # print(ACTIVITIES_API)
+  for change in CHANGES_API_RESPONSE["changes"]:
+    for activity in ACTIVITIES_API_RESPONSE:
 
-  # hierchy = {
-  #   "restore":0,
-  #   "delete": 1,
-  #   "create": 2,
-  #   "rename": 3,
-  #   "edit": 3,
-  #   "move": 3,
-  # }
+      if(change["fileId"] != activity["driveItems"]["name"][6:]):
+        continue
+      if(change["removed"] == True):
+        ALL_CHANGES.append({
+          "id": change["fileId"],
+          "name": activity["driveItems"]["title"],
+          "time": change["time"],
+          "removed": True,
+          "mimeType": activity["driveItems"]["mimeType"],
+        })
+        break
+      change_present_in_integrated_changes = False
 
-  # for change in CHANGES_API:
-  #   for activity in ACTIVITIES_API:
+      for integratedChange in ALL_CHANGES:
+        if(integratedChange["id"] == change["fileId"]):
+          change_present_in_integrated_changes = True
+          activityAction = list(activity["primaryActionDetail"].keys())[0]   # this is a single activity
+          if(activityAction in integratedChange["primaryActionDetail"].keys()): # this means that there is an action already present in the integratedChange object
+            if(activity["timestamp"] > integratedChange["timestamp"]):
+              integratedChange[activityAction] = activity["primaryActionDetail"]   # to replace the current existing action with the latest action
 
-  #     if(change["fileId"] != activity["driveItems"]["name"][6:]):
-  #       continue
-  #     if(change["removed"] == True):
-  #       ALL_CHANGES.append({
-  #         "id": change["fileId"],
-  #         "name": activity["driveItems"]["title"],
-  #         "time": change["time"],
-  #         "removed": True,
-  #         "mimeType": activity["driveItems"]["mimeType"],
-  #       })
-  #       break
-  #     change_present_in_integrated_changes = False
+          else:  # this indicates that the action is not present in the actionChange so accrding to their hierchy add them
+            lowestHierchy = int(integratedChange["lowestHierchy"])
+            if(hierchy[list(activity["primaryActionDetail"].keys())[0]] < lowestHierchy):
+              temp = integratedChange["primaryActionDetail"].copy()   # this is just made to avoid "dictionary changed size during iteration" exception
+              for action in temp.keys():
+                del integratedChange["primaryActionDetail"][action]
+              integratedChange["primaryActionDetail"] = activity["primaryActionDetail"]
+              integratedChange["lowestHierchy"] = hierchy[activity["primaryActionDetail"]]
 
-  #     for integratedChange in ALL_CHANGES:
-  #       if(integratedChange["id"] == change["fileId"]):
-  #         change_present_in_integrated_changes = True
-  #         activityAction = list(activity["primaryActionDetail"].keys())[0]   # this is a single activity
-  #         if(activityAction in integratedChange["primaryActionDetail"].keys()): # this means that there is an action already present in the integratedChange object
-  #           if(activity["timestamp"] > integratedChange["timestamp"]):
-  #             integratedChange[activityAction] = activity["primaryActionDetail"]   # to replace the current existing action with the latest action
+            if(hierchy[list(activity["primaryActionDetail"].keys())[0]] == lowestHierchy):
+              integratedChange["primaryActionDetail"].update(activity["primaryActionDetail"])
 
-  #         else:  # this indicates that the action is not present in the actionChange so accrding to their hierchy add them
-  #           lowestHierchy = int(integratedChange["lowestHierchy"])
-  #           if(hierchy[list(activity["primaryActionDetail"].keys())[0]] < lowestHierchy):
-  #             temp = integratedChange["primaryActionDetail"].copy()   # this is just made to avoid "dictionary changed size during iteration" exception
-  #             for action in temp.keys():
-  #               del integratedChange["primaryActionDetail"][action]
-  #             integratedChange["primaryActionDetail"] = activity["primaryActionDetail"]
-  #             integratedChange["lowestHierchy"] = hierchy[activity["primaryActionDetail"]]
+      if(change_present_in_integrated_changes == False): # this means that the change was not alrecy present in the integratedChanges
+        ALL_CHANGES.append({
+          "id": change["fileId"],
+          "name": change["file"]["name"],
+          "mimeType": change["file"]["mimeType"],
+          "removed": False,
+          "timestamp": activity["timestamp"],
+          "parents": change["file"]["parents"],
+          "primaryActionDetail": activity["primaryActionDetail"],
+          "lowestHierchy": str(hierchy[list(activity["primaryActionDetail"].keys())[0]]),
+        })
 
-  #           if(hierchy[list(activity["primaryActionDetail"].keys())[0]] == lowestHierchy):
-  #             integratedChange["primaryActionDetail"].update(activity["primaryActionDetail"])
-
-  #     if(change_present_in_integrated_changes == False): # this means that the change was not alrecy present in the integratedChanges
-  #       ALL_CHANGES.append({
-  #         "id": change["fileId"],
-  #         "name": change["file"]["name"],
-  #         "mimeType": change["file"]["mimeType"],
-  #         "removed": False,
-  #         "timestamp": activity["timestamp"],
-  #         "parents": change["file"]["parents"],
-  #         "primaryActionDetail": activity["primaryActionDetail"],
-  #         "lowestHierchy": str(hierchy[list(activity["primaryActionDetail"].keys())[0]]),
-  #       })
-
-  return ALL_CHANGES
+  return {
+          "changes": ALL_CHANGES, 
+          "trackingInfo":{
+            "pageToken":updatedPageToken, 
+            "lastChecked":updatedLastChecked 
+            }
+         } 
 
