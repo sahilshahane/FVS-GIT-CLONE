@@ -26,10 +26,11 @@ export interface AppSettings_DATA_STRUCTURE {
     type: 'ascending' | 'descending';
   };
 }
+const GET: () => AppSettings_DATA_STRUCTURE = () => APP_SETTINGS;
 
 export const AppSettingsSlice = createSlice({
   name: 'AppSettings',
-  initialState: APP_SETTINGS,
+  initialState: GET(),
   reducers: {
     saveRepositorySettings: (state) => {
       fs.writeFileSync(

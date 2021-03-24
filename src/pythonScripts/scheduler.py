@@ -26,6 +26,7 @@ APP_SETTINGS = LOAD_APP_SETTINGS()
 os.environ["APP_HOME_PATH"] = GET_APP_FOLDER_PATH()
 os.environ["DEFAULT_REPO_FOLDER_PATH"] = ".usp"
 os.environ["DEFAULT_DB_FILE_NAME"] = "database.db"
+os.environ["DEFAULT_REPO_DATA_FILE_NAME"] = "data.json"
 os.environ["TESTING_FOLDER"] =  os.path.join('..','..',"Testing")
 
 def defaultWrapper(callback, task:Dict):
@@ -80,16 +81,11 @@ def uploadFile(task):
   parentDriveID = task["data"]["parentDriveID"]
 
   try:
-    driveID = GoogleDrive.uploadFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID)
+    task["data"]["driveID"] = GoogleDrive.uploadFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID)
 
     return {
     "code":CCODES["UPLOAD_SUCCESS"],
-    "data" : {
-      "RepoID" : RepoID,
-      "driveID" : driveID,
-      "fileName" : fileName,
-      "parentPath" : os.path.dirname(filePath)
-    }}
+    "data" : task["data"]}
 
   except Exception as e:
     return { "code":CCODES["UPLOAD_FAILED"], "data" : task["data"], "exception": {"msg":str(e),"type": str(e.__class__.__name__)}}
@@ -145,14 +141,27 @@ def retriveUploads(task):
 
 def createRepoFolders(task):
   RepoID = task["data"]["RepoID"]
-  rootFolderName = task["data"]["RepoName"]
-  rootFolderPath = task["data"]["folderPath"]
-  folderData = task["data"]["folderData"]
+
   try:
-    folderData = GoogleDrive.createRepoFolders(CCODES,RepoID,rootFolderName, rootFolderPath, folderData)
-    return {"code": CCODES["FOLDERS_CREATED"], "data": {"RepoID" : RepoID, "folderData":folderData}}
+    GoogleDrive.createRepoFolders(CCODES, task)
+
+    return {"code": CCODES["ALL_FOLDERS_CREATED_DRIVE"], "data": {"RepoID" : RepoID }}
   except Exception as e:
     return {"code": CCODES["FAILED_TO_CREATE_FOLDERS"], "data": {"RepoID" : RepoID}, "exception" : {"msg" : str(e), "type" :  str(e.__class__.__name__)}}
+
+def checkChanges(task):
+  repoDriveId = task["data"]["driveID"]
+  trackingInfo = task["data"].get("trackingInfo")
+  trackingTime = trackingInfo.get("lastChecked")
+  trackingToken = trackingInfo.get("pageToken")
+
+  try:
+    changes = GoogleDrive.checkChanges(CCODES, repoDriveId, trackingTime, trackingToken)
+
+    return {"code": CCODES["CHANGES_CHECKED"], "data": {"RepoID" : repoDriveId, "changes": changes}}
+  except Exception as e:
+    return {"code": CCODES["CHECK_CHANGES_FAILED"], "data": {"RepoID" : repoDriveId}, "exception" : {"msg" : str(e), "type" :  str(e.__class__.__name__)}}
+
 
 TASKS_DEFINITIONS = {
   CCODES["START_GOOGLE_LOGIN"] : startGoogleLogin,
@@ -161,7 +170,8 @@ TASKS_DEFINITIONS = {
   CCODES["GENERATE_IDS"]: generateGDriveID,
   CCODES["RETRIVE_REPO_UPLOADS"] : retriveUploads,
   CCODES["CREATE_FOLDERS"] : createRepoFolders,
-  CCODES["DOWNLOAD_FILE"]: downloadFile
+  CCODES["DOWNLOAD_FILE"]: downloadFile,
+  CCODES["CHECK_CHANGES"]: checkChanges
 }
 
 def addTask(task):
@@ -176,11 +186,37 @@ def aloneMain():
   # os.environ["SHOW_NODE_OUTPUT"] = 'sdf'
 
   task = {
-    "data": {"path" : "Testing", "force": True},
-    "code": CCODES["INIT_DIR"]
+    "code": CCODES["CREATE_FOLDERS"],
+    "data":{
+      "RepoID": 'Ai0asjd7wgbn6c38h',
+
+      "repoFolderData":{
+          "folder_id": 1,
+          "folderPath": 'Testing',
+          "driveID": "1Lx-M1E1IGwVmNaTJxSkOIBPmwvqnCFzi",
+          "RepoName": 'Testing'
+      },
+      # 2021-03-23T13:54:54.732Z
+      # 12590
+    "folderData":[
+      {
+        "folderPath":"Testing/asd22",
+        "folder_id": 2
+      },
+    ]
+    }
   }
 
-  addTask(task)
+  # addTask(task)
+  task2 = {
+    "code":CCODES["CHECK_CHANGES"],
+    "data":{
+      "RepoID":"asdasdasdasd",
+      "driveID": None,
+      "trackingInfo":{"lastChecked":"2021-03-23T13:58:29Z","pageToken":"12595"}
+      }
+  }
+  addTask(task2)
 
 def GUI_LAUNCH():
   f = open('test.txt',"w+")
@@ -189,6 +225,7 @@ def GUI_LAUNCH():
     task = sys.stdin.readline()[:-1]
     try:
       task = orjson.loads(task)
+
       if(task): addTask(task)
     except:
       pass

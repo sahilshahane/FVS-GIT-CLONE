@@ -24,5 +24,18 @@
     "test/**/__snapshots__": true,
     "yarn.lock": true,
     "*.{css,sass,scss}.d.ts": true
-  }
+  },
+
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "node_modules": true
+  },
+  "python.linting.pylintEnabled": false,
+  "python.linting.enabled": true,
+  "python.pythonPath": "/home/void/.local/share/virtualenvs/pythonScripts-2r4CSBOV/bin/python",
+  "python.linting.mypyEnabled": true
 }

@@ -19,8 +19,7 @@ def loadJSON(filePath):
   return data
 
 def saveJSON(filePath : str, data: dict, encode : str = "utf-8"):
-  with open(filePath,"r") as file_:
+  with open(filePath,"w") as file_:
     file_.write(orjson.dumps(data).decode(encode))
-    data = orjson.loads(file_.read())
     file_.close()
 

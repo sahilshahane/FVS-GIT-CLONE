@@ -6,7 +6,9 @@ from pathlib import Path
 def GET_APP_FOLDER_PATH():
   isDev = os.environ.get("development",False)
   isGUI = os.environ.get("isGUI",False)
-  if(isDev and not isGUI):
+  CURRENT_DIR_NAME = os.path.basename(os.path.abspath('.'))
+
+  if(isDev and not isGUI and CURRENT_DIR_NAME=='pythonScripts'):
     return os.path.join('..','..',"assets", "installation", ".usp")
   elif(isDev):
     return os.path.join("assets", "installation", ".usp")

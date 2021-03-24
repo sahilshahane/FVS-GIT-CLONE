@@ -1,13 +1,13 @@
 import { batch } from 'react-redux';
-import { Modal } from 'antd';
 import log from 'electron-log';
 import ReduxStore from '../Redux/store';
-import { addRepository } from '../Redux/UserRepositorySlicer';
 import {
-  allocateRepoData,
+  addRepository,
+  setRepositoryTrackingInfo,
+} from '../Redux/UserRepositorySlicer';
+import {
   updateUploadingQueue,
   addUploadFinishedQueue,
-  ReAddFailedUpload,
 } from '../Redux/SynchronizationSlicer';
 import { CCODES } from './get_AppData';
 import ShowError, { ShowInfo } from './ErrorPopup_dialog';
@@ -15,6 +15,8 @@ import {
   saveGoogleLogin,
   saveRepositorySettings,
 } from '../Redux/AppSettingsSlicer';
+import { createRepoFoldersInDrive } from './backgroundTasks';
+import { updateFilesDriveID, updateFolderDriveID } from './Database';
 
 const { dispatch } = ReduxStore;
 
@@ -36,19 +38,59 @@ const Handler = (
           RepoID: response.data.RepoID,
         })
       );
+
+      // CREATE FOLDERS
+      createRepoFoldersInDrive(
+        response.data.RepoID,
+        response.data.RepositoryName
+      );
+
       break;
-    case CCODES.FOLDER_CREATED:
-      dispatch(
-        allocateRepoData({
-          RepoID: response.data.RepoID,
-          folderData: response.data.folderData,
+    case CCODES.INIT_FAILED:
+      log.error('Failed to Initialize Repository', response);
+      break;
+    case CCODES.ALL_FOLDERS_CREATED_DRIVE:
+      log.info('All Folders are created in drive', response.data);
+
+      // UPDATE UPLOADS
+      dispatch(updateUploadingQueue(ReduxStore.getState().UserRepoData));
+
+      break;
+    case CCODES.FOLDER_CREATED_DRIVE:
+      updateFolderDriveID(response.data.RepoID, {
+        folder_id: response.data.folder_id,
+        driveID: response.data.driveID,
+      }).catch((exception) =>
+        log.error("Failed to Update folder's data locally", {
+          response,
+          exception,
         })
       );
+
       break;
-    case CCODES.ADD_UPLOAD:
+    case CCODES.REPO_FOLDER_CREATED_DRIVE:
+      updateFolderDriveID(response.data.RepoID, {
+        folder_id: response.data.folder_id,
+        driveID: response.data.driveID,
+      })
+        .then(() => {
+          dispatch(
+            setRepositoryTrackingInfo({
+              RepoID: response.data.RepoID,
+              trackingInfo: response.data.trackingInfo,
+            })
+          );
+          return null;
+        })
+        .catch((exception) =>
+          log.error("Failed to Update Repository's driveID data locally", {
+            response,
+            exception,
+          })
+        );
+
       break;
-    case CCODES.ADD_DOWNLOAD:
-      break;
+
     case CCODES.REPO_EXISTS:
       if (process.env.NODE_ENV === 'development')
         ShowInfo(
@@ -56,29 +98,36 @@ const Handler = (
           'Please Remove the .usp folder [This Dialog will only be shown in Development mode]'
         );
       break;
-    case CCODES.FAILED_CREATE_FOLDERS:
-      ShowError(
-        'Failed to Allocated Folders!',
-        `${response.exception?.type} : ${response.exception?.msg}`
-      );
-      break;
+
     case CCODES.UPLOAD_SUCCESS:
-      dispatch(
-        addUploadFinishedQueue({
-          RepoID: response.data.RepoID,
-          driveID: response.data.driveID,
-          fileName: response.data.fileName,
-          parentPath: response.data.parentPath,
+      updateFilesDriveID(response.data.RepoID, {
+        folder_id: response.data.folder_id,
+        driveID: response.data.driveID,
+        fileName: response.data.fileName,
+      })
+        .then(() => {
+          dispatch(
+            addUploadFinishedQueue({
+              RepoID: response.data.RepoID,
+              driveID: response.data.driveID,
+              fileName: response.data.fileName,
+              filePath: response.data.filePath,
+            })
+          );
+          return null;
         })
-      );
+        .catch((err) =>
+          log.error('Failed Updating Uploaded file locally', {
+            response,
+            exception: err,
+          })
+        );
+
       break;
     case CCODES.UPLOAD_FAILED:
-      dispatch(ReAddFailedUpload(response.data));
-      if (process.env.NODE_ENV === 'development')
-        ShowError(
-          'Upload Failed',
-          `${response.data.fileName}\n${response.exception?.type} : ${response.exception?.msg}`
-        );
+      // UPDATE UPLOADS
+      dispatch(updateUploadingQueue(ReduxStore.getState().UserRepoData));
+
       break;
     case CCODES.GOOGLE_LOGIN_SUCCESS:
       batch(() => {
@@ -86,8 +135,6 @@ const Handler = (
         dispatch(saveRepositorySettings());
       });
 
-      break;
-    case CCODES.GOOGLE_LOGIN_FAILED:
       break;
   }
 };

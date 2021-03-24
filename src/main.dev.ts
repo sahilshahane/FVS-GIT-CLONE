@@ -120,27 +120,7 @@ if (
   require('electron-debug')();
 }
 
-const installExtensions = async () => {
-  const installer = require('electron-devtools-installer');
-  const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS', 'REDUX_DEVTOOLS'];
-
-  return installer
-    .default(
-      extensions.map((name) => installer[name]),
-      forceDownload
-    )
-    .catch(console.log);
-};
-
 const createWindow = async () => {
-  if (
-    process.env.NODE_ENV === 'development' ||
-    process.env.DEBUG_PROD === 'true'
-  ) {
-    await installExtensions();
-  }
-
   const RESOURCES_PATH = app.isPackaged
     ? path.join(process.resourcesPath, 'assets')
     : path.join(__dirname, '../assets');
@@ -156,7 +136,6 @@ const createWindow = async () => {
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
-      enableRemoteModule: true,
       contextIsolation: false,
     },
   });
@@ -178,13 +157,18 @@ const createWindow = async () => {
     }
   });
 
+  let savedOnce = false;
   mainWindow.on('close', (e) => {
-    e.preventDefault();
+    if (!savedOnce) {
+      e.preventDefault();
+      mainWindow.webContents.send('save-on-exit');
+      savedOnce = true;
+    }
   });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
+  // mainWindow.on('closed', () => {
+  //   mainWindow = null;
+  // });
 
   // Open urls in the user's browser
   mainWindow.webContents.on('new-window', (event, url) => {
@@ -237,4 +221,8 @@ ipcMain.on('get-CCODES', (evt) => {
 
 ipcMain.on('get-APP_HOME_PATH', (evt) => {
   evt.returnValue = APP_HOME_PATH;
+});
+
+ipcMain.on('exit-normal', () => {
+  app.quit();
 });

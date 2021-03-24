@@ -3,12 +3,15 @@ import { createSlice } from '@reduxjs/toolkit';
 import log from 'electron-log';
 import fs from 'fs-extra';
 import path from 'path';
+import { getRemainingUploads } from '../modules/Database';
 import {
   CCODES,
   sendSchedulerTask,
   SYNC_DATA,
   SYNC_DATA_FILE_PATH,
 } from '../modules/get_AppData';
+import Reduxstore from '../Redux/store';
+import { USER_REPOSITORY_DATA_STRUCTURE } from './UserRepositorySlicer';
 
 export interface SYNC_INPUT {
   fileName: string;
@@ -40,12 +43,13 @@ export interface DoingQueue {
   progress?: number;
   RepoID: number | string;
   status?: string;
+  parentDriveID: string;
 }
 
 export interface FinishedQueue {
   fileName: string;
   driveID: string;
-  parentPath: string;
+  filePath: string;
 }
 
 export interface WatingQueueInterface {
@@ -108,7 +112,7 @@ interface allocateRepoDataInterface {
 interface addFinishedQueueInterface {
   payload: {
     fileName: string;
-    parentPath: string;
+    filePath: string;
     driveID: string;
     RepoID: number | string;
   };
@@ -184,21 +188,9 @@ export const SynchronizationSlice = createSlice({
     saveSyncData: (state) => {
       SAVE(state);
     },
-    setRepositoryData: (state, action: setRepositoryDataInterface) => {
-      const { RepoID, folderData } = action.payload;
-      state.RepoData[RepoID] = folderData;
-    },
-    setUploadWatingQueue: (state, action: setWatingQueueInterface) => {
-      state.uploadWatingQueue[action.payload.RepoID] = action.payload.data;
-      state.totalSessionUploads += action.payload.data.length;
-    },
-    setDownloadWatingQueue: (state, action: setWatingQueueInterface) => {
-      state.downloadWatingQueue[action.payload.RepoID] = action.payload.data;
-      state.totalSessionDownloads += action.payload.data.length;
-    },
     addUploadFinishedQueue: (state, action: addFinishedQueueInterface) => {
-      const { RepoID, fileName, driveID, parentPath } = action.payload;
-      const filePath = path.join(parentPath, fileName);
+      const { RepoID, fileName, driveID, filePath } = action.payload;
+
       const indexTobeRemoved = state.uploadingQueue.findIndex(
         (val) => val.driveID === driveID || val.filePath === filePath
       );
@@ -213,7 +205,7 @@ export const SynchronizationSlice = createSlice({
       state.uploadFinishedQueue[RepoID].push({
         fileName,
         driveID,
-        parentPath,
+        filePath,
       });
     },
     addDownloadFinishedQueue: (state, action: addFinishedQueueInterface) => {
@@ -237,87 +229,42 @@ export const SynchronizationSlice = createSlice({
         parentPath,
       });
     },
-    ReAddFailedUpload: (state, action: ReAddFailedUploadInterface) => {
-      const { driveID, RepoID, fileName, filePath } = action.payload;
-      let indexTobeRemoved = -1;
-      if (driveID) {
-        indexTobeRemoved = state.uploadingQueue.findIndex(
-          (val) => val.driveID === driveID
-        );
-      } else {
-        indexTobeRemoved = state.uploadingQueue.findIndex(
-          (val) => val.filePath === filePath
-        );
-      }
 
-      if (indexTobeRemoved > -1) {
-        state.uploadingQueue.splice(indexTobeRemoved, 1);
+    updateUploadingQueue: (
+      state,
+      action: { payload: USER_REPOSITORY_DATA_STRUCTURE }
+    ) => {
+      const UserRepoData = action.payload;
+      // eslint-disable-next-line consistent-return
+      Object.keys(UserRepoData.info).forEach((RepoID) => {
+        if (state.uploadingQueue.length <= MAX_PARALLEL_UPLOAD) {
+          // CALCULATE HOW MANY UPLOADS DO YOU NEED
+          const remainingSlots =
+            MAX_PARALLEL_UPLOAD - state.uploadingQueue.length;
 
-        state.uploadWatingQueue[RepoID].push({
-          driveID,
-          fileName,
-          filePath,
-        });
-      }
-    },
-    ReAddFailedDownload: (state, action: ReAddFailedUploadInterface) => {
-      const { driveID, RepoID, fileName, filePath } = action.payload;
-      let indexTobeRemoved = -1;
-      if (driveID) {
-        indexTobeRemoved = state.downloadingQueue.findIndex(
-          (val) => val.driveID === driveID
-        );
-      } else {
-        indexTobeRemoved = state.downloadingQueue.findIndex(
-          (val) => val.filePath === filePath
-        );
-      }
+          if (remainingSlots === 0) return null;
 
-      if (indexTobeRemoved > -1) {
-        state.downloadingQueue.splice(indexTobeRemoved, 1);
+          // GET THE UPLOADS FROM DATABASE
+          const newUploads = getRemainingUploads(RepoID, remainingSlots);
 
-        state.downloadWatingQueue[RepoID].push({
-          driveID,
-          fileName,
-          filePath,
-        });
-      }
-    },
-    updateUploadingQueue: (state) => {
-      const { uploadWatingQueue, RepoData } = state;
-      Object.keys(uploadWatingQueue).forEach((RepoID) => {
-        if (state.uploadingQueue.length < MAX_PARALLEL_UPLOAD) {
-          uploadWatingQueue[RepoID].forEach((val, index) => {
-            if (state.uploadingQueue.length < MAX_PARALLEL_UPLOAD) {
-              const parentPath = path.dirname(val.filePath);
-              const parentID = RepoData[RepoID][parentPath];
-              if (parentID) {
-                // UPDATING WAITING QUEUE , IMP SECTION
-                state.uploadWatingQueue[RepoID].splice(index, 1);
-                /// //////////////////////////////////////
-                const newUploads: DoingQueue = {
-                  fileName: val.fileName,
-                  filePath: val.filePath,
-                  driveID: val.driveID,
-                  RepoID,
-                  status: 'RUNNING',
-                };
-                state.uploadingQueue = [...state.uploadingQueue, newUploads];
-                sendSchedulerTask({
-                  code: CCODES.UPLOAD_FILE,
-                  data: {
-                    ...newUploads,
-                    parentDriveID: state.RepoData[RepoID][parentPath],
-                  },
-                });
-              }
-            }
+          // UPDATE IT FOR UI and STATUS
+          state.uploadingQueue = [...state.uploadingQueue, ...newUploads];
+
+          // SEND TASK TO SCHEDULER
+          newUploads.forEach((fileUploadData) => {
+            if (fileUploadData.parentDriveID)
+              sendSchedulerTask({
+                code: CCODES.UPLOAD_FILE,
+                data: { ...fileUploadData, RepoID },
+              });
+            else log.warn('CREATE FOLDERS IN DRIVE FIRST!');
           });
         }
       });
     },
     updateDownloadingQueue: (state) => {
       const { downloadWatingQueue, RepoData } = state;
+
       Object.keys(downloadWatingQueue).forEach((RepoID) => {
         if (state.downloadingQueue.length < MAX_PARALLEL_DOWNLOAD) {
           const newDownloads: Array<DoingQueue> = downloadWatingQueue[
@@ -371,13 +318,6 @@ export const SynchronizationSlice = createSlice({
       state.showDownloadsDrawer = false;
       state.showUploadsDrawer = false;
     },
-    allocateRepoData: (state, action: allocateRepoDataInterface) => {
-      const { RepoID, folderData } = action.payload;
-      state.RepoData[RepoID] = {
-        ...state.RepoData[RepoID],
-        ...folderData,
-      };
-    },
   },
 });
 
@@ -386,16 +326,10 @@ export const {
   showDownloadsDrawer,
   showUploadsDrawer,
   closeSyncDrawer,
-  setRepositoryData,
-  setUploadWatingQueue,
-  setDownloadWatingQueue,
   updateUploadingQueue,
   updateDownloadingQueue,
-  allocateRepoData,
   addUploadFinishedQueue,
   addDownloadFinishedQueue,
-  ReAddFailedUpload,
-  ReAddFailedDownload,
 } = SynchronizationSlice.actions;
 
 export const SYNC_ACTIONS = SynchronizationSlice.actions;

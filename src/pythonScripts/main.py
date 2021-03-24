@@ -182,6 +182,13 @@ def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
   # CREATE A DIRECTORY
   os.mkdir(REPO_PATH)
 
+  # CREATE REPOSITORY DATA
+  REPO_DATA_PATH = os.path.join(REPO_PATH,os.environ["DEFAULT_REPO_DATA_FILE_NAME"])
+  REPO_DATA = dict()
+  REPO_DATA["RepoPath"] = DIR_PATH
+
+  saveJSON(REPO_DATA_PATH, REPO_DATA)
+
   DB_PATH = os.path.join(REPO_PATH,os.environ["DEFAULT_DB_FILE_NAME"])
 
   DB_CONNECTION = sqlite3.connect(DB_PATH)
@@ -189,9 +196,9 @@ def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
 
   # FILES TABLE
   cur.execute(f'''CREATE TABLE files (
-                      name text ,
+                      fileName text ,
                       folder_id INTEGER NOT NULL,
-                      drive_id TEXT,
+                      driveID TEXT,
                       uploaded INTEGER,
                       downloaded INTEGER,
                       fileHash TEXT,
@@ -200,11 +207,11 @@ def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
 
   # FOLDERS TABLE
   cur.execute(f'''CREATE TABLE folders (
-                      name TEXT NOT NULL,
+                      folderName TEXT NOT NULL,
                       folder_id INTEGER PRIMARY KEY,
-                      drive_id TEXT,
-                      parentPath TEXT NOT NULL
-                      )''')
+                      driveID TEXT,
+                      folderPath TEXT NOT NULL
+                    )''')
 
   cur.close()
 
