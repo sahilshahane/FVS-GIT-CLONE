@@ -530,7 +530,6 @@ def getChanges_API(service, pageToken):
 #     "parents": "1lUw5Z86W4h8m-DIdaSII9SRjV3OksTPp"
 #   }
 
-
 def checkChanges(CCODES, repoDriveId, lastCheckedTime, pageToken):
   service = getService(CCODES)
   activityService = getActivityService(CCODES)
