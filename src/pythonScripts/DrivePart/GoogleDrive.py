@@ -7,7 +7,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.http import BatchHttpRequest, MediaFileUpload, MediaIoBaseDownload
 import orjson
-from utils import output, saveJSON
+from utils import output, saveJSON, printJSON
 import webbrowser
 import wsgiref.simple_server
 import wsgiref.util
@@ -20,7 +20,7 @@ import mimetypes
 import io
 import pyrfc3339
 from datetime import datetime
-import pytz
+
 
 CREDENTIALS = None
 service:Resource = None
@@ -55,9 +55,9 @@ def build_request(http, *args, **kwargs):
 def getService(CCODES,creds = None, api=None):
     global CREDENTIALS
     global service
-    
+
     # if CREDENTIALS: return build('drive', 'v3', credentials=CREDENTIALS, requestBuilder=build_request)
-    
+
     if service and not api: return service
     else:
       TOKEN_FILE_PATH = str(os.path.join(os.environ["APP_HOME_PATH"],"token.pickle"))
@@ -328,9 +328,6 @@ def createRepoFolders(CCODES, task):
 
   CREATED_FOLDERS = dict()
 
-
-
-
   # CHECK IF repo FOLDER IS PRESENT
   if not repoFolderID:
     repoCreatedTime = None
@@ -347,7 +344,6 @@ def createRepoFolders(CCODES, task):
           repoCreatedTime = response["createdTime"]
         elif req_id == '2':
           pageToken = response["startPageToken"]
-
 
     batch = service.new_batch_http_request(callback=assignResponse)
     batch.add(createFolder(CCODES,repoFolderName,fields="id, createdTime",service=service))
@@ -440,73 +436,10 @@ def downloadFile(CCODES, driveID, fileName, filePath, repoID):
   #   if page_token is None:
   #     break
 
-def getActivities_API(activityService, repoDriveId, trackingTime):
-  if not trackingTime: trackingTime = 0
-
-  timeFilter = f'time >= "{trackingTime}"'
-
-  results = activityService.activity().query(
-    body={
-      # 'pageSize': 10,
-      "ancestorName": f"items/{repoDriveId}",
-      "filter": timeFilter
-    },
-  ).execute()
-
-  activities = results.get('activities', [])
-  activityChanges = []
-
-  for activity in activities:
-      primaryActionDetail = activity["primaryActionDetail"]
-      driveItems = activity["targets"][0]["driveItem"]
-      timestamp = activity["timestamp"]
-      change = {
-        "primaryActionDetail": primaryActionDetail,
-        "driveItems": driveItems,
-        "timestamp": timestamp
-      }
-      activityChanges.append(change)
-
-  return activityChanges
-
-def getChanges_API(service, pageToken):
-  if not pageToken: pageToken = getStartPageToken(service)
-
-  CHANGES = []
-
-  while pageToken is not None:
-    response = service.changes().list(
-    pageToken=pageToken,
-    fields="changes(kind, type, changeType, time, removed, fileId, file(mimeType, name, parents))",
-    spaces='drive',
-    includeRemoved=True).execute()
-
-    CHANGES.extend(change for change in response.get('changes'))
-
-    if 'newStartPageToken' in response: saved_start_page_token = response.get('newStartPageToken')
-
-    pageToken = response.get('nextPageToken')
-
-  updatedPageToken = getStartPageToken(service).execute()["startPageToken"]
-  return {"changes":CHANGES, "updatedPageToken": updatedPageToken}
-
-def checkChanges(CCODES, repoDriveId, lastCheckedTime, pageToken):
-  service = getService(CCODES)
-  activityService = getActivityService(CCODES)
-
-  CHANGES_API_RESPONSE = getChanges_API(service, pageToken)
-  ACTIVITIES_API_RESPONSE = getActivities_API(activityService, repoDriveId, lastCheckedTime)
-
-  print(CHANGES_API_RESPONSE)
-
-
-  updatedPageToken = CHANGES_API_RESPONSE["updatedPageToken"]
-  updatedLastChecked = pyrfc3339.generate(datetime.utcnow(),accept_naive=True,utc=True)
-
-  ALL_CHANGES = []
+def getActivities_API(activityService, CHANGES_API_RESPONSE, repoDriveId, trackingTime):
 
   hierchy = {
-    "restore":0,
+    "restore":1,
     "delete": 1,
     "create": 2,
     "rename": 3,
@@ -514,59 +447,106 @@ def checkChanges(CCODES, repoDriveId, lastCheckedTime, pageToken):
     "move": 3,
   }
 
-  for change in CHANGES_API_RESPONSE["changes"]:
-    for activity in ACTIVITIES_API_RESPONSE:
+  results = activityService.activity().query(
+    body={
+      "ancestorName": f"items/{repoDriveId}",
+      "filter": f'time >= "{trackingTime}"'
+    },
+  ).execute()
 
-      if(change["fileId"] != activity["driveItems"]["name"][6:]):
-        continue
-      if(change["removed"] == True):
-        ALL_CHANGES.append({
-          "id": change["fileId"],
-          "name": activity["driveItems"]["title"],
-          "time": change["time"],
-          "removed": True,
-          "mimeType": activity["driveItems"]["mimeType"],
-        })
-        break
-      change_present_in_integrated_changes = False
+  CHANGES = {}
+  activities = results.get('activities', [])
 
-      for integratedChange in ALL_CHANGES:
-        if(integratedChange["id"] == change["fileId"]):
-          change_present_in_integrated_changes = True
-          activityAction = list(activity["primaryActionDetail"].keys())[0]   # this is a single activity
-          if(activityAction in integratedChange["primaryActionDetail"].keys()): # this means that there is an action already present in the integratedChange object
-            if(activity["timestamp"] > integratedChange["timestamp"]):
-              integratedChange[activityAction] = activity["primaryActionDetail"]   # to replace the current existing action with the latest action
+  for activity in activities:
+    driveItems = activity["targets"][0]["driveItem"]
+    id = driveItems["name"][6:]                                     # this might be confusing name~title
 
-          else:  # this indicates that the action is not present in the actionChange so accrding to their hierchy add them
-            lowestHierchy = int(integratedChange["lowestHierchy"])
-            if(hierchy[list(activity["primaryActionDetail"].keys())[0]] < lowestHierchy):
-              temp = integratedChange["primaryActionDetail"].copy()   # this is just made to avoid "dictionary changed size during iteration" exception
-              for action in temp.keys():
-                del integratedChange["primaryActionDetail"][action]
-              integratedChange["primaryActionDetail"] = activity["primaryActionDetail"]
-              integratedChange["lowestHierchy"] = hierchy[activity["primaryActionDetail"]]
+    activityHierchy = hierchy[next(iter(activity["primaryActionDetail"]))]
+    savedHierchy = None
 
-            if(hierchy[list(activity["primaryActionDetail"].keys())[0]] == lowestHierchy):
-              integratedChange["primaryActionDetail"].update(activity["primaryActionDetail"])
-
-      if(change_present_in_integrated_changes == False): # this means that the change was not alrecy present in the integratedChanges
-        ALL_CHANGES.append({
-          "id": change["fileId"],
-          "name": change["file"]["name"],
-          "mimeType": change["file"]["mimeType"],
-          "removed": False,
+    if not CHANGES.get(id):
+      CHANGES[id] = {
+          "name": driveItems["title"],
           "timestamp": activity["timestamp"],
-          "parents": change["file"]["parents"],
-          "primaryActionDetail": activity["primaryActionDetail"],
-          "lowestHierchy": str(hierchy[list(activity["primaryActionDetail"].keys())[0]]),
-        })
+          "mimeType": driveItems["mimeType"],
+          "hierchy": activityHierchy,
+          "actions": activity["primaryActionDetail"]
+        }
+    else:
+      savedHierchy = CHANGES[id]["hierchy"]
+
+    if savedHierchy:
+      if savedHierchy > activityHierchy:
+        CHANGES[id].update({ "actions": activity["primaryActionDetail"], "hierchy": activityHierchy })
+
+      # else if the hierchy is the same i.e is the same priority (rename, edit, move) then just update the object
+      elif savedHierchy == activityHierchy:
+        savedTimeStamp = CHANGES[id]["timestamp"]
+
+        if activityHierchy == 1 and activity["timestamp"] > savedTimeStamp:
+            CHANGES[id]["actions"] = activity["primaryActionDetail"]
+        else: continue
+
+        CHANGES[id]["actions"].update(activity["primaryActionDetail"])
+
+        # and eventually update the time since it was after (checked in the first if)
+        CHANGES[id].update({"timestamp": activity["timestamp"], "name": activity["name"]})
+
+  return CHANGES
+# "1SAmoOSyJesmltBTym1a5lOQSrN_Il-pSj8LicJ3y23Q": {
+#     "name": "Inside Folder 1.2",
+#     "timestamp": "2021-03-25T06:36:50.933Z",
+#     "mimeType": "application/vnd.google-apps.document",
+#     "hierchy": 3,
+#     "action": {
+#       "rename": {
+#         "oldTitle": "Inside Folder 2",
+#         "newTitle": "Inside Folder 1.2"
+#       }
+#     }
+#   }
+
+def getChanges_API(service, pageToken):
+  CHANGES = {}
+
+  while pageToken is not None:
+    response = service.changes().list(
+      pageToken=pageToken,
+      fields="changes(removed, fileId, file(parents, mimeType))",
+      spaces='drive',
+      includeRemoved=True).execute()
+
+    for change in response.get('changes'):
+      parentID = change.get("file",{}).get("parents",[None])[0]         # basically if there is a file there are its parents
+      driveID = change["fileId"]
+
+      CHANGES[driveID] = { "parents": parentID }
+
+      if change["removed"]: CHANGES[driveID]["removed"] = True
+
+    pageToken = response.get('nextPageToken')
+
+  updatedPageToken = getStartPageToken(service).execute()["startPageToken"]
+
+  return {"changes":CHANGES, "updatedPageToken": updatedPageToken}
+
+def checkChanges(CCODES, repoDriveId, lastCheckedTime, pageToken):
+  service = getService(CCODES)
+  activityService = getActivityService(CCODES)
+
+  CHANGES_API_RESPONSE = getChanges_API(service, pageToken)
+  ACTIVITIES_API_RESPONSE = getActivities_API(activityService, CHANGES_API_RESPONSE, repoDriveId, lastCheckedTime)
+
+  updatedPageToken = CHANGES_API_RESPONSE["updatedPageToken"]
+  updatedLastChecked = pyrfc3339.generate(datetime.utcnow(),accept_naive=True,utc=True)
+
+  for id in ACTIVITIES_API_RESPONSE:
+    ACTIVITIES_API_RESPONSE[id].update(CHANGES_API_RESPONSE["changes"][id])
 
   return {
-          "changes": ALL_CHANGES, 
+          "changes": ACTIVITIES_API_RESPONSE,
           "trackingInfo":{
-            "pageToken":updatedPageToken, 
-            "lastChecked":updatedLastChecked 
+            "pageToken":updatedPageToken,
+            "lastChecked":updatedLastChecked
             }
-         } 
-
+         }

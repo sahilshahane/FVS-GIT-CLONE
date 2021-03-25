@@ -27,6 +27,8 @@ os.environ["APP_HOME_PATH"] = GET_APP_FOLDER_PATH()
 os.environ["DEFAULT_REPO_FOLDER_PATH"] = ".usp"
 os.environ["DEFAULT_DB_FILE_NAME"] = "database.db"
 os.environ["DEFAULT_REPO_DATA_FILE_NAME"] = "data.json"
+os.environ["DRIVE_CHANGES_DB"] = os.path.join(os.environ["APP_HOME_PATH"],'drive_changes.db')
+
 os.environ["TESTING_FOLDER"] =  os.path.join('..','..',"Testing")
 
 def defaultWrapper(callback, task:Dict):
@@ -150,15 +152,16 @@ def createRepoFolders(task):
     return {"code": CCODES["FAILED_TO_CREATE_FOLDERS"], "data": {"RepoID" : RepoID}, "exception" : {"msg" : str(e), "type" :  str(e.__class__.__name__)}}
 
 def checkChanges(task):
+  repoID = task["data"]["RepoID"]
   repoDriveId = task["data"]["driveID"]
   trackingInfo = task["data"].get("trackingInfo")
   trackingTime = trackingInfo.get("lastChecked")
   trackingToken = trackingInfo.get("pageToken")
 
   try:
-    changes = GoogleDrive.checkChanges(CCODES, repoDriveId, trackingTime, trackingToken)
+    DATA = GoogleDrive.checkChanges(CCODES, repoDriveId, trackingTime, trackingToken)
 
-    return {"code": CCODES["CHANGES_CHECKED"], "data": {"RepoID" : repoDriveId, "changes": changes}}
+    return {"code": CCODES["CHANGES_CHECKED"], "data": {"RepoID" : repoID, "changes":  DATA["changes"], "trackingInfo": DATA["trackingInfo"]}}
   except Exception as e:
     return {"code": CCODES["CHECK_CHANGES_FAILED"], "data": {"RepoID" : repoDriveId}, "exception" : {"msg" : str(e), "type" :  str(e.__class__.__name__)}}
 
@@ -183,7 +186,7 @@ def addTask(task):
 def aloneMain():
   DIR_PATH = os.path.abspath("Testing")
 
-  # os.environ["SHOW_NODE_OUTPUT"] = 'sdf'
+  # os.environ["DISABLE_NODE_OUTPUT"] = '1'
 
   task = {
     "code": CCODES["CREATE_FOLDERS"],
@@ -193,7 +196,7 @@ def aloneMain():
       "repoFolderData":{
           "folder_id": 1,
           "folderPath": 'Testing',
-          "driveID": "1Lx-M1E1IGwVmNaTJxSkOIBPmwvqnCFzi",
+          "driveID": None,
           "RepoName": 'Testing'
       },
       # 2021-03-23T13:54:54.732Z
@@ -208,19 +211,21 @@ def aloneMain():
   }
 
   # addTask(task)
+
   task2 = {
     "code":CCODES["CHECK_CHANGES"],
     "data":{
       "RepoID":"asdasdasdasd",
-      "driveID": None,
-      "trackingInfo":{"lastChecked":"2021-03-23T13:58:29Z","pageToken":"12595"}
+      "driveID": "1lO4POQfaBc2Uj0c1EbmNsoMdyOY3g06m",
+      "trackingInfo":{"lastChecked":"2021-03-25T13:43:29Z","pageToken":"13444"}
       }
   }
-  addTask(task2)
+
+  # addTask(task2)
+  task_func = TASKS_DEFINITIONS[task2["code"]]
+  print(task_func(task2))
 
 def GUI_LAUNCH():
-  f = open('test.txt',"w+")
-  # MAIN LOOP
   while(True):
     task = sys.stdin.readline()[:-1]
     try:
