@@ -154,12 +154,10 @@ def createRepoFolders(task):
 def checkChanges(task):
   repoID = task["data"]["RepoID"]
   repoDriveId = task["data"]["driveID"]
-  trackingInfo = task["data"].get("trackingInfo")
-  trackingTime = trackingInfo.get("lastChecked")
-  trackingToken = trackingInfo.get("pageToken")
+  lastCheckedTime = task["data"]["trackingInfo"]["lastChecked"]
 
   try:
-    DATA = GoogleDrive.checkChanges(CCODES, repoDriveId, trackingTime, trackingToken)
+    DATA = GoogleDrive.checkChanges(CCODES, repoDriveId, lastCheckedTime)
 
     return {"code": CCODES["CHANGES_CHECKED"], "data": {"RepoID" : repoID, "changes":  DATA["changes"], "trackingInfo": DATA["trackingInfo"]}}
   except Exception as e:
@@ -216,14 +214,13 @@ def aloneMain():
     "code":CCODES["CHECK_CHANGES"],
     "data":{
       "RepoID":"asdasdasdasd",
-      "driveID": "1lO4POQfaBc2Uj0c1EbmNsoMdyOY3g06m",
-      "trackingInfo":{"lastChecked":"2021-03-25T13:43:29Z","pageToken":"13444"}
+      "driveID": "1alokoT_QAi9wcrZvtMfCnauRPdM6G4bx",
+      "trackingInfo":{"lastChecked":"2021-03-25T20:27:58Z"}
       }
   }
 
-  # addTask(task2)
-  task_func = TASKS_DEFINITIONS[task2["code"]]
-  print(task_func(task2))
+  addTask(task2)
+
 
 def GUI_LAUNCH():
   while(True):

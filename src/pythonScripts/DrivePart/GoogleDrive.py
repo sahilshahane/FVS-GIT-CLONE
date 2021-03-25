@@ -21,7 +21,6 @@ import io
 import pyrfc3339
 from datetime import datetime
 
-
 CREDENTIALS = None
 service:Resource = None
 ActivityService = None
@@ -436,7 +435,25 @@ def downloadFile(CCODES, driveID, fileName, filePath, repoID):
   #   if page_token is None:
   #     break
 
-def getActivities_API(activityService, CHANGES_API_RESPONSE, repoDriveId, trackingTime):
+def getActivities_API(activityService, repoDriveId, trackingTime):
+  activities = []
+
+  pageToken = None
+
+  while True:
+    response = activityService.activity().query(
+      body={
+        "ancestorName": f"items/{repoDriveId}",
+        "filter": f'time >= "{trackingTime}"',
+        "pageToken": pageToken
+      },
+    ).execute()
+
+    activities.extend(response.get('activities', []))
+    pageToken = response.get('nextPageToken', None)
+
+    if pageToken is None: break
+
 
   hierchy = {
     "restore":1,
@@ -447,15 +464,7 @@ def getActivities_API(activityService, CHANGES_API_RESPONSE, repoDriveId, tracki
     "move": 3,
   }
 
-  results = activityService.activity().query(
-    body={
-      "ancestorName": f"items/{repoDriveId}",
-      "filter": f'time >= "{trackingTime}"'
-    },
-  ).execute()
-
   CHANGES = {}
-  activities = results.get('activities', [])
 
   for activity in activities:
     driveItems = activity["targets"][0]["driveItem"]
@@ -506,47 +515,65 @@ def getActivities_API(activityService, CHANGES_API_RESPONSE, repoDriveId, tracki
 #     }
 #   }
 
-def getChanges_API(service, pageToken):
-  CHANGES = {}
-
-  while pageToken is not None:
-    response = service.changes().list(
-      pageToken=pageToken,
-      fields="changes(removed, fileId, file(parents, mimeType))",
-      spaces='drive',
-      includeRemoved=True).execute()
-
-    for change in response.get('changes'):
-      parentID = change.get("file",{}).get("parents",[None])[0]         # basically if there is a file there are its parents
-      driveID = change["fileId"]
-
-      CHANGES[driveID] = { "parents": parentID }
-
-      if change["removed"]: CHANGES[driveID]["removed"] = True
-
-    pageToken = response.get('nextPageToken')
-
-  updatedPageToken = getStartPageToken(service).execute()["startPageToken"]
-
-  return {"changes":CHANGES, "updatedPageToken": updatedPageToken}
-
-def checkChanges(CCODES, repoDriveId, lastCheckedTime, pageToken):
+def checkChanges(CCODES, repoDriveId, lastCheckedTime):
   service = getService(CCODES)
   activityService = getActivityService(CCODES)
 
-  CHANGES_API_RESPONSE = getChanges_API(service, pageToken)
-  ACTIVITIES_API_RESPONSE = getActivities_API(activityService, CHANGES_API_RESPONSE, repoDriveId, lastCheckedTime)
+  ACTIVITIES_API_RESPONSE = getActivities_API(activityService, repoDriveId, lastCheckedTime)
 
-  updatedPageToken = CHANGES_API_RESPONSE["updatedPageToken"]
   updatedLastChecked = pyrfc3339.generate(datetime.utcnow(),accept_naive=True,utc=True)
 
-  for id in ACTIVITIES_API_RESPONSE:
-    ACTIVITIES_API_RESPONSE[id].update(CHANGES_API_RESPONSE["changes"][id])
+  responseIDs = {}
+
+  def assignData(res_id, res, err):
+    nonlocal ACTIVITIES_API_RESPONSE
+
+    driveID = responseIDs[int(res_id)]
+
+    if(err):
+      fileDetails = ACTIVITIES_API_RESPONSE[driveID]
+      printJSON({"ERROR" : str(err),"code" : "FAILED", "data": fileDetails})
+    else:
+      res["parents"] = res["parents"][0]
+      ACTIVITIES_API_RESPONSE[driveID].update(res)
+
+  # BATCH SERVICE
+  batch = service.new_batch_http_request(callback=assignData)
+
+  # SET INITIAL DATA
+  request_count = 1
+  MAX_BATCH_REQUETS_LIMIT = 99
+  AAR_ITERATOR = iter(ACTIVITIES_API_RESPONSE)
+
+  while(True):
+
+    try:
+      id = next(AAR_ITERATOR)
+    except StopIteration: break
+
+    isPermanentDelete = ACTIVITIES_API_RESPONSE[id]["actions"].get("delete",{}).get("type") == "PERMANENT_DELETE"
+
+    # MAX BATCH REQUESTS ARE LIMITED TO 1000
+    if(request_count==MAX_BATCH_REQUETS_LIMIT):
+      batch.execute()
+
+      request_count = 1
+      responseIDs = {}
+      batch = service.new_batch_http_request(callback=assignData)
+
+    if(not isPermanentDelete):
+      responseIDs[request_count] = id
+
+      batch.add(service.files().get(fileId=id, fields="parents, trashed"))
+
+      # INCREASE THE RESPONSE_ID
+      request_count+=1
+
+  batch.execute()
 
   return {
           "changes": ACTIVITIES_API_RESPONSE,
           "trackingInfo":{
-            "pageToken":updatedPageToken,
             "lastChecked":updatedLastChecked
             }
          }
