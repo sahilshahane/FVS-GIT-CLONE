@@ -7,7 +7,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.http import BatchHttpRequest, MediaFileUpload, MediaIoBaseDownload
 import orjson
-from utils import output, saveJSON
+from utils import output, saveJSON, printJSON
 import webbrowser
 import wsgiref.simple_server
 import wsgiref.util
@@ -20,7 +20,6 @@ import mimetypes
 import io
 import pyrfc3339
 from datetime import datetime
-import json
 
 CREDENTIALS = None
 service:Resource = None
@@ -57,7 +56,6 @@ def getService(CCODES,creds = None, api=None):
     global service
     
     # if CREDENTIALS: return build('drive', 'v3', credentials=CREDENTIALS, requestBuilder=build_request)
-    
     if service and not api: return service
     else:
       TOKEN_FILE_PATH = str(os.path.join(os.environ["APP_HOME_PATH"],"token.pickle"))
@@ -436,14 +434,14 @@ def downloadFile(CCODES, driveID, fileName, filePath, repoID):
   #   if page_token is None:
   #     break
 
-def getActivities_API(activityService, repoDriveId, trackingTime):
-  activityChanges = {}
+def getActivities_API(activityService, CHANGES_API_RESPONSE, repoDriveId, trackingTime):
+
   hierchy = {
     "restore":1,
     "delete": 1,
     "create": 2,
     "rename": 3,
-    "edit": 3, 
+    "edit": 3,
     "move": 3,
   }
 
@@ -454,40 +452,45 @@ def getActivities_API(activityService, repoDriveId, trackingTime):
     },
   ).execute()
 
-  activityChanges = {}
+  CHANGES = {}
   activities = results.get('activities', [])
 
   for activity in activities:
     driveItems = activity["targets"][0]["driveItem"]
     id = driveItems["name"][6:]                                     # this might be confusing name~title
-    change = {
-      id:{
+
+    activityHierchy = hierchy[next(iter(activity["primaryActionDetail"]))]
+    savedHierchy = None
+
+    if not CHANGES.get(id):
+      CHANGES[id] = {
         "name": driveItems["title"],
         "timestamp": activity["timestamp"],
         "mimeType": driveItems["mimeType"],
-        "hierchy": hierchy[list(activity["primaryActionDetail"].keys())[0]],
-        "action": activity["primaryActionDetail"],
+        "hierchy": activityHierchy,
+        "actions": activity["primaryActionDetail"]
       }
-    }      
-    if(not id in activityChanges):
-      activityChanges.update(change)
-      continue
-    
-    if activityChanges[id]["hierchy"] > change[id]["hierchy"]:            # if the hierchy is lower i.e has more priority
-      activityChanges[id]["action"] = change[id]["action"]                # then update the activity action 
-      activityChanges[id]["hierchy"] = change[id]["hierchy"]
+    else:
+      savedHierchy = CHANGES[id]["hierchy"]
 
-    elif activityChanges[id]["hierchy"] == change[id]["hierchy"]:       # else if the hierchy is the same i.e is the same priority (rename, edit, move) then just update the object
-      if activityChanges[id]["hierchy"] == 1:
-        if activityChanges[id]["timestamp"] < change[id]["timestamp"]:
-          activityChanges[id]["action"] = change[id]["action"]
+    if savedHierchy:
+      if savedHierchy > activityHierchy:
+        CHANGES[id].update({ "actions": activity["primaryActionDetail"], "hierchy": activityHierchy })
+
+      # else if the hierchy is the same i.e is the same priority (rename, edit, move) then just update the object
+      elif savedHierchy == activityHierchy:
+        savedTimeStamp = CHANGES[id]["timestamp"]
+
+        if activityHierchy == 1 and activity["timestamp"] > savedTimeStamp:
+            CHANGES[id]["actions"] = activity["primaryActionDetail"]
         else: continue
-      activityChanges[id]["action"].update(change[id]["action"])
-    
-      activityChanges[id]["timestamp"] = change[id]["timestamp"]          # and eventually update the time since it was after (checked in the first if)
-      activityChanges[id]["name"] = change[id]["name"]          # and eventually update the time since it was after (checked in the first if)
 
-  return activityChanges
+        CHANGES[id]["actions"].update(activity["primaryActionDetail"])
+
+        # and eventually update the time since it was after (checked in the first if)
+        CHANGES[id].update({"timestamp": activity["timestamp"], "name": activity["name"]})
+
+  return CHANGES
 # "1SAmoOSyJesmltBTym1a5lOQSrN_Il-pSj8LicJ3y23Q": {
 #     "name": "Inside Folder 1.2",
 #     "timestamp": "2021-03-25T06:36:50.933Z",
@@ -502,54 +505,46 @@ def getActivities_API(activityService, repoDriveId, trackingTime):
 #   }
 
 def getChanges_API(service, pageToken):
-  if not pageToken: pageToken = getStartPageToken(service)
-
   CHANGES = {}
-  while page_token is not None:
-    response = service.changes().list(
-      pageToken=page_token,
-      fields="changes(removed, fileId, file(parents))",
-      spaces='drive', 
-      includeRemoved=True).execute()
-    for change in response.get('changes'):
-      parents = "file" in change         # basically if there is a file there are its parents
 
-      change = {
-        change["fileId"]: {
-          "removed": change["removed"],
-          "parents": False if (not parents) else change["file"]["parents"][0]
-        }
-      }
-      CHANGES.update(change)
-    page_token = response.get('nextPageToken')
+  while pageToken is not None:
+    response = service.changes().list(
+      pageToken=pageToken,
+      fields="changes(removed, fileId, file(parents, mimeType))",
+      spaces='drive',
+      includeRemoved=True).execute()
+
+    for change in response.get('changes'):
+      parentID = change.get("file",{}).get("parents",[None])[0]         # basically if there is a file there are its parents
+      driveID = change["fileId"]
+
+      CHANGES[driveID] = { "parents": parentID }
+
+      if change["removed"]: CHANGES[driveID]["removed"] = True
+
+    pageToken = response.get('nextPageToken')
 
   updatedPageToken = getStartPageToken(service).execute()["startPageToken"]
+
   return {"changes":CHANGES, "updatedPageToken": updatedPageToken}
-# "1aW4IE4_uWWa9e62oYrH6boF5SSfOwQXb": {
-#     "removed": false,
-#     "parents": "1lUw5Z86W4h8m-DIdaSII9SRjV3OksTPp"
-#   }
 
 def checkChanges(CCODES, repoDriveId, lastCheckedTime, pageToken):
   service = getService(CCODES)
   activityService = getActivityService(CCODES)
 
   CHANGES_API_RESPONSE = getChanges_API(service, pageToken)
-  ACTIVITIES_API_RESPONSE = getActivities_API(activityService, repoDriveId, lastCheckedTime)
-
-  print(CHANGES_API_RESPONSE)
+  ACTIVITIES_API_RESPONSE = getActivities_API(activityService, CHANGES_API_RESPONSE, repoDriveId, lastCheckedTime)
 
   updatedPageToken = CHANGES_API_RESPONSE["updatedPageToken"]
   updatedLastChecked = pyrfc3339.generate(datetime.utcnow(),accept_naive=True,utc=True)
 
-  for id in list(ACTIVITIES_API_RESPONSE.keys()):
+  for id in ACTIVITIES_API_RESPONSE:
     ACTIVITIES_API_RESPONSE[id].update(CHANGES_API_RESPONSE["changes"][id])
 
   return {
-          "changes": ACTIVITIES_API_RESPONSE, 
+          "changes": ACTIVITIES_API_RESPONSE,
           "trackingInfo":{
-            "pageToken":updatedPageToken, 
-            "lastChecked":updatedLastChecked 
+            "pageToken":updatedPageToken,
+            "lastChecked":updatedLastChecked
             }
-         } 
-
+         }
