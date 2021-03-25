@@ -20,7 +20,7 @@ import mimetypes
 import io
 import pyrfc3339
 from datetime import datetime
-import pytz
+import json
 
 CREDENTIALS = None
 service:Resource = None
@@ -328,9 +328,6 @@ def createRepoFolders(CCODES, task):
 
   CREATED_FOLDERS = dict()
 
-
-
-
   # CHECK IF repo FOLDER IS PRESENT
   if not repoFolderID:
     repoCreatedTime = None
@@ -347,7 +344,6 @@ def createRepoFolders(CCODES, task):
           repoCreatedTime = response["createdTime"]
         elif req_id == '2':
           pageToken = response["startPageToken"]
-
 
     batch = service.new_batch_http_request(callback=assignResponse)
     batch.add(createFolder(CCODES,repoFolderName,fields="id, createdTime",service=service))
@@ -441,54 +437,99 @@ def downloadFile(CCODES, driveID, fileName, filePath, repoID):
   #     break
 
 def getActivities_API(activityService, repoDriveId, trackingTime):
-  if not trackingTime: trackingTime = 0
-
-  timeFilter = f'time >= "{trackingTime}"'
+  activityChanges = {}
+  hierchy = {
+    "restore":1,
+    "delete": 1,
+    "create": 2,
+    "rename": 3,
+    "edit": 3, 
+    "move": 3,
+  }
 
   results = activityService.activity().query(
     body={
-      # 'pageSize': 10,
       "ancestorName": f"items/{repoDriveId}",
-      "filter": timeFilter
+      "filter": f'time >= "{trackingTime}"'
     },
   ).execute()
 
+  activityChanges = {}
   activities = results.get('activities', [])
-  activityChanges = []
 
   for activity in activities:
-      primaryActionDetail = activity["primaryActionDetail"]
-      driveItems = activity["targets"][0]["driveItem"]
-      timestamp = activity["timestamp"]
-      change = {
-        "primaryActionDetail": primaryActionDetail,
-        "driveItems": driveItems,
-        "timestamp": timestamp
+    driveItems = activity["targets"][0]["driveItem"]
+    id = driveItems["name"][6:]                                     # this might be confusing name~title
+    change = {
+      id:{
+        "name": driveItems["title"],
+        "timestamp": activity["timestamp"],
+        "mimeType": driveItems["mimeType"],
+        "hierchy": hierchy[list(activity["primaryActionDetail"].keys())[0]],
+        "action": activity["primaryActionDetail"],
       }
-      activityChanges.append(change)
+    }      
+    if(not id in activityChanges):
+      activityChanges.update(change)
+      continue
+    
+    if activityChanges[id]["hierchy"] > change[id]["hierchy"]:            # if the hierchy is lower i.e has more priority
+      activityChanges[id]["action"] = change[id]["action"]                # then update the activity action 
+      activityChanges[id]["hierchy"] = change[id]["hierchy"]
+
+    elif activityChanges[id]["hierchy"] == change[id]["hierchy"]:       # else if the hierchy is the same i.e is the same priority (rename, edit, move) then just update the object
+      if activityChanges[id]["hierchy"] == 1:
+        if activityChanges[id]["timestamp"] < change[id]["timestamp"]:
+          activityChanges[id]["action"] = change[id]["action"]
+        else: continue
+      activityChanges[id]["action"].update(change[id]["action"])
+    
+      activityChanges[id]["timestamp"] = change[id]["timestamp"]          # and eventually update the time since it was after (checked in the first if)
+      activityChanges[id]["name"] = change[id]["name"]          # and eventually update the time since it was after (checked in the first if)
 
   return activityChanges
+# "1SAmoOSyJesmltBTym1a5lOQSrN_Il-pSj8LicJ3y23Q": {
+#     "name": "Inside Folder 1.2",
+#     "timestamp": "2021-03-25T06:36:50.933Z",
+#     "mimeType": "application/vnd.google-apps.document",
+#     "hierchy": 3,
+#     "action": {
+#       "rename": {
+#         "oldTitle": "Inside Folder 2",
+#         "newTitle": "Inside Folder 1.2"
+#       }
+#     }
+#   }
 
 def getChanges_API(service, pageToken):
   if not pageToken: pageToken = getStartPageToken(service)
 
-  CHANGES = []
-
-  while pageToken is not None:
+  CHANGES = {}
+  while page_token is not None:
     response = service.changes().list(
-    pageToken=pageToken,
-    fields="changes(kind, type, changeType, time, removed, fileId, file(mimeType, name, parents))",
-    spaces='drive',
-    includeRemoved=True).execute()
+      pageToken=page_token,
+      fields="changes(removed, fileId, file(parents))",
+      spaces='drive', 
+      includeRemoved=True).execute()
+    for change in response.get('changes'):
+      parents = "file" in change         # basically if there is a file there are its parents
 
-    CHANGES.extend(change for change in response.get('changes'))
-
-    if 'newStartPageToken' in response: saved_start_page_token = response.get('newStartPageToken')
-
-    pageToken = response.get('nextPageToken')
+      change = {
+        change["fileId"]: {
+          "removed": change["removed"],
+          "parents": False if (not parents) else change["file"]["parents"][0]
+        }
+      }
+      CHANGES.update(change)
+    page_token = response.get('nextPageToken')
 
   updatedPageToken = getStartPageToken(service).execute()["startPageToken"]
   return {"changes":CHANGES, "updatedPageToken": updatedPageToken}
+# "1aW4IE4_uWWa9e62oYrH6boF5SSfOwQXb": {
+#     "removed": false,
+#     "parents": "1lUw5Z86W4h8m-DIdaSII9SRjV3OksTPp"
+#   }
+
 
 def checkChanges(CCODES, repoDriveId, lastCheckedTime, pageToken):
   service = getService(CCODES)
@@ -499,71 +540,14 @@ def checkChanges(CCODES, repoDriveId, lastCheckedTime, pageToken):
 
   print(CHANGES_API_RESPONSE)
 
-
   updatedPageToken = CHANGES_API_RESPONSE["updatedPageToken"]
   updatedLastChecked = pyrfc3339.generate(datetime.utcnow(),accept_naive=True,utc=True)
 
-  ALL_CHANGES = []
-
-  hierchy = {
-    "restore":0,
-    "delete": 1,
-    "create": 2,
-    "rename": 3,
-    "edit": 3,
-    "move": 3,
-  }
-
-  for change in CHANGES_API_RESPONSE["changes"]:
-    for activity in ACTIVITIES_API_RESPONSE:
-
-      if(change["fileId"] != activity["driveItems"]["name"][6:]):
-        continue
-      if(change["removed"] == True):
-        ALL_CHANGES.append({
-          "id": change["fileId"],
-          "name": activity["driveItems"]["title"],
-          "time": change["time"],
-          "removed": True,
-          "mimeType": activity["driveItems"]["mimeType"],
-        })
-        break
-      change_present_in_integrated_changes = False
-
-      for integratedChange in ALL_CHANGES:
-        if(integratedChange["id"] == change["fileId"]):
-          change_present_in_integrated_changes = True
-          activityAction = list(activity["primaryActionDetail"].keys())[0]   # this is a single activity
-          if(activityAction in integratedChange["primaryActionDetail"].keys()): # this means that there is an action already present in the integratedChange object
-            if(activity["timestamp"] > integratedChange["timestamp"]):
-              integratedChange[activityAction] = activity["primaryActionDetail"]   # to replace the current existing action with the latest action
-
-          else:  # this indicates that the action is not present in the actionChange so accrding to their hierchy add them
-            lowestHierchy = int(integratedChange["lowestHierchy"])
-            if(hierchy[list(activity["primaryActionDetail"].keys())[0]] < lowestHierchy):
-              temp = integratedChange["primaryActionDetail"].copy()   # this is just made to avoid "dictionary changed size during iteration" exception
-              for action in temp.keys():
-                del integratedChange["primaryActionDetail"][action]
-              integratedChange["primaryActionDetail"] = activity["primaryActionDetail"]
-              integratedChange["lowestHierchy"] = hierchy[activity["primaryActionDetail"]]
-
-            if(hierchy[list(activity["primaryActionDetail"].keys())[0]] == lowestHierchy):
-              integratedChange["primaryActionDetail"].update(activity["primaryActionDetail"])
-
-      if(change_present_in_integrated_changes == False): # this means that the change was not alrecy present in the integratedChanges
-        ALL_CHANGES.append({
-          "id": change["fileId"],
-          "name": change["file"]["name"],
-          "mimeType": change["file"]["mimeType"],
-          "removed": False,
-          "timestamp": activity["timestamp"],
-          "parents": change["file"]["parents"],
-          "primaryActionDetail": activity["primaryActionDetail"],
-          "lowestHierchy": str(hierchy[list(activity["primaryActionDetail"].keys())[0]]),
-        })
+  for id in list(ACTIVITIES_API_RESPONSE.keys()):
+    ACTIVITIES_API_RESPONSE[id].update(CHANGES_API_RESPONSE["changes"][id])
 
   return {
-          "changes": ALL_CHANGES, 
+          "changes": ACTIVITIES_API_RESPONSE, 
           "trackingInfo":{
             "pageToken":updatedPageToken, 
             "lastChecked":updatedLastChecked 
