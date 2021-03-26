@@ -436,7 +436,6 @@ def downloadFile(CCODES, driveID, fileName, filePath, repoID):
 
 def getActivities_API(activityService, repoDriveId, trackingTime):
   activities = []
-
   pageToken = None
 
   while True:
@@ -452,7 +451,6 @@ def getActivities_API(activityService, repoDriveId, trackingTime):
     pageToken = response.get('nextPageToken', None)
 
     if pageToken is None: break
-
 
   hierchy = {
     "restore":1,

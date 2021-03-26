@@ -157,6 +157,53 @@ export const updateFilesDriveID: updateFilesDriveID_ = async (RepoID, data) => {
   log.info('Updated File Data Succesfully', { RepoID, data });
 };
 
+export const getResults = async (
+  RepoID: number | string,
+  SearchText: string,
+  IgnrPathString: string
+) => {
+  const DB = getDB(RepoID);
+
+  const searchedFolders = DB.prepare(
+    `SELECT folderName, folderPath as path FROM folders WHERE folderName LIKE '%${SearchText}%' ${IgnrPathString}`
+  ).all();
+
+  const searchedFiles = DB.prepare(
+    `SELECT fileName, (SELECT folderPath from folders WHERE folders.folder_id = files.folder_id ) AS path FROM files WHERE fileName LIKE '%${SearchText}%'`
+  ).all();
+
+  return {
+    files: searchedFiles,
+    folders: searchedFolders,
+  };
+};
+
+export const getSearchResults = async (
+  RepoID: number | string,
+  SearchText: string
+) => {
+  const { UserRepoData } = Reduxstore.getState();
+  const DB = getDB(RepoID);
+
+  const searchedFolders = DB.prepare(
+    `SELECT folderName FROM folders WHERE folderName LIKE '%${SearchText}%'`
+  ).all();
+
+  const searchedFiles = DB.prepare(
+    `SELECT fileName, folder_id FROM files WHERE fileName LIKE '%${SearchText}%'`
+  ).all();
+
+  // const withPaths = DB.prepare(
+  //   `SELECT fileName as name, (SELECT folderPath from folders WHERE folders.folder_id = files.folder_id ) AS parentPath FROM files WHERE fileName LIKE '%${SearchText}%'`
+  // ).all();
+
+  return {
+    folders: searchedFolders,
+    files: searchedFiles,
+    // paths: withPaths,
+  };
+};
+
 // export const getFinishedUploadsName = (RepoID: string | number) => {
 //   const DB = getDB(RepoID);
 
