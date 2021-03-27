@@ -178,32 +178,6 @@ export const getResults = async (
   };
 };
 
-export const getSearchResults = async (
-  RepoID: number | string,
-  SearchText: string
-) => {
-  const { UserRepoData } = Reduxstore.getState();
-  const DB = getDB(RepoID);
-
-  const searchedFolders = DB.prepare(
-    `SELECT folderName FROM folders WHERE folderName LIKE '%${SearchText}%'`
-  ).all();
-
-  const searchedFiles = DB.prepare(
-    `SELECT fileName, folder_id FROM files WHERE fileName LIKE '%${SearchText}%'`
-  ).all();
-
-  // const withPaths = DB.prepare(
-  //   `SELECT fileName as name, (SELECT folderPath from folders WHERE folders.folder_id = files.folder_id ) AS parentPath FROM files WHERE fileName LIKE '%${SearchText}%'`
-  // ).all();
-
-  return {
-    folders: searchedFolders,
-    files: searchedFiles,
-    // paths: withPaths,
-  };
-};
-
 // export const getFinishedUploadsName = (RepoID: string | number) => {
 //   const DB = getDB(RepoID);
 
