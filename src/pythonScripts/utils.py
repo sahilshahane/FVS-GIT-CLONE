@@ -2,12 +2,11 @@ import os
 import orjson
 
 def output(_ : dict):
-  if(os.environ.get("SHOW_NODE_OUTPUT",True)):
+  if not (os.environ.get("DISABLE_NODE_OUTPUT",False)):
     print(orjson.dumps(_).decode("utf-8"))
 
-def output_direct(_):
-    # pass
-    print(_)
+def printJSON(_ : dict, indent = None):
+    print(orjson.dumps(_,option=orjson.OPT_INDENT_2).decode("utf-8"))
 
 def loadFile(filePath : str, mode = "r"):
   return open(filePath, mode)

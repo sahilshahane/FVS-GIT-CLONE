@@ -1,10 +1,16 @@
+/* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable default-case */
 import React, { useEffect } from 'react';
-import { Modal, Col, Button, Space } from 'antd';
+import { Modal, Divider, Typography } from 'antd';
 import { Redirect } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import Particles from 'react-particles-js';
+import { faGoogleDrive } from '@fortawesome/free-brands-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { CCODES, sendSchedulerTask } from '../modules/get_AppData';
 import { store } from '../Redux/store';
+import particlesConfig from '../../assets/configParticles';
+import useWindowDimensions from '../hooks/useWindowDimention';
 
 const showWarning = async () => {
   Modal.info({
@@ -38,29 +44,36 @@ const Login = () => {
       Modal.destroyAll();
     }
   }, [isGoogleLoggedIN]);
+
+  const { width, height } = useWindowDimensions('100vw', '100vh');
+
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        position: 'absolute',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
+    <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
       {isGoogleLoggedIN && <Redirect to="/" />}
-      <Col
-        className="component-bg"
-        style={{
-          width: '500px',
-          height: '500px',
-        }}
-      >
-        <Space align="center" style={{ margin: 'auto' }}>
-          <Button onClick={startLogin}>Connect : Google Drive</Button>
-        </Space>
-      </Col>
+
+      <div className="component-bg radius-7 login-area">
+        <Typography.Title className="text-center">FHS</Typography.Title>
+
+        <Divider />
+        <Typography.Title type="secondary" className="text-center" level={4}>
+          Login with
+        </Typography.Title>
+        <div className="sign-in">
+          <button
+            type="button"
+            onClick={startLogin}
+            title="Google Account Required"
+          >
+            <div className="inner">
+              <FontAwesomeIcon className="icon" icon={faGoogleDrive} />
+              <span className="label">Google Drive</span>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div style={{ overflow: 'hidden', width, height }}>
+        <Particles height="100vh" width="100vw" params={particlesConfig} />
+      </div>
     </div>
   );
 };

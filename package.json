@@ -14,7 +14,8 @@
     "start:main": "cross-env NODE_ENV=development electron -r ./.erb/scripts/BabelRegister ./src/main.dev.ts",
     "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
     "test": "jest",
-    "py": "python src/pythonScripts/scheduler.py -dev"
+    "py": "python src/pythonScripts/scheduler.py -dev",
+    "py:env": "cd src/pythonScripts && pipenv shell"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -174,6 +175,8 @@
     "@babel/preset-typescript": "^7.12.7",
     "@babel/register": "^7.12.1",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
+    "@simonwep/selection-js": "^2.0.2",
+    "@svgr/webpack": "^5.5.0",
     "@teamsupercell/typings-for-css-modules-loader": "^2.4.0",
     "@testing-library/jest-dom": "^5.11.6",
     "@testing-library/react": "^11.2.2",
@@ -257,6 +260,11 @@
   },
   "dependencies": {
     "@ant-design/icons": "^4.6.2",
+    "@fortawesome/fontawesome-svg-core": "^1.2.35",
+    "@fortawesome/free-brands-svg-icons": "^5.15.3",
+    "@fortawesome/free-regular-svg-icons": "^5.15.3",
+    "@fortawesome/free-solid-svg-icons": "^5.15.3",
+    "@fortawesome/react-fontawesome": "^0.1.14",
     "@reduxjs/toolkit": "^1.5.0",
     "antd": "^4.10.3",
     "chokidar": "^3.5.1",

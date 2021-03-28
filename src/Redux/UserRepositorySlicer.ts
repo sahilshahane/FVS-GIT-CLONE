@@ -9,7 +9,7 @@ import {
 
 type trackingInfo_ = {
   lastChecked: string;
-  pageToken: number;
+  driveID: string;
 };
 
 export interface RepositoryInfo {

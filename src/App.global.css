@@ -222,13 +222,7 @@ body {
 .hideScrollbar::-webkit-scrollbar {
   display: none;
 }
-.space-align-block {
-  display: inline-block;
-  padding: 12px 20px;
-  position: absolute;
-  left: 10%;
-  top: 60%;
-}
+
 .Divider-align {
   position: absolute;
   top: 30%;
@@ -241,4 +235,63 @@ body {
 .Image-Align-google {
   height: 20px;
   width: 20px;
+}
+.selection-area {
+  background: rgba(46, 115, 252, 0.048);
+  border: 2px solid rgba(98, 155, 255, 0.51);
+  border-radius: 0.1em;
+}
+
+.login-area {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 250px;
+  /* margin: 0 1rem; */
+}
+
+.login-area .title {
+  text-align: center;
+}
+
+.sign-in {
+  display: flex;
+  margin-top: 1rem;
+  justify-content: center;
+  flex-flow: column nowrap;
+  align-items: center;
+}
+
+.sign-in button {
+  border: none;
+  background-color: var(--arsenic);
+  cursor: pointer;
+  border-radius: 100px;
+  transition: all 0.2s;
+  box-shadow: 0px 0px 17px -7px rgba(0, 0, 0, 1);
+  max-width: 55%;
+}
+
+.sign-in button:hover {
+  box-shadow: 0px 0px 20px -7px rgba(255, 255, 255, 1);
+}
+
+.sign-in button .inner {
+  padding: 0.4rem 1rem;
+  display: flex;
+  flex-flow: row nowrap;
+  gap: 0.4rem;
+  justify-content: center;
+  align-items: center;
+  font-size: larger;
+}
+
+.radius-7 {
+  border-radius: 7px;
+}
+
+.text-center {
+  text-align: center;
 }

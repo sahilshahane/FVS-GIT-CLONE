@@ -71,7 +71,7 @@ const Handler = (
     case CCODES.REPO_FOLDER_CREATED_DRIVE:
       updateFolderDriveID(response.data.RepoID, {
         folder_id: response.data.folder_id,
-        driveID: response.data.driveID,
+        driveID: response.data.trackingInfo.driveID,
       })
         .then(() => {
           dispatch(

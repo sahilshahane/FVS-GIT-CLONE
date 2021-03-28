@@ -31,11 +31,9 @@
     "**/.svn": true,
     "**/.hg": true,
     "**/CVS": true,
-    "**/.DS_Store": true,
-    "node_modules": true
+    "**/.DS_Store": true
   },
-  "python.linting.pylintEnabled": false,
   "python.linting.enabled": true,
-  "python.pythonPath": "/home/void/.local/share/virtualenvs/pythonScripts-2r4CSBOV/bin/python",
-  "python.linting.mypyEnabled": true
+  "python.terminal.activateEnvironment": true,
+  "python.pythonPath": "src\\pythonScripts\\.venv\\Scripts\\python.exe"
 }

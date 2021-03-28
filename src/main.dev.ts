@@ -17,6 +17,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { PythonShell } from 'python-shell';
 import fs from 'fs';
+import os from 'os';
 
 export default class AppUpdater {
   constructor() {
@@ -64,18 +65,52 @@ const Error_Dialog = (title: string, message: string) => {
 let mainWindow: BrowserWindow = null;
 const CCODES = Load_CCODES();
 const APP_HOME_PATH = getAppHomePath();
+let pythonScheduler: PythonShell;
+
+const platforms = {
+  WINDOWS: 'WINDOWS',
+  MAC: 'MAC',
+  LINUX: 'LINUX',
+  SUN: 'SUN',
+  OPENBSD: 'OPENBSD',
+  ANDROID: 'ANDROID',
+  AIX: 'AIX',
+};
+
+const platformsNames: any = {
+  win32: platforms.WINDOWS,
+  darwin: platforms.MAC,
+  linux: platforms.LINUX,
+  sunos: platforms.SUN,
+  openbsd: platforms.OPENBSD,
+  android: platforms.ANDROID,
+  aix: platforms.AIX,
+};
 
 // ------------------------------PYTHON_SERVER---------------------------------------------------------
 // ------------------------------PYTHON_SERVER---------------------------------------------------------
 // ------------------------------PYTHON_SERVER---------------------------------------------------------
-export const Create_PythonScheduler = () => {
+const Create_PythonScheduler = () => {
   try {
     fs.unlinkSync('scheduler-logs.txt');
   } catch (error) {}
 
+  let pythonBinaryFileName = '';
+
+  if (platformsNames[os.platform()] === platforms.WINDOWS)
+    pythonBinaryFileName = 'python.exe';
+  else if (platformsNames[os.platform()] === platforms.LINUX)
+    pythonBinaryFileName = 'python';
+
   const OPTIONS = {
     mode: 'json',
-    // pythonPath: 'path/to/python',
+    pythonPath: path.join(
+      __dirname,
+      'pythonScripts',
+      '.venv',
+      'Scripts',
+      pythonBinaryFileName
+    ),
     pythonOptions: ['-u'], // get print results in real-time
     scriptPath: path.join(__dirname, 'pythonScripts'),
     args: ['-node'],
@@ -141,7 +176,7 @@ const createWindow = async () => {
   });
 
   // ASSIGN PYTHON SCHEDULER ///////////////////////////////////////////
-  Create_PythonScheduler(); // /////////////////////////////////////////
+  pythonScheduler = Create_PythonScheduler(); // /////////////////////////////////////////
   // //////////////////////////////////////////////////////////////////
   mainWindow.loadURL(`file://${__dirname}/index.html`);
 
@@ -224,5 +259,11 @@ ipcMain.on('get-APP_HOME_PATH', (evt) => {
 });
 
 ipcMain.on('exit-normal', () => {
+  if (pythonScheduler)
+    pythonScheduler.end((err, exitcode, exitsignal) => {
+      if (err) log.error(`Python Exit Error : ${err}`);
+      log.info(`Python Exit Code : ${exitcode}`);
+      log.info(`Python Exit Sigal : ${exitsignal}`);
+    });
   app.quit();
 });
