@@ -32,8 +32,8 @@
     ]
   },
   "build": {
-    "productName": "ElectronReact",
-    "appId": "org.erb.ElectronReact",
+    "productName": "FHS",
+    "appId": "com.fhs",
     "asar": false,
     "files": [
       "pythonScripts/**",
