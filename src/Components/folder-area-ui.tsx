@@ -1,82 +1,64 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { store } from '../Redux/store';
+import { useDispatch } from 'react-redux';
+import path from 'path';
+import log from 'electron-log';
 import {
-  GoTo_Repository,
-  move_To_NextLocation,
   RepositoryInfo,
+  setCurrentDirectory,
 } from '../Redux/UserRepositorySlicer';
 
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~// FILE UI //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export const File = ({ info }: any) => {
+export const File = ({ filePath }: any) => {
   // console.log('File-UI recieved data ', fileInfo);
-  const fileName = info.name;
-  const { syncStatus } = info;
+  const fileName = path.basename(filePath);
+  const syncStatus = false;
 
   return (
     <div className="file-ui">
-      <h3>{fileName.length > 20 ? `${fileName.slice(0, 20)}...` : fileName}</h3>
-      {syncStatus === true ? (
-        <span className="synced-true" />
-      ) : (
-        <span className="synced-false" />
-      )}
+      <h3>{fileName}</h3>
+      <span className={syncStatus ? 'synced-true' : 'synced-false'} />
     </div>
   );
 };
 
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~// FOLDER UI //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-export const Folder = ({ info }: any) => {
+export const Folder = ({ folderPath }: any) => {
   const dispatch = useDispatch();
 
-  const { name, syncStatus } = info;
+  const folderName = path.basename(folderPath);
 
-  const folderName = name;
-
-  const moveInsideADir = () => {
-    dispatch(move_To_NextLocation(folderName));
+  const changeLocation = () => {
+    dispatch(setCurrentDirectory({ localLocation: folderPath }));
   };
+
+  const syncStatus = false;
 
   return (
-    <div onDoubleClick={moveInsideADir} className="folder-ui">
-      <h3>
-        {folderName.length > 20 ? `${folderName.slice(0, 20)}...` : folderName}
-      </h3>
-      {syncStatus === true ? (
-        <span className="synced-true" />
-      ) : (
-        <span className="synced-false" />
-      )}
+    <div onDoubleClick={changeLocation} className="folder-ui">
+      <h3>{folderName}</h3>
+      <span className={syncStatus ? 'synced-true' : 'synced-false'} />
     </div>
   );
 };
 
-export const Repository = ({ info }: { info: RepositoryInfo }) => {
+export const Repository = ({
+  RepoID,
+  info,
+}: {
+  RepoID: string;
+  info: RepositoryInfo;
+}) => {
   const dispatch = useDispatch();
+  const { localLocation } = info;
 
-  const change_Repo = () => {
-    dispatch(GoTo_Repository(info));
+  const changeLocation = () => {
+    dispatch(setCurrentDirectory({ RepoID, localLocation }));
   };
-  const uploadWatingQueue = useSelector(
-    (state: store) => state.Sync.uploadWatingQueue[info]
-  );
-  const uploadingQueue = useSelector(
-    (state: store) => state.Sync.uploadWatingQueue[info]
-  );
+
   useEffect(() => {}, [info.syncStatus]);
   return (
-    <div onDoubleClick={change_Repo} className="folder-ui">
-      <h3>
-        {info.displayName.length > 20
-          ? `${info.displayName.slice(0, 20)}...`
-          : info.displayName}
-      </h3>
-      {info.syncStatus ? (
-        <span className="synced-true" />
-      ) : (
-        <span className="synced-false" />
-      )}
+    <div onDoubleClick={changeLocation} className="folder-ui">
+      <h3>{info.displayName}</h3>
+      <span className={info.syncStatus ? 'synced-true' : 'synced-false'} />
     </div>
   );
 };

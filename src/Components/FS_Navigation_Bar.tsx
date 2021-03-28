@@ -1,69 +1,78 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Dispatch, nanoid } from '@reduxjs/toolkit';
+import { nanoid } from '@reduxjs/toolkit';
 import { Breadcrumb } from 'antd';
-import {
-  RepositoryInfo,
-  goBack_From_CurrentLocation,
-} from '../Redux/UserRepositorySlicer';
+import path from 'path';
+import { setCurrentDirectory } from '../Redux/UserRepositorySlicer';
+import ReduxStore, { store } from '../Redux/store';
 
-const updateLocation = (
-  currentDirLocation: Array<String>,
-  selectedRepository: RepositoryInfo
-) => {
-  // if selectedRepository === null then you'll be in Home
-  if (!selectedRepository) return ['Home'];
+const changeLocation = async (pathIndex: number) => {
+  const { UserRepoData } = ReduxStore.getState();
+  const { currentDirectory } = UserRepoData;
+  const { RepoID, localLocation } = currentDirectory;
+  if (RepoID) {
+    const RepositoryLocationArray = UserRepoData.info[
+      RepoID
+    ].localLocation.split(path.sep);
+    const traversedLocation = localLocation
+      ?.split(path.sep)
+      .slice(0, RepositoryLocationArray.length + pathIndex)
+      .join(path.sep);
 
-  const RepositoryName =
-    selectedRepository.displayName || selectedRepository.name;
-
-  return [
-    'Home',
-    RepositoryName,
-    ...[...currentDirLocation].splice(selectedRepository.directoryLevel),
-  ];
+    ReduxStore.dispatch(
+      setCurrentDirectory({ localLocation: traversedLocation })
+    );
+  }
 };
 
-const change_currentLocation = async (
-  dispatch: Dispatch<any>,
-  PathIndex: number | null = null
-) => {
-  if (PathIndex != null) {
-    // Excluding ["Home"]
-    PathIndex -= 1;
+const FileSysten_NavigationBar = () => {
+  const currentDirectory = useSelector(
+    (state: store) => state.UserRepoData.currentDirectory.localLocation
+  );
 
-    dispatch(goBack_From_CurrentLocation(PathIndex));
-  } else dispatch(goBack_From_CurrentLocation());
-};
-
-const Routing = () => {
-  const [currentDirLocation, selectedRepository] = useSelector((state) => [
-    state.UserRepoData.currentDirLocation,
-    state.UserRepoData.selectedRepository,
-  ]);
+  const RepoID = useSelector(
+    (state: store) => state.UserRepoData.currentDirectory.RepoID
+  );
   const dispatch = useDispatch();
 
-  const [BreadCrumbPath, setBreadCrumbPath] = useState(currentDirLocation);
+  const UserRepoData = useSelector((state: store) => state.UserRepoData);
+
+  const [BreadCrumbPath, setBreadCrumbPath] = useState([]);
 
   useEffect(() => {
-    // UPDATE THE LOCATION, UPDATES ONLY FS_Navigation_Bar
-    setBreadCrumbPath(() =>
-      updateLocation(currentDirLocation, selectedRepository)
-    );
-  }, [currentDirLocation]);
+    if (currentDirectory !== 'Home' && currentDirectory) {
+      if (RepoID) {
+        const RepoInfo = UserRepoData.info[RepoID];
+
+        const newBreadLoc = currentDirectory
+          .split(path.sep)
+          .slice(RepoInfo.localLocation.split(path.sep).length);
+
+        setBreadCrumbPath([RepoInfo.displayName, ...newBreadLoc]);
+      }
+    } else setBreadCrumbPath([]);
+  }, [RepoID, UserRepoData.info, currentDirectory]);
 
   return (
-    <div onDoubleClick={() => change_currentLocation(dispatch)}>
+    <div>
       <Breadcrumb separator="/" className="component-bg breadcrumb">
-        {BreadCrumbPath.map((Path_Name: any, PathIndex: number) => {
+        <Breadcrumb.Item
+          className="breadcrumb-item"
+          onClick={() =>
+            dispatch(setCurrentDirectory({ localLocation: 'Home' }))
+          }
+        >
+          Home
+        </Breadcrumb.Item>
+        {BreadCrumbPath.map((pathName: string, pathIndex: number) => {
           return (
             <Breadcrumb.Item
               key={nanoid()}
               className="breadcrumb-item"
-              onClick={() => change_currentLocation(dispatch, PathIndex)}
+              onClick={() => changeLocation(pathIndex)}
             >
-              {Path_Name}
+              {pathName}
             </Breadcrumb.Item>
           );
         })}
@@ -72,4 +81,4 @@ const Routing = () => {
   );
 };
 
-export default Routing;
+export default FileSysten_NavigationBar;

@@ -18,7 +18,6 @@ import {
 const { Sider } = Layout;
 
 const SiderBar = () => {
-  log.info('Rendering Side-Bar.tsx');
   const IgnoreRef = useRef(null);
   const [collapsed, setCollapsed] = useState(true);
   const dispatch = useDispatch();
