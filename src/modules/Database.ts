@@ -157,6 +157,27 @@ export const updateFilesDriveID: updateFilesDriveID_ = async (RepoID, data) => {
   log.info('Updated File Data Succesfully', { RepoID, data });
 };
 
+export const getResults = async (
+  RepoID: number | string,
+  SearchText: string,
+  IgnrPathString: string
+) => {
+  const DB = getDB(RepoID);
+
+  const searchedFolders = DB.prepare(
+    `SELECT folderName, folderPath as path FROM folders WHERE folderName LIKE '%${SearchText}%' ${IgnrPathString}`
+  ).all();
+
+  const searchedFiles = DB.prepare(
+    `SELECT fileName, (SELECT folderPath from folders WHERE folders.folder_id = files.folder_id ) AS path FROM files WHERE fileName LIKE '%${SearchText}%'`
+  ).all();
+
+  return {
+    files: searchedFiles,
+    folders: searchedFolders,
+  };
+};
+
 // export const getFinishedUploadsName = (RepoID: string | number) => {
 //   const DB = getDB(RepoID);
 
