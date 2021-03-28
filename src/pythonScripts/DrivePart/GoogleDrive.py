@@ -212,7 +212,7 @@ def generateIDs(CCODES, count=1):
 
 def allocateGFID(CCODES, DIR_PATH, service=None):
     if(not service):
-        service = get_gdrive_service(CCODES)
+        service = getService(CCODES)
 
     MD_FILE_INFO = main.Get_latest_commit_info(DIR_PATH)
 
@@ -311,7 +311,7 @@ def getStartPageToken(service):
 
 def uploadRepository(CCODES, DIR_PATH, service=None):
     if(not service):
-        service = get_gdrive_service(CCODES)
+        service = getService(CCODES)
 
     # CHECK AND ALLOCATE FILE IDs
     GFID_DATA, MD_FILE_INFO = allocateGFID(CCODES, DIR_PATH, service)

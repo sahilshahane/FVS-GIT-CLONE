@@ -246,6 +246,7 @@ def aloneMain():
     addTask(task2)
 
 
+
 def GUI_LAUNCH():
     while(True):
         task = sys.stdin.readline()[:-1]
