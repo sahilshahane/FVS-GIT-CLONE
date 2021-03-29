@@ -3,6 +3,7 @@ import { Input, AutoComplete, Row } from 'antd';
 import { renderTitle, renderItem } from './Search_Bar_Components';
 import { getResults } from '../modules/Database';
 import Reduxstore from '../Redux/store';
+import { useDispatch } from 'react-redux';
 
 const NAV_BAR = () => {
   const [options, setOptions] = useState([]);
@@ -10,6 +11,7 @@ const NAV_BAR = () => {
   const RepoIDs: Array<string> = Object.keys(UserRepoData['info']);
   const RepoInfo = UserRepoData['info'];
   let ignrPathString: string = '';
+  const dispatch = useDispatch();
 
   useEffect(() => {
     for (let repo in RepoInfo) {
@@ -21,6 +23,7 @@ const NAV_BAR = () => {
   const onSearch = (searchedText: string) => {
     if (searchedText == '') {
       setOptions([]);
+      return '';
     }
     getResults(RepoIDs[0], searchedText, ignrPathString.trim())
       .then((res) => {
@@ -29,13 +32,28 @@ const NAV_BAR = () => {
 
         for (let repo in RepoInfo) {
           const repoLocation = RepoInfo[repo].localLocation;
+          let repoId = '';
+          for (let id of RepoIDs) {
+            if (RepoInfo[id].localLocation == repoLocation) repoId = id;
+          }
+
           let found = [];
 
           for (let file of foundInfo) {
             if (file.path.substring(0, repoLocation.length) === repoLocation) {
               file.fileName
-                ? found.push(renderItem(file.fileName, file.path, true))
-                : found.push(renderItem(file.folderName, file.path, false));
+                ? found.push(
+                    renderItem(file.fileName, file.path, repoId, true, dispatch)
+                  )
+                : found.push(
+                    renderItem(
+                      file.folderName,
+                      file.path,
+                      repoId,
+                      false,
+                      dispatch
+                    )
+                  );
             }
           }
 
