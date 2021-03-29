@@ -7,7 +7,10 @@ import Animate from 'rc-animate';
 import { useSelector } from 'react-redux';
 import ChangeProfileImg from './Choose_Profile_Image';
 import log from 'electron-log';
-import { GetGoogleUsername } from '../Redux/AppSettingsSlicer';
+import {
+  GetGoogleUsername,
+  GetGoogleProfilePictureURL,
+} from '../Redux/AppSettingsSlicer';
 
 const { Text } = Typography;
 const { useState } = React;
@@ -22,6 +25,7 @@ const Profile = ({ showName }: any) => {
 
   // console.log('Rendering Profile.tsx');
   const Username = useSelector(GetGoogleUsername);
+  const ProfilePicture = useSelector(GetGoogleProfilePictureURL);
   const [MinimizedName, setMinimizedName] = useState(null);
 
   useEffect(() => {
@@ -33,6 +37,9 @@ const Profile = ({ showName }: any) => {
         }, '')
         .toUpperCase()
     );
+    ProfilePicture
+      ? setProfileImg({ ...profileImg, imgURL: ProfilePicture })
+      : '';
   }, [Username]);
 
   return (

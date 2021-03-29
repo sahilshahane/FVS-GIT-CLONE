@@ -4,12 +4,17 @@
   "data_fileExtension": ".json",
   "log_folderName": "logs",
   "log_fileExtension": ".log",
-  "available_cloudStorage": ["google_drive"],
+  "available_cloudStorage": [
+    "google_drive"
+  ],
   "repository_cloudData_folderName": "c_storage",
   "repository_googleDriveID_folderName": "google_drive",
   "repositorySettings_fileName": "repositorySettings.json",
   "repository_commit_fileName": "commit.json",
-  "defaultIgnores": [".usp", ".uspignore"],
+  "defaultIgnores": [
+    ".usp",
+    ".uspignore"
+  ],
   "repository_directoryData_fileName": "repositoryDirData.json",
   "profileImage_fileName": "profile.jpg",
   "cloudLoginStatus": {
@@ -17,15 +22,16 @@
       "user": {
         "kind": "drive#user",
         "displayName": "test accout",
+        "photoLink": "https://lh3.googleusercontent.com/a-/AOh14GjQzO-ZvrJG6W3kNVsHW3EE456eV6lVybnQM9iu=s64",
         "me": true,
         "permissionId": "04909922914753751588",
         "emailAddress": "testaccoutfortheapp@gmail.com"
       },
       "storageQuota": {
         "limit": "16106127360",
-        "usage": "160",
-        "usageInDrive": "160",
-        "usageInDriveTrash": "0"
+        "usage": "352",
+        "usageInDrive": "352",
+        "usageInDriveTrash": "320"
       }
     }
   },

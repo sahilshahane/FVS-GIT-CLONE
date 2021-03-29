@@ -80,4 +80,12 @@ export const GetGoogleUsername = (state: any) => {
   }
 };
 
+export const GetGoogleProfilePictureURL = (state: any) => {
+  try {
+    return state.AppSettings.cloudLoginStatus.googleDrive.user.photoLink;
+  } catch (e) {
+    return '';
+  }
+};
+
 export default AppSettingsSlice.reducer;
