@@ -95,12 +95,10 @@ const Create_PythonScheduler = () => {
     fs.unlinkSync('scheduler-logs.txt');
   } catch (error) {}
 
-  let pythonBinaryFileName = '';
+  let pythonBinaryPath = path.join('Scripts', 'python.exe');
 
-  if (platformsNames[os.platform()] === platforms.WINDOWS)
-    pythonBinaryFileName = 'python.exe';
-  else if (platformsNames[os.platform()] === platforms.LINUX)
-    pythonBinaryFileName = 'python';
+  if (platformsNames[os.platform()] === platforms.LINUX)
+    pythonBinaryPath = path.join('bin', 'python');
 
   const OPTIONS = {
     mode: 'json',
@@ -108,8 +106,7 @@ const Create_PythonScheduler = () => {
       __dirname,
       'pythonScripts',
       '.venv',
-      'Scripts',
-      pythonBinaryFileName
+      pythonBinaryPath
     ),
     pythonOptions: ['-u'], // get print results in real-time
     scriptPath: path.join(__dirname, 'pythonScripts'),
