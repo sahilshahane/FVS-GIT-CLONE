@@ -1,12 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { Layout, Menu, Divider } from 'antd';
-import {
-  PieChartOutlined,
-  CloudUploadOutlined,
-  CloudDownloadOutlined,
-  RadiusBottomrightOutlined,
-} from '@ant-design/icons';
+import { VscSyncIgnored } from 'react-icons/vsc';
+import { IoCloudUploadSharp, IoCloudDownloadSharp } from 'react-icons/io5';
 import log from 'electron-log';
 import Profile from './Side-Bar_Profile';
 import IgnoreDataSelector from './IgnoreDataSelector';
@@ -41,7 +37,7 @@ const SiderBar = () => {
         <Menu theme="dark" mode="inline" style={{ backgroundColor: 'inherit' }}>
           <Menu.Item
             key="StateIgnore"
-            icon={<PieChartOutlined />}
+            icon={<VscSyncIgnored />}
             onClick={() => IgnoreRef.current.show()}
           >
             Ignore Files
@@ -49,14 +45,14 @@ const SiderBar = () => {
           </Menu.Item>
 
           <Menu.Item
-            icon={<CloudUploadOutlined />}
+            icon={<IoCloudUploadSharp />}
             onClick={() => dispatch(showUploadsDrawer())}
           >
             Uploads
           </Menu.Item>
 
           <Menu.Item
-            icon={<CloudDownloadOutlined />}
+            icon={<IoCloudDownloadSharp />}
             onClick={() => dispatch(showDownloadsDrawer())}
           >
             Downloads
