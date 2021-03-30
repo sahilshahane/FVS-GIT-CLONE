@@ -45,7 +45,12 @@ const Profile = ({ showName }: any) => {
   return (
     <Row align="middle">
       <Animate transitionName="fade">
-        {profileImg.showDialog && <ChangeProfileImg {...{ setProfileImg }} />}
+        {profileImg.showDialog && (
+          <ChangeProfileImg
+            {...{ setProfileImg }}
+            currentImg={ProfilePicture}
+          />
+        )}
       </Animate>
       <Row
         onClick={() => setProfileImg({ ...profileImg, showDialog: true })}

@@ -7,7 +7,7 @@ import saveProfilePic from '../modules/saveProfilePicture';
 const { Text } = Typography;
 
 // eslint-disable-next-line react/prop-types
-const ChangeProfileImg = ({ setProfileImg }: any) => {
+const ChangeProfileImg = ({ setProfileImg, currentImg }: any) => {
   const inputURL: any = useRef(null);
   const inputFILE: any = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,6 @@ const ChangeProfileImg = ({ setProfileImg }: any) => {
       const URL = inputURL.current.state.value;
       DATA = { type: 'url', url: URL };
     }
-
     // eslint-disable-next-line promise/catch-or-return
     if (DATA) {
       setLoading(true);
@@ -33,6 +32,7 @@ const ChangeProfileImg = ({ setProfileImg }: any) => {
         // eslint-disable-next-line promise/always-return
         .then((imgPath) => {
           // eslint-disable-next-line promise/always-return
+          console.log(`Setting img path -> ${imgPath}`);
           if (imgPath) {
             setProfileImg({ imgURL: imgPath, showDialog: false });
             // eslint-disable-next-line no-console
@@ -40,6 +40,7 @@ const ChangeProfileImg = ({ setProfileImg }: any) => {
         })
         .catch((err) => {
           // eslint-disable-next-line no-console
+          setProfileImg(currentImg);
           console.error(err);
         })
         .finally(() => {
@@ -57,7 +58,9 @@ const ChangeProfileImg = ({ setProfileImg }: any) => {
       cancelButtonProps={{ style: { display: 'none' } }}
       onOk={SET_PROFILE_IMAGE}
       onCancel={() => {
-        setProfileImg({ showDialog: false });
+        // const if_old_img_present = currentImg ? currentImg : null;
+        if (currentImg)
+          setProfileImg({ showDialog: false, imgURL: currentImg });
       }}
     >
       <Row style={{ marginBottom: '15px' }}>
