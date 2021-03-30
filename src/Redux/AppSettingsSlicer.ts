@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { createSlice } from '@reduxjs/toolkit';
 import fs from 'fs';
 import log from 'electron-log';
@@ -10,7 +11,21 @@ export interface AppSettings_DATA_STRUCTURE {
   defaultIgnores: Array<string> | ['.usp', '.uspignore'];
   profileImage_fileName: 'profile.jpg';
   cloudLoginStatus: {
-    googleDrive: any;
+    googleDrive: {
+      user: {
+        displayName: string;
+        photoLink: string;
+        permissionId: string;
+        emailAddress: string;
+      };
+      storageQuota: {
+        limit: string;
+        usage: string;
+        usageInDrive: string;
+        usageInDriveTrash: string;
+      };
+      rootFolderDriveID: string;
+    };
   };
   theme: 'dark' | 'light';
   globalIgnores: Array<string> | [];

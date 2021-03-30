@@ -1,3 +1,4 @@
+/* eslint-disable import/no-cycle */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable import/prefer-default-export */
 import Sqlite3 from 'better-sqlite3';
@@ -191,3 +192,37 @@ export const getResults = async (
 
 //   return response;
 // };
+
+const getCrossPlatformPath = (Path: string) => {
+  if (Path && process.platform === 'linux') return Path.replaceAll('\\', '/');
+  return Path;
+};
+
+type GetParentPathFromDatabase = {
+  RepoID: string;
+  parentID: string;
+};
+
+export const getParentPathFromRepoDatabase = ({
+  RepoID,
+  parentID,
+}: GetParentPathFromDatabase) => {
+  const DB = getDB(RepoID);
+
+  const response = DB.prepare(
+    'SELECT folderPath FROM folders WHERE driveID = ?'
+  ).get(parentID);
+
+  if (!response?.folderPath) {
+    const { AppSettings, UserRepoData } = Reduxstore.getState();
+
+    const { rootFolderDriveID } = AppSettings.cloudLoginStatus.googleDrive;
+    if (parentID === rootFolderDriveID) {
+      const { localLocation } = UserRepoData.info[RepoID];
+
+      return path.resolve(localLocation, '..');
+    }
+  }
+
+  return getCrossPlatformPath(response.folderPath);
+};
