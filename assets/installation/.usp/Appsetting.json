@@ -24,10 +24,11 @@
       },
       "storageQuota": {
         "limit": "16106127360",
-        "usage": "352",
-        "usageInDrive": "352",
+        "usage": "384",
+        "usageInDrive": "384",
         "usageInDriveTrash": "320"
-      }
+      },
+      "rootFolderDriveID": "0AEHi7cZJu23bUk9PVA"
     }
   },
   "theme": "dark",
@@ -42,9 +43,5 @@
     },
     "current": "name",
     "type": "ascending"
-  },
-  "local_profileimage_info": {
-    "type": "file",
-    "url": "/home/uttkarsh/.usp/Profile.jpg"
   }
 }
