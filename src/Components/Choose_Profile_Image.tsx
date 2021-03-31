@@ -2,17 +2,24 @@ import React, { useRef, useState } from 'react';
 import { Modal, Row, Input, Typography } from 'antd';
 import log from 'electron-log';
 import saveProfilePic from '../modules/saveProfilePicture';
+import { useDispatch } from 'react-redux';
+import { setLocalProfilePhotoOption } from '../Redux/AppSettingsSlicer';
 
 // import { FileImageOutlined } from '@ant-design/icons'
 const { Text } = Typography;
 
 // eslint-disable-next-line react/prop-types
-const ChangeProfileImg = ({ setProfileImg, currentImg }: any) => {
+const ChangeProfileImg = ({
+  setProfileImg,
+  isModalVisible,
+  setVisible,
+}: any) => {
   const inputURL: any = useRef(null);
   const inputFILE: any = useRef(null);
   const [loading, setLoading] = useState(false);
   const Textstyle = { marginBottom: '3px' };
   const title = 'Choose a Profile Image';
+  const dispatch = useDispatch();
 
   const SET_PROFILE_IMAGE = async () => {
     let DATA: any;
@@ -37,30 +44,35 @@ const ChangeProfileImg = ({ setProfileImg, currentImg }: any) => {
             setProfileImg({ imgURL: imgPath, showDialog: false });
             // eslint-disable-next-line no-console
           } else console.log('failed');
+          return '';
         })
         .catch((err) => {
           // eslint-disable-next-line no-console
-          setProfileImg(currentImg);
           console.error(err);
         })
         .finally(() => {
           setLoading(false);
+          dispatch(
+            setLocalProfilePhotoOption({
+              localImage: DATA,
+            })
+          );
         });
     }
+    setVisible(false);
   };
 
   return (
     <Modal
       title={title}
-      visible
+      visible={isModalVisible}
       centered
       confirmLoading={loading}
       cancelButtonProps={{ style: { display: 'none' } }}
       onOk={SET_PROFILE_IMAGE}
       onCancel={() => {
-        // const if_old_img_present = currentImg ? currentImg : null;
-        if (currentImg)
-          setProfileImg({ showDialog: false, imgURL: currentImg });
+        console.log(setVisible());
+        setVisible(false);
       }}
     >
       <Row style={{ marginBottom: '15px' }}>

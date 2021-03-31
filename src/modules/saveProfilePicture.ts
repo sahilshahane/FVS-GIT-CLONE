@@ -1,15 +1,14 @@
 import fs from 'fs';
-import path, { resolve } from 'path';
 import request from 'request';
 import progress from 'request-progress';
 import { ipcRenderer } from 'electron';
 
-const Load_APP_HOME_PATH = () => {
-  return ipcRenderer.sendSync('get-APP_HOME_PATH');
-};
+// const Load_APP_HOME_PATH = () => {
+//   return ipcRenderer.sendSync('get-APP_HOME_PATH');
+// };
 
-let APP_HOME_PATH = Load_APP_HOME_PATH();
-let APP_SETTINGS = {};
+// let APP_HOME_PATH = Load_APP_HOME_PATH();
+// let APP_SETTINGS = {};
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const saveProfilePicture_FILE = async (from: fs.PathLike, to: fs.PathLike) => {
