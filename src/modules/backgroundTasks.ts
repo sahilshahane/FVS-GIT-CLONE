@@ -6,37 +6,19 @@ import log from 'electron-log';
 import {
   APP_SETTINGS_FILE_PATH,
   USER_REPOSITORY_DATA_FILE_PATH,
-  sendSchedulerTask,
-  CCODES,
 } from './get_AppData';
 import Reduxstore from '../Redux/store';
+import { checkGDriveChanges, createRepoFoldersInDrive } from './GoogleDrive';
 
-import { getNonCreatedFolder } from './Database';
-import path from 'path';
-
-export const createRepoFoldersInDrive = (RepoID: string, RepoName: string) => {
-  const folderData = getNonCreatedFolder(RepoID);
-  log.info('Creating Folders in Drive', { RepoID, folderData });
-  folderData.repoFolderData.RepoName = RepoName;
-
-  // SEND DATA TO SCHEDULER
-  sendSchedulerTask({
-    code: CCODES.CREATE_FOLDERS,
-    data: {
-      RepoID,
-      ...folderData,
-    },
-  });
-};
-
-export const checkRepoFolders = () => {
+export const PerformInitialTask = () => {
   const { UserRepoData } = Reduxstore.getState();
 
   Object.keys(UserRepoData.info).forEach((RepoID) => {
-    const RepoName = UserRepoData.info[RepoID].displayName;
-
-    // CREATE FOLDERS IN DRIVE
-    createRepoFoldersInDrive(RepoID, RepoName);
+    const { displayName, trackingInfo } = UserRepoData.info[RepoID];
+    // CREATE FOLDERS IN DRIVE FOR FIRST TIME
+    if (!trackingInfo) createRepoFoldersInDrive(RepoID, displayName);
+    // ELSE CHECK CHANGES IN GOOGLE DRIVE
+    else checkGDriveChanges(RepoID, trackingInfo);
   });
 };
 
@@ -50,8 +32,8 @@ export const getRepositoryTrackingInfo = (RepoID: string) => {
 
 // eslint-disable-next-line import/prefer-default-export
 export const LOAD_ONCE_AFTER_APP_READY = () => {
-  checkRepoFolders();
-  console.log('Background Service Started!');
+  PerformInitialTask();
+  log.info('Background Service Started!');
 };
 
 ipcRenderer.on('save-on-exit', () => {

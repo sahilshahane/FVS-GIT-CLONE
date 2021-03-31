@@ -15,8 +15,8 @@ import {
   saveGoogleLogin,
   saveRepositorySettings,
 } from '../Redux/AppSettingsSlicer';
-import { createRepoFoldersInDrive } from './backgroundTasks';
 import { updateFilesDriveID, updateFolderDriveID } from './Database';
+import { performGDriveChanges, createRepoFoldersInDrive } from './GoogleDrive';
 
 const { dispatch } = ReduxStore;
 
@@ -50,7 +50,7 @@ const Handler = (
       log.error('Failed to Initialize Repository', response);
       break;
     case CCODES.ALL_FOLDERS_CREATED_DRIVE:
-      log.info('All Folders are created in drive', response.data);
+      log.info('Uncreated Folders are Created in drive', response.data);
 
       // UPDATE UPLOADS
       dispatch(updateUploadingQueue(ReduxStore.getState().UserRepoData));
@@ -135,6 +135,13 @@ const Handler = (
         dispatch(saveRepositorySettings());
       });
 
+      break;
+    case CCODES.FINISHED_CHECKING_CHANGES:
+      performGDriveChanges({
+        RepoID: response.data.RepoID,
+        changes: response.data.changes,
+        trackingInfo: response.data.trackingInfo,
+      });
       break;
   }
 };

@@ -79,10 +79,6 @@ const DownloadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
     (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.totalSessionDownloads
   );
 
-  const downloadWatingQueue = useSelector(
-    (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.downloadWatingQueue
-  );
-
   const downloadingQueue = useSelector(
     (state: { Sync: SYNC_DATA_STRUCTURE }) => state.Sync.downloadingQueue
   );
@@ -93,10 +89,6 @@ const DownloadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
     let totalWaiting = 0;
 
     (async () => {
-      Object.keys(downloadWatingQueue).forEach((RepoID: any) => {
-        totalWaiting += downloadWatingQueue[RepoID].length;
-      });
-
       if (!totalWaiting && !downloadingQueue.length) {
         setPercentage(100);
       } else {
@@ -108,12 +100,7 @@ const DownloadsPercentage = ({ dispatch }: { dispatch: Dispatch<any> }) => {
         );
       }
     })();
-  }, [
-    downloadFinishedQueue,
-    totalSessionDownloads,
-    downloadingQueue.length,
-    downloadWatingQueue,
-  ]);
+  }, [downloadFinishedQueue, totalSessionDownloads, downloadingQueue.length]);
   return (
     <div
       aria-hidden
@@ -155,12 +142,8 @@ const PercentageStatus = () => {
           >
             <Row justify="space-around">
               <Space size="middle">
-                <Col>
-                  <UploadsPercentage {...{ dispatch }} />
-                </Col>
-                <Col>
-                  <DownloadsPercentage {...{ dispatch }} />
-                </Col>
+                <Col>{/* <UploadsPercentage {...{ dispatch }} /> */}</Col>
+                <Col>{/* <DownloadsPercentage {...{ dispatch }} /> */}</Col>
               </Space>
             </Row>
           </Collapse.Panel>

@@ -7,7 +7,7 @@ import {
   USER_REPOSITORY_DATA_FILE_PATH,
 } from '../modules/get_AppData';
 
-type trackingInfo_ = {
+export type trackingInfo_ = {
   lastChecked: string;
   driveID: string;
 };
@@ -75,9 +75,7 @@ const GET_INITIAL_STATE: () => USER_REPOSITORY_DATA_STRUCTURE = () => {
   const data: USER_REPOSITORY_DATA_STRUCTURE = USER_REPOSITORY_DATA;
 
   if (!(data.info && Object.keys(data.info).length)) data.info = {};
-  if (!data.currentDirectory)
-    data.currentDirectory = { RepoID: null, localLocation: 'Home' };
-
+  data.currentDirectory = { RepoID: null, localLocation: 'Home' };
   return { ...USER_REPOSITORY_DATA, ...data };
 };
 const SAVE = async (state: USER_REPOSITORY_DATA_STRUCTURE) => {
@@ -96,16 +94,16 @@ export const USER_REPOSITORY_Slice = createSlice({
         localLocation: DATA.localLocation,
       };
     },
-
     setRepositoryTrackingInfo: (state, action: setRepositoryTrackingInfo_) => {
       const { RepoID, trackingInfo } = action.payload;
 
-      const dataToBeSaved = {
-        trackingInfo,
-      };
-
-      // UPDATE THE STATE FOR FASTER DATA ACCESS
-      state.info[RepoID].trackingInfo = trackingInfo;
+      if (state.info[RepoID].trackingInfo)
+        // UPDATE THE STATE FOR FASTER DATA ACCESS
+        state.info[RepoID].trackingInfo = {
+          ...state.info[RepoID].trackingInfo,
+          ...trackingInfo,
+        };
+      else state.info[RepoID].trackingInfo = trackingInfo;
 
       const localPath = state.info[RepoID].localLocation;
       const repositoryDataPath = path.join(localPath, '.usp', 'data.json');
@@ -116,7 +114,7 @@ export const USER_REPOSITORY_Slice = createSlice({
       // WRITE REPO DATA / SETTINGS
       fs.writeJSONSync(repositoryDataPath, {
         ...repositoryData,
-        ...dataToBeSaved,
+        ...state.info[RepoID].trackingInfo,
       });
     },
     setCurrentDirectory: (state, action: setCurrentDirectory_) => {
@@ -132,8 +130,7 @@ export const USER_REPOSITORY_Slice = createSlice({
 
       if (RepoID) state.currentDirectory.RepoID = RepoID;
     },
-
-    saveUserRepositoryDataSync: (state) => {
+    saveUserRepositoryData: (state) => {
       SAVE(state);
     },
     setSyncStatus: (state, action: setSyncStatus) => {
@@ -146,7 +143,7 @@ export const USER_REPOSITORY_Slice = createSlice({
 export const {
   addRepository,
   setCurrentDirectory,
-  saveUserRepositoryDataSync,
+  saveUserRepositoryData,
   setRepositoryTrackingInfo,
 } = USER_REPOSITORY_Slice.actions;
 

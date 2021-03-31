@@ -288,7 +288,7 @@ const SliderDrawer = () => {
         bodyStyle={{ padding: 0 }}
         className="hideScrollbar"
       >
-        <DownloadsDrawer />
+        {/* <DownloadsDrawer /> */}
       </Drawer>
     </div>
   );

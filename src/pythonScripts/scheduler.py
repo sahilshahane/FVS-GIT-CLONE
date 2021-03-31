@@ -164,26 +164,26 @@ def retriveUploads(task):
 
 def createRepoFolders(task):
     RepoID = task["data"]["RepoID"]
-
     try:
         GoogleDrive.createRepoFolders(CCODES, task)
+        del task["data"]["folderData"]
 
-        return {"code": CCODES["ALL_FOLDERS_CREATED_DRIVE"], "data": {"RepoID": RepoID}}
+        return {"code": CCODES["ALL_FOLDERS_CREATED_DRIVE"], "data": task["data"]}
     except Exception as e:
         return {"code": CCODES["FAILED_TO_CREATE_FOLDERS"], "data": {"RepoID": RepoID}, "exception": {"msg": str(e), "type":  str(e.__class__.__name__)}}
 
 
 def checkChanges(task):
-    repoID = task["data"]["RepoID"]
-    repoDriveId = task["data"]["driveID"]
+    RepoID = task["data"]["RepoID"]
+    repoDriveId = task["data"]["trackingInfo"]["driveID"]
     lastCheckedTime = task["data"]["trackingInfo"]["lastChecked"]
 
     try:
         DATA = GoogleDrive.checkChanges(CCODES, repoDriveId, lastCheckedTime)
 
-        return {"code": CCODES["CHANGES_CHECKED"], "data": {"RepoID": repoID, "changes":  DATA["changes"], "trackingInfo": DATA["trackingInfo"]}}
+        return {"code": CCODES["FINISHED_CHECKING_CHANGES"], "data": {"RepoID": RepoID, "changes":  DATA["changes"], "trackingInfo": DATA["trackingInfo"]}}
     except Exception as e:
-        return {"code": CCODES["CHECK_CHANGES_FAILED"], "data": {"RepoID": repoDriveId}, "exception": {"msg": str(e), "type":  str(e.__class__.__name__)}}
+        return {"code": CCODES["FAILED_CHECKING_CHANGES"], "data": {"RepoID": RepoID}, "exception": {"msg": str(e), "type":  str(e.__class__.__name__)}}
 
 
 TASKS_DEFINITIONS = {
@@ -238,13 +238,16 @@ def aloneMain():
         "code": CCODES["CHECK_CHANGES"],
         "data": {
             "RepoID": "asdasdasdasd",
-            "driveID": "1ANeBtoxCEWbQMV8mLWlXR7GxQDjfZy8I",
-            "trackingInfo": {"lastChecked": "2021-03-27T14:01:05Z"}
+            "trackingInfo": {"lastChecked": "2021-03-29T18:11:03.293Z","driveID": "1e4-j-oFlCdJSx-qdGHvE78w5EiQtsYpn"}
         }
     }
 
-    addTask(task2)
+    # addTask(task2)
 
+    task3 = {
+      "code": CCODES["START_GOOGLE_LOGIN"]
+    }
+    addTask(task3)
 
 
 def GUI_LAUNCH():

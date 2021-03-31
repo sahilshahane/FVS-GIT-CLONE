@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { createSlice } from '@reduxjs/toolkit';
 import fs from 'fs';
 import os, { homedir } from 'os';
@@ -16,7 +17,21 @@ export interface AppSettings_DATA_STRUCTURE {
     url: string;
   };
   cloudLoginStatus: {
-    googleDrive: any;
+    googleDrive: {
+      user: {
+        displayName: string;
+        photoLink: string;
+        permissionId: string;
+        emailAddress: string;
+      };
+      storageQuota: {
+        limit: string;
+        usage: string;
+        usageInDrive: string;
+        usageInDriveTrash: string;
+      };
+      rootFolderDriveID: string;
+    };
   };
   theme: 'dark' | 'light';
   globalIgnores: Array<string> | [];
