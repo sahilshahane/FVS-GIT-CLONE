@@ -5,8 +5,7 @@ import { Modal, Divider, Typography } from 'antd';
 import { Redirect } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Particles from 'react-particles-js';
-import { faGoogleDrive } from '@fortawesome/free-brands-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { FaGoogleDrive } from 'react-icons/fa';
 import { CCODES, sendSchedulerTask } from '../modules/get_AppData';
 import { store } from '../Redux/store';
 import particlesConfig from '../../assets/configParticles';
@@ -65,7 +64,7 @@ const Login = () => {
             title="Google Account Required"
           >
             <div className="inner">
-              <FontAwesomeIcon className="icon" icon={faGoogleDrive} />
+              <FaGoogleDrive />
               <span className="label">Google Drive</span>
             </div>
           </button>

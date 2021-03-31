@@ -1,10 +1,14 @@
 import fs from 'fs';
-import path, { resolve } from 'path';
 import request from 'request';
 import progress from 'request-progress';
+import { ipcRenderer } from 'electron';
 
-let APP_HOME_PATH = 'C:\\Users\\void';
-let APP_SETTINGS = {};
+// const Load_APP_HOME_PATH = () => {
+//   return ipcRenderer.sendSync('get-APP_HOME_PATH');
+// };
+
+// let APP_HOME_PATH = Load_APP_HOME_PATH();
+// let APP_SETTINGS = {};
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const saveProfilePicture_FILE = async (from: fs.PathLike, to: fs.PathLike) => {
@@ -64,10 +68,7 @@ const downloadFile = async (url: any, to: string) => {
 
 const saveProfilePicture = async ({ type, url }) => {
   let result = null;
-  const PROFILE_IMG_PATH = path.join(
-    APP_HOME_PATH,
-    APP_SETTINGS.profileImage_fileName
-  );
+  const PROFILE_IMG_PATH = url;
 
   // eslint-disable-next-line default-case
   switch (type) {

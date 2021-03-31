@@ -7,21 +7,25 @@ import Animate from 'rc-animate';
 import { useSelector } from 'react-redux';
 import ChangeProfileImg from './Choose_Profile_Image';
 import log from 'electron-log';
-import { GetGoogleUsername } from '../Redux/AppSettingsSlicer';
+import {
+  GetGoogleUsername,
+  GetGoogleProfilePictureURL,
+  LocalProfileImageSelected,
+} from '../Redux/AppSettingsSlicer';
 
 const { Text } = Typography;
 const { useState } = React;
 
-// eslint-disable-next-line react/prop-types
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Profile = ({ showName }: any) => {
   const [profileImg, setProfileImg] = useState({
     showDialog: false,
     imgURL: null,
   });
 
-  // console.log('Rendering Profile.tsx');
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const Username = useSelector(GetGoogleUsername);
+  const ProfilePicture = useSelector(GetGoogleProfilePictureURL);
+  const LocalProfilePicture = useSelector(LocalProfileImageSelected);
   const [MinimizedName, setMinimizedName] = useState(null);
 
   useEffect(() => {
@@ -33,12 +37,25 @@ const Profile = ({ showName }: any) => {
         }, '')
         .toUpperCase()
     );
+
+    if (LocalProfilePicture) {
+      const profileURL = LocalProfilePicture.url;
+      setProfileImg({ ...profileImg, imgURL: profileURL });
+    } else if (ProfilePicture) {
+      setProfileImg({ ...profileImg, imgURL: ProfilePicture });
+    }
   }, [Username]);
 
   return (
     <Row align="middle">
       <Animate transitionName="fade">
-        {profileImg.showDialog && <ChangeProfileImg {...{ setProfileImg }} />}
+        {profileImg.showDialog && (
+          <ChangeProfileImg
+            {...{ setProfileImg }}
+            isModalVisible
+            setVisible={setIsModalVisible}
+          />
+        )}
       </Animate>
       <Row
         onClick={() => setProfileImg({ ...profileImg, showDialog: true })}
