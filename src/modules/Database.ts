@@ -63,11 +63,43 @@ export const getFinishedUploadsName = (RepoID: number) => {
   return response;
 };
 
+export const getFinishedDownloadsName = (RepoID: number) => {
+  const DB = getDB(RepoID);
+
+  const response = DB.prepare(
+    `SELECT fileName from files WHERE downloaded IS NOT NULL`
+  ).all();
+
+  return response;
+};
+
 export const getRemainingUploads = (RepoID: string, limit = -1) => {
   const DB = getDB(RepoID);
 
   const file_data = DB.prepare(
     `SELECT fileName, driveID, folder_id FROM files WHERE uploaded IS NULL LIMIT ?`
+  ).all(limit);
+
+  const stmt_folders = DB.prepare(
+    `SELECT folderName, folderPath, driveID AS parentDriveID FROM folders WHERE folder_id = ?`
+  );
+
+  const response: Array<DoingQueue> = file_data.map(
+    ({ fileName, driveID, folder_id }) => {
+      const { folderPath, parentDriveID } = stmt_folders.all(folder_id)[0];
+      const filePath = path.join(folderPath, fileName);
+      return { RepoID, fileName, filePath, driveID, parentDriveID, folder_id };
+    }
+  );
+
+  return response;
+};
+
+export const getRemainingDownloads = (RepoID: string, limit = -1) => {
+  const DB = getDB(RepoID);
+
+  const file_data = DB.prepare(
+    `SELECT fileName, driveID, folder_id FROM files WHERE downloaded IS NULL LIMIT ?`
   ).all(limit);
 
   const stmt_folders = DB.prepare(
