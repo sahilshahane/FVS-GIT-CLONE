@@ -1,11 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { Modal, Row, Input, Typography } from 'antd';
 import log from 'electron-log';
-import saveProfilePic from '../modules/saveProfilePicture';
 import { useDispatch } from 'react-redux';
+import saveProfilePic from '../modules/saveProfilePicture';
 import { setLocalProfilePhotoOption } from '../Redux/AppSettingsSlicer';
 
-// import { FileImageOutlined } from '@ant-design/icons'
 const { Text } = Typography;
 
 // eslint-disable-next-line react/prop-types
@@ -43,7 +42,7 @@ const ChangeProfileImg = ({
           if (imgPath) {
             setProfileImg({ imgURL: imgPath, showDialog: false });
             // eslint-disable-next-line no-console
-          } else console.log('failed');
+          } else console.log('Failes to set new Profile Image');
           return '';
         })
         .catch((err) => {

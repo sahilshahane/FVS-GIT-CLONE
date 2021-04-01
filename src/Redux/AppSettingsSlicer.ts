@@ -85,20 +85,23 @@ export const AppSettingsSlice = createSlice({
     setLocalProfilePhotoOption: (state, action) => {
       const DATA = action.payload.localImage;
       const PathToDotUSP = path.join(os.homedir(), '.usp');
-      const fileName = path.basename(DATA.url);
-      const extType = path.extname(DATA.url);
 
       if (DATA.type === 'file') {
-        fs.copyFileSync(DATA.url, path.join(PathToDotUSP, `Profile${extType}`));
+        const fileName = path.basename(DATA.url);
+
+        fs.copyFileSync(DATA.url, path.join(PathToDotUSP, `Profile.jpg`));
+        state.local_profileimage_info = {
+          ...DATA,
+          url: path.join(PathToDotUSP, 'Profile.jpg'),
+        };
+        log.info('Setting a new local image as the profile photo');
+      } else {
+        state.local_profileimage_info = {
+          ...DATA,
+          url: path.join(PathToDotUSP, `Profile.jpg`),
+        };
       }
-      log.info('Setting a new image as the profile');
 
-      // Can be optimized by just checking the type of the file i.e it is URL or File
-
-      state.local_profileimage_info = {
-        ...DATA,
-        url: path.join(PathToDotUSP, fileName),
-      };
       fs.writeFileSync(
         APP_SETTINGS_FILE_PATH,
         JSON.stringify(state, null, 2),
@@ -141,9 +144,8 @@ export const GetGoogleProfilePictureURL = (state: any) => {
 export const LocalProfileImageSelected = (state: any) => {
   if (state.AppSettings.local_profileimage_info) {
     return state.AppSettings.local_profileimage_info;
-  } else {
-    return false;
   }
+  return false;
 };
 
 export const RemoveProfileImageSelected = (state: any) => {

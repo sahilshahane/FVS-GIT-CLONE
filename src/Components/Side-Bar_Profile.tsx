@@ -6,7 +6,7 @@ import { UserOutlined } from '@ant-design/icons';
 import Animate from 'rc-animate';
 import { useSelector } from 'react-redux';
 import ChangeProfileImg from './Choose_Profile_Image';
-import log from 'electron-log';
+
 import {
   GetGoogleUsername,
   GetGoogleProfilePictureURL,

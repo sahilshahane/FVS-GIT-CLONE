@@ -1,4 +1,6 @@
 import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import request from 'request';
 import progress from 'request-progress';
 import { ipcRenderer } from 'electron';
@@ -66,17 +68,22 @@ const downloadFile = async (url: any, to: string) => {
   });
 };
 
-const saveProfilePicture = async ({ type, url }) => {
+interface DATA {
+  type: string;
+  url: string;
+}
+
+const saveProfilePicture = async ({ type, url }: DATA) => {
   let result = null;
   const PROFILE_IMG_PATH = url;
-
+  const PATH_TO_USP = path.join(os.homedir(), '.usp', 'Profile.jpg');
   // eslint-disable-next-line default-case
   switch (type) {
     case 'file':
       result = await saveProfilePicture_FILE(url, PROFILE_IMG_PATH);
       break;
     case 'url':
-      result = await downloadFile(url, PROFILE_IMG_PATH);
+      result = await downloadFile(url, PATH_TO_USP);
       break;
   }
   return result;
