@@ -1,10 +1,10 @@
+/* eslint-disable import/no-cycle */
 /* eslint-disable @typescript-eslint/naming-convention */
 import { createSlice } from '@reduxjs/toolkit';
 import fs from 'fs';
-import os, { homedir } from 'os';
-import path from 'path';
 import log from 'electron-log';
 import { APP_SETTINGS, APP_SETTINGS_FILE_PATH } from '../modules/get_AppData';
+import { store } from './store';
 
 export interface AppSettings_DATA_STRUCTURE {
   repository_folderName: '.usp';
@@ -12,15 +12,11 @@ export interface AppSettings_DATA_STRUCTURE {
   repositorySettings_fileName: 'repositorySettings.json';
   defaultIgnores: Array<string> | ['.usp', '.uspignore'];
   profileImage_fileName: 'profile.jpg';
-  local_profileimage_info?: {
-    type: string;
-    url: string;
-  };
   cloudLoginStatus: {
-    googleDrive: {
+    googleDrive: null | {
       user: {
         displayName: string;
-        photoLink: string;
+        photoLink?: string;
         permissionId: string;
         emailAddress: string;
       };
@@ -34,7 +30,7 @@ export interface AppSettings_DATA_STRUCTURE {
     };
   };
   theme: 'dark' | 'light';
-  globalIgnores: Array<string> | [];
+  globalIgnores: string[] | [];
   directorySortBy: {
     options: {
       Name: 'name';
@@ -82,33 +78,9 @@ export const AppSettingsSlice = createSlice({
       state.cloudLoginStatus.googleDrive = action.payload;
       log.info('Saved Google Login');
     },
-    setLocalProfilePhotoOption: (state, action) => {
-      const DATA = action.payload.localImage;
-      const PathToDotUSP = path.join(os.homedir(), '.usp');
-      const fileName = path.basename(DATA.url);
-      const extType = path.extname(DATA.url);
-
-      if (DATA.type === 'file') {
-        fs.copyFileSync(DATA.url, path.join(PathToDotUSP, `Profile${extType}`));
-      }
-      log.info('Setting a new image as the profile');
-
-      // Can be optimized by just checking the type of the file i.e it is URL or File
-
-      state.local_profileimage_info = {
-        ...DATA,
-        url: path.join(PathToDotUSP, fileName),
-      };
-      fs.writeFileSync(
-        APP_SETTINGS_FILE_PATH,
-        JSON.stringify(state, null, 2),
-        (err: { message: any }) => {
-          if (err) log.error('Failed to Save App Settings', err.message);
-          else {
-            log.info('Saved Updated App Settings');
-          }
-        }
-      );
+    setProfilePhoto: (state, action: { payload: string }) => {
+      if (state.cloudLoginStatus.googleDrive)
+        state.cloudLoginStatus.googleDrive.user.photoLink = action.payload;
     },
   },
 });
@@ -117,40 +89,9 @@ export const {
   saveRepositorySettings,
   changeTheme,
   saveGoogleLogin,
-  setLocalProfilePhotoOption,
+  setProfilePhoto,
 } = AppSettingsSlice.actions;
 
-export const CurrentSettings = (state: any) => state.AppSettings;
-
-export const GetGoogleUsername = (state: any) => {
-  try {
-    return state.AppSettings.cloudLoginStatus.googleDrive.user.displayName;
-  } catch (e) {
-    return '';
-  }
-};
-
-export const GetGoogleProfilePictureURL = (state: any) => {
-  try {
-    return state.AppSettings.cloudLoginStatus.googleDrive.user.photoLink;
-  } catch (e) {
-    return '';
-  }
-};
-
-export const LocalProfileImageSelected = (state: any) => {
-  if (state.AppSettings.local_profileimage_info) {
-    return state.AppSettings.local_profileimage_info;
-  } else {
-    return false;
-  }
-};
-
-export const RemoveProfileImageSelected = (state: any) => {
-  if (state.AppSettings.local_profileimage_info) {
-    delete state.AppSettings.local_profileimage_info;
-    log.info('Deleted the local profile picture image info ');
-  }
-};
+export const CurrentSettings = (state: store) => state.AppSettings;
 
 export default AppSettingsSlice.reducer;
