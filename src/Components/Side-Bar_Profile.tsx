@@ -49,9 +49,9 @@ const ChangeProfileDialog = (props: {
     }
   };
 
-  const [isVisible, setVisible] = useState(true);
-
-  useEffect(() => setDialogVisible(isVisible), [isVisible, setDialogVisible]);
+  const handleCancle = () => {
+    setTimeout(() => setDialogVisible(false), 1);
+  };
 
   return (
     <Modal
@@ -61,10 +61,7 @@ const ChangeProfileDialog = (props: {
       confirmLoading={loading}
       cancelButtonProps={{ style: { display: 'none' } }}
       onOk={SET_PROFILE_IMAGE}
-      destroyOnClose
-      onCancel={(e) => {
-        setVisible(false);
-      }}
+      onCancel={handleCancle}
     >
       <Row style={{ marginBottom: '15px' }}>
         <Text style={Textstyle}>Choose a Image from Computer</Text>
@@ -124,12 +121,11 @@ const Profile = () => {
       onClick={() => setDialogVisible(true)}
       style={{ cursor: 'pointer', margin: 'auto' }}
     >
-      {isDialogVisible && (
-        <ChangeProfileDialog
-          isDialogVisible={isDialogVisible}
-          setDialogVisible={setDialogVisible}
-        />
-      )}
+      <ChangeProfileDialog
+        isDialogVisible={isDialogVisible}
+        setDialogVisible={setDialogVisible}
+      />
+
       <Avatar
         src={ProfilePictureURL}
         shape="circle"
