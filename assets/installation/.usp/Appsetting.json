@@ -17,15 +17,14 @@
       "user": {
         "kind": "drive#user",
         "displayName": "test accout",
-        "photoLink": "https://lh3.googleusercontent.com/a-/AOh14GjQzO-ZvrJG6W3kNVsHW3EE456eV6lVybnQM9iu=s64",
         "me": true,
         "permissionId": "04909922914753751588",
         "emailAddress": "testaccoutfortheapp@gmail.com"
       },
       "storageQuota": {
         "limit": "16106127360",
-        "usage": "448",
-        "usageInDrive": "448",
+        "usage": "384",
+        "usageInDrive": "384",
         "usageInDriveTrash": "320"
       },
       "rootFolderDriveID": "0AEHi7cZJu23bUk9PVA"

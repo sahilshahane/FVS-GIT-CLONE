@@ -1,83 +1,139 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
-import React, { useEffect } from 'react';
-import { Row, Avatar, Typography } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
-import Animate from 'rc-animate';
-import { useSelector } from 'react-redux';
-import ChangeProfileImg from './Choose_Profile_Image';
-
-import {
-  GetGoogleUsername,
-  GetGoogleProfilePictureURL,
-  LocalProfileImageSelected,
-} from '../Redux/AppSettingsSlicer';
+/* eslint-disable promise/catch-or-return */
+import React, { useRef, useState, useEffect } from 'react';
+import { Modal, Row, Input, Typography, Avatar } from 'antd';
+import log from 'electron-log';
+import { useDispatch, useSelector } from 'react-redux';
+import { store } from '../Redux/store';
+import saveProfilePic from '../modules/saveProfilePicture';
+import { setProfilePhoto } from '../Redux/AppSettingsSlicer';
 
 const { Text } = Typography;
-const { useState } = React;
 
-const Profile = ({ showName }: any) => {
-  const [profileImg, setProfileImg] = useState({
-    showDialog: false,
-    imgURL: null,
-  });
+const ChangeProfileDialog = (props: {
+  isDialogVisible: boolean;
+  setDialogVisible: React.Dispatch<React.SetStateAction<boolean>>;
+}) => {
+  const { isDialogVisible, setDialogVisible } = props;
+  const input: React.MutableRefObject<{
+    url: Input | null;
+    file: Input | null;
+  }> = useRef({ url: null, file: null });
 
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const Username = useSelector(GetGoogleUsername);
-  const ProfilePicture = useSelector(GetGoogleProfilePictureURL);
-  const LocalProfilePicture = useSelector(LocalProfileImageSelected);
-  const [MinimizedName, setMinimizedName] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const Textstyle = { marginBottom: '3px' };
+  const dispatch = useDispatch();
 
-  useEffect(() => {
-    setMinimizedName(
-      Username.trim()
-        .split(' ')
-        .reduce((prev: any, current: any[]) => {
-          return prev + current[0];
-        }, '')
-        .toUpperCase()
-    );
+  const SET_PROFILE_IMAGE = async () => {
+    let DATA: { type: 'file' | 'url'; url: string } | undefined;
 
-    if (LocalProfilePicture) {
-      const profileURL = LocalProfilePicture.url;
-      setProfileImg({ ...profileImg, imgURL: profileURL });
-    } else if (ProfilePicture) {
-      setProfileImg({ ...profileImg, imgURL: ProfilePicture });
+    if (input.current.file?.input?.files?.length) {
+      DATA = { type: 'file', url: input.current.file.input.files[0].path };
+    } else if (input.current.url?.state?.value) {
+      DATA = { type: 'url', url: input.current.url.state.value };
     }
-  }, [Username]);
+
+    if (DATA) {
+      setLoading(true);
+
+      saveProfilePic(DATA)
+        .then((imgPath) =>
+          // `${imgPath}?time=${new Date().getTime()}` is added to remove browser caching for that specific image
+          dispatch(setProfilePhoto(`${imgPath}?time=${new Date().getTime()}`))
+        )
+        .then(() => setDialogVisible(false))
+        .then(() => log.info('Profile Image Changed'))
+        .catch((err) => log.error('Failed Setting Profile Image', err))
+        .finally(() => setLoading(false));
+    }
+  };
+
+  const handleCancle = () => {
+    setTimeout(() => setDialogVisible(false), 1);
+  };
 
   return (
-    <Row align="middle">
-      <Animate transitionName="fade">
-        {profileImg.showDialog && (
-          <ChangeProfileImg
-            {...{ setProfileImg }}
-            isModalVisible
-            setVisible={setIsModalVisible}
-          />
-        )}
-      </Animate>
-      <Row
-        onClick={() => setProfileImg({ ...profileImg, showDialog: true })}
-        style={{ cursor: 'pointer', margin: 'auto' }}
-      >
-        <Avatar
-          src={profileImg.imgURL}
-          shape="circle"
-          size="large"
-          icon={<UserOutlined />}
+    <Modal
+      title="Choose a Profile Image"
+      visible={isDialogVisible}
+      centered
+      confirmLoading={loading}
+      cancelButtonProps={{ style: { display: 'none' } }}
+      onOk={SET_PROFILE_IMAGE}
+      onCancel={handleCancle}
+    >
+      <Row style={{ marginBottom: '15px' }}>
+        <Text style={Textstyle}>Choose a Image from Computer</Text>
+        <Input
+          type="file"
+          accept="image/x-png,image/jpeg"
+          ref={(ele) => {
+            input.current.file = ele;
+          }}
         />
       </Row>
-      <Row style={{ margin: 'auto' }}>
-        <Text
-          style={{
-            fontSize: '1.3rem',
-            textTransform: 'capitalize',
-          }}
-        >
-          {!showName ? Username : MinimizedName}
-        </Text>
+      <Row>
+        <Text style={{ margin: '5px auto', fontStyle: 'italic' }}>OR</Text>
       </Row>
+      <Row>
+        <Text style={Textstyle}>Enter Image URL</Text>
+        <Input
+          ref={(ele) => {
+            input.current.url = ele;
+          }}
+          type="url"
+          placeholder="Example - https://picsum.photos/seed/picsum/300/300"
+        />
+      </Row>
+    </Modal>
+  );
+};
+
+const Profile = () => {
+  const Username = useSelector(
+    (state: store) =>
+      state.AppSettings.cloudLoginStatus.googleDrive?.user.displayName
+  );
+  const ProfilePictureURL = useSelector(
+    (state: store) =>
+      state.AppSettings.cloudLoginStatus.googleDrive?.user.photoLink
+  );
+
+  const [MinimizedName, setMinimizedName] = useState('');
+
+  useEffect(() => {
+    if (Username)
+      setMinimizedName(
+        Username.split(' ')
+          .reduce((prev, current) => {
+            return prev + current[0];
+          }, '')
+          .toUpperCase()
+      );
+  }, [Username]);
+
+  const [isDialogVisible, setDialogVisible] = useState(false);
+
+  return (
+    <Row
+      align="middle"
+      onClick={() => setDialogVisible(true)}
+      style={{ cursor: 'pointer', margin: 'auto' }}
+    >
+      <ChangeProfileDialog
+        isDialogVisible={isDialogVisible}
+        setDialogVisible={setDialogVisible}
+      />
+
+      <Avatar
+        src={ProfilePictureURL}
+        shape="circle"
+        size="large"
+        style={{ backgroundColor: '#fde3cf', color: '#f56a00' }}
+      >
+        {MinimizedName}
+      </Avatar>
     </Row>
   );
 };
