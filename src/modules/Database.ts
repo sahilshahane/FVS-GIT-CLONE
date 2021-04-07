@@ -16,10 +16,15 @@ const DB_CONNECTIONS: {
   [RepoID: string]: Sqlite3.Database;
 } = {};
 
+export const ConnectAllDatabases = () => {
+  const { UserRepoData } = Reduxstore.getState();
+  Object.keys(UserRepoData.info).forEach((RepoID) => getDB(RepoID));
+};
+
 const getDB = (RepoID: string | number) => {
   // IF DB EXSISTS IN DB_CONNECTIONS, just Return it
   if (DB_CONNECTIONS[RepoID]) return DB_CONNECTIONS[RepoID];
-
+  console.log(DB_CONNECTIONS);
   const { UserRepoData } = Reduxstore.getState();
 
   const { localLocation } = UserRepoData.info[RepoID];
@@ -48,6 +53,22 @@ export const getRemainingUploadsName = (RepoID: string | number) => {
   return response;
 };
 
+export const getRemainingDownloadsName = (RepoID: string | number) => {
+  const DB = getDB(RepoID);
+
+  // THIS STATEMENT RETURNS fileName, directoryName, parentPath
+  // const stmt = DB.prepare(`SELECT name as fileName,
+  //                         (SELECT name from folders WHERE folder_id = files.folder_id ) AS folderName,
+  //                         (SELECT parentPath from folders WHERE folder_id = files.folder_id ) AS parentPath FROM files
+  //                           WHERE uploaded IS NULL`);
+
+  const response = DB.prepare(
+    'SELECT fileName from files WHERE downloaded IS NULL'
+  ).all();
+
+  return response;
+};
+
 export const getFinishedUploadsName = (RepoID: number) => {
   const DB = getDB(RepoID);
 
@@ -69,6 +90,28 @@ export const getRemainingUploads = (RepoID: string, limit = -1) => {
 
   const file_data = DB.prepare(
     `SELECT fileName, driveID, folder_id FROM files WHERE uploaded IS NULL LIMIT ?`
+  ).all(limit);
+
+  const stmt_folders = DB.prepare(
+    `SELECT folderName, folderPath, driveID AS parentDriveID FROM folders WHERE folder_id = ?`
+  );
+
+  const response: Array<DoingQueue> = file_data.map(
+    ({ fileName, driveID, folder_id }) => {
+      const { folderPath, parentDriveID } = stmt_folders.all(folder_id)[0];
+      const filePath = path.join(folderPath, fileName);
+      return { RepoID, fileName, filePath, driveID, parentDriveID, folder_id };
+    }
+  );
+
+  return response;
+};
+
+export const getRemainingDownloads = (RepoID: string, limit = -1) => {
+  const DB = getDB(RepoID);
+
+  const file_data = DB.prepare(
+    `SELECT fileName, driveID, folder_id FROM files WHERE downloaded IS NULL LIMIT ?`
   ).all(limit);
 
   const stmt_folders = DB.prepare(
@@ -180,20 +223,6 @@ export const getResults = async (
   };
 };
 
-// export const getFinishedUploadsName = (RepoID: string | number) => {
-//   const DB = getDB(RepoID);
-
-//   // THIS STATEMENT RETURNS fileName, directoryName, parentPath
-//   const stmt = DB.prepare(`SELECT name as fileName,
-//                           (SELECT name from folders WHERE folder_id = files.folder_id ) AS folderName,
-//                           (SELECT parentPath from folders WHERE folder_id = files.folder_id ) AS parentPath FROM files
-//                             WHERE uploaded IS NULL`);
-
-//   const response = stmt.all();
-
-//   return response;
-// };
-
 const getCrossPlatformPath = (Path: string) => {
   if (Path && process.platform === 'linux') return Path.replaceAll('\\', '/');
   return Path;
@@ -233,36 +262,6 @@ export const getParentPathFromRepoDatabase = ({
     parentPath: getCrossPlatformPath(response.folderPath),
     parentFolderID: response.folder_id,
   };
-};
-
-type setRepoDownload_ = (
-  RepoID: string,
-  data: {
-    driveID: string;
-    type: 'ADD' | 'REMOVE';
-    parentPath: string;
-    fileName: string;
-  }
-) => void;
-
-export const setRepoDownload: setRepoDownload_ = (RepoID, data) => {
-  const DB = getDB(RepoID);
-
-  const stmt = DB.prepare(
-    `UPDATE files downloaded = NULL WHERE driveID = @driveID`
-  );
-
-  const run = DB.transaction(() => {
-    const modifiedVal = {
-      driveID: data.driveID,
-    };
-    stmt.run(modifiedVal);
-  });
-
-  // RUN THE TRANSACTION
-  run();
-
-  log.info('Updated File Data Succesfully', { RepoID, data });
 };
 
 type addFolderRepoDB_ = (
@@ -389,4 +388,41 @@ export const removeFileRepoDB: removeFileRepoDB_ = (RepoID, data) => {
   // RUN THE TRANSACTION
   run();
   log.info('Removed File Data Succesfully', { RepoID, data });
+};
+
+type setRepoDownload_ = (
+  RepoID: string,
+  data: {
+    driveID: string;
+    type: 'ADD' | 'COMPLETE';
+  }
+) => void;
+
+export const setRepoDownload: setRepoDownload_ = (RepoID, data) => {
+  const DB = getDB(RepoID);
+
+  const stmt = DB.prepare(
+    `UPDATE files SET downloaded = @downloaded WHERE driveID = @driveID`
+  );
+
+  const run = DB.transaction(() => {
+    const modifiedVal: {
+      driveID: string;
+      downloaded?: number | null;
+    } = {
+      driveID: data.driveID,
+      downloaded: null,
+    };
+
+    if (data.type == 'COMPLETE') {
+      modifiedVal.downloaded = 1;
+    }
+
+    stmt.run(modifiedVal);
+  });
+
+  // RUN THE TRANSACTION
+  run();
+
+  log.info('Updated File Data Succesfully', { RepoID, data });
 };

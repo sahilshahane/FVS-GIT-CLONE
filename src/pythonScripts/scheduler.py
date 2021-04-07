@@ -102,7 +102,8 @@ def uploadFile(task):
 
         return {
             "code": CCODES["UPLOAD_SUCCESS"],
-            "data": task["data"]}
+            "data": task["data"]
+            }
 
     except Exception as e:
         return {"code": CCODES["UPLOAD_FAILED"], "data": task["data"], "exception": {"msg": str(e), "type": str(e.__class__.__name__)}}
@@ -119,12 +120,8 @@ def downloadFile(task):
 
         return {
             "code": CCODES["DOWNLOAD_SUCCESS"],
-            "data": {
-                "RepoId": RepoID,
-                "fileName": fileName,
-                "parentPath": os.path.dirname(filePath)
-            }
-        }
+            "data": task["data"]
+          }
     except Exception as e:
         return {
             "code": CCODES["DOWNLOAD_FAILED"],

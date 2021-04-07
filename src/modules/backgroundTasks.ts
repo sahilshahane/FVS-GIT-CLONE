@@ -9,6 +9,7 @@ import {
 } from './get_AppData';
 import Reduxstore from '../Redux/store';
 import { checkGDriveChanges, createRepoFoldersInDrive } from './GoogleDrive';
+import { ConnectAllDatabases } from './Database';
 
 export const PerformInitialTask = () => {
   const { UserRepoData } = Reduxstore.getState();
@@ -32,6 +33,7 @@ export const getRepositoryTrackingInfo = (RepoID: string) => {
 
 // eslint-disable-next-line import/prefer-default-export
 export const LOAD_ONCE_AFTER_APP_READY = () => {
+  ConnectAllDatabases();
   PerformInitialTask();
   log.info('Background Service Started!');
 };

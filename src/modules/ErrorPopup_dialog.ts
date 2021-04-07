@@ -7,7 +7,7 @@ const ShowError = (title = '', message = '') => {
   });
 };
 
-export const ShowInfo = (title = '', message = 'null') => {
+export const ShowInfo = (title:string = '', message:string = 'null') => {
   const data = {};
 
   if (title) data.title = title;

@@ -3,7 +3,10 @@
 import { createSlice } from '@reduxjs/toolkit';
 import log from 'electron-log';
 import fs from 'fs-extra';
-import { getRemainingUploads } from '../modules/Database';
+import {
+  getRemainingDownloads,
+  getRemainingUploads,
+} from '../modules/Database';
 import {
   CCODES,
   sendSchedulerTask,
@@ -166,6 +169,26 @@ export const SynchronizationSlice = createSlice({
         filePath,
       });
     },
+    addDownloadFinishedQueue: (state, action: addFinishedQueueInterface) => {
+      const { RepoID, fileName, driveID, filePath } = action.payload;
+
+      const indexTobeRemoved = state.downloadingQueue.findIndex(
+        (val) => val.driveID === driveID || val.filePath === filePath
+      );
+
+      if (indexTobeRemoved > -1) {
+        state.downloadingQueue.splice(indexTobeRemoved, 1);
+      }
+
+      if (!state.downloadFinishedQueue[RepoID])
+        state.downloadFinishedQueue[RepoID] = [];
+
+      state.downloadFinishedQueue[RepoID].push({
+        fileName,
+        driveID,
+        filePath,
+      });
+    },
     updateUploadingQueue: (
       state,
       action: { payload: USER_REPOSITORY_DATA_STRUCTURE }
@@ -196,6 +219,36 @@ export const SynchronizationSlice = createSlice({
         }
       });
     },
+    updateDownloadingQueue: (
+      state,
+      action: { payload: USER_REPOSITORY_DATA_STRUCTURE }
+    ) => {
+      const UserRepoData = action.payload;
+      // eslint-disable-next-line consistent-return
+      Object.keys(UserRepoData.info).forEach((RepoID) => {
+        // CALCULATE HOW MANY UPLOADS DO YOU NEED
+        const remainingSlots =
+          MAX_PARALLEL_DOWNLOAD - state.downloadingQueue.length;
+
+        if (remainingSlots) {
+          // GET THE UPLOADS FROM DATABASE
+          const newDownloads = getRemainingDownloads(RepoID, remainingSlots);
+
+          // UPDATE IT FOR UI and STATUS
+          state.downloadingQueue = [...state.downloadingQueue, ...newDownloads];
+
+          // SEND TASK TO SCHEDULER
+          newDownloads.forEach((fileDownloadData) => {
+            if (fileDownloadData.parentDriveID)
+              sendSchedulerTask({
+                code: CCODES.DOWNLOAD_FILE,
+                data: { ...fileDownloadData, RepoID },
+              });
+            else log.warn('CREATE FOLDERS IN DRIVE FIRST!');
+          });
+        }
+      });
+    },
     showUploadsDrawer: (state) => {
       state.showUploadsDrawer = true;
       state.showDownloadsDrawer = false;
@@ -217,7 +270,9 @@ export const {
   showUploadsDrawer,
   closeSyncDrawer,
   updateUploadingQueue,
+  updateDownloadingQueue,
   addUploadFinishedQueue,
+  addDownloadFinishedQueue,
 } = SynchronizationSlice.actions;
 
 export const SYNC_ACTIONS = SynchronizationSlice.actions;
