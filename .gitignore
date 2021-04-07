@@ -57,3 +57,4 @@ test.py
 scheduler-logs.txt
 assets/installation/.usp/token.pickle
 assets/installation/.usp/info.json
+assets/installation/.usp/token.pickle
