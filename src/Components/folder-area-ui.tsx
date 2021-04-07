@@ -1,20 +1,35 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import React, { useEffect } from 'react';
+import React, { useEffect, useContext } from 'react';
 import { useDispatch } from 'react-redux';
 import path from 'path';
-import log from 'electron-log';
 import {
   RepositoryInfo,
   setCurrentDirectory,
 } from '../Redux/UserRepositorySlicer';
+import VideoContext from '../modules/VideoContext';
 
-export const File = ({ filePath }: any) => {
+export const File = ({ currDir, filePath }: any) => {
   // console.log('File-UI recieved data ', fileInfo);
   const fileName = path.basename(filePath);
   const syncStatus = false;
+  const { setVideoPath } = useContext(VideoContext);
 
+  const showVideo = () => () => {
+    const loc = filePath.lastIndexOf('.');
+    const ext_type = filePath.substr(loc, filePath.length);
+    switch (ext_type) {
+      case '.mp4':
+      case '.mpg':
+      case '.webm':
+      case '.ogg':
+        setVideoPath(path.join(currDir, filePath));
+        break;
+      default:
+        setVideoPath(false);
+    }
+  };
   return (
-    <div className="file-ui">
+    <div className="file-ui" onDoubleClick={showVideo()}>
       <h3>{fileName}</h3>
       <span className={syncStatus ? 'synced-true' : 'synced-false'} />
     </div>

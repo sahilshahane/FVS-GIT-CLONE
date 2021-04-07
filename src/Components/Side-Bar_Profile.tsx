@@ -38,10 +38,7 @@ const ChangeProfileDialog = (props: {
       setLoading(true);
 
       saveProfilePic(DATA)
-        .then((imgPath) =>
-          // `${imgPath}?time=${new Date().getTime()}` is added to remove browser caching for that specific image
-          dispatch(setProfilePhoto(`${imgPath}?time=${new Date().getTime()}`))
-        )
+        .then((imgPath) => dispatch(setProfilePhoto(imgPath)))
         .then(() => setDialogVisible(false))
         .then(() => log.info('Profile Image Changed'))
         .catch((err) => log.error('Failed Setting Profile Image', err))

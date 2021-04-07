@@ -117,7 +117,11 @@ const Selected_Repository_Directory = () => {
             md={{ span: 6 }}
             key={nanoid()}
           >
-            <File id={nanoid()} filePath={filePath} />
+            <File
+              id={nanoid()}
+              filePath={filePath}
+              currDir={currentDirectory}
+            />
           </Col>
         );
       })}

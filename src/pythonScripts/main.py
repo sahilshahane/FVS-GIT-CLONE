@@ -197,7 +197,7 @@ def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
   # FILES TABLE
   cur.execute(f'''CREATE TABLE files (
                       fileName text ,
-                      folder_id INTEGER NOT NULL,
+                      folder_id TEXT NOT NULL,
                       driveID TEXT,
                       uploaded INTEGER,
                       downloaded INTEGER,
@@ -208,9 +208,9 @@ def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
   # FOLDERS TABLE
   cur.execute(f'''CREATE TABLE folders (
                       folderName TEXT NOT NULL,
-                      folder_id INTEGER PRIMARY KEY,
+                      folder_id TEXT,
                       driveID TEXT,
-                      folderPath TEXT NOT NULL
+                      folderPath TEXT PRIMARY KEY
                     )''')
 
   cur.close()

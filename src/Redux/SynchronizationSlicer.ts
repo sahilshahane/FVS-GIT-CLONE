@@ -3,10 +3,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import log from 'electron-log';
 import fs from 'fs-extra';
-import {
-  getRemainingUploads,
-  getRemainingDownloads,
-} from '../modules/Database';
+import { getRemainingUploads } from '../modules/Database';
 import {
   CCODES,
   sendSchedulerTask,
@@ -195,36 +192,6 @@ export const SynchronizationSlice = createSlice({
                 data: { ...fileUploadData, RepoID },
               });
             else log.warn('CREATE FOLDERS IN DRIVE FIRST!');
-          });
-        }
-      });
-    },
-    updateDownloadingQueue: (
-      state,
-      action: { payload: USER_REPOSITORY_DATA_STRUCTURE }
-    ) => {
-      const UserRepoData = action.payload;
-      // eslint-disable-next-line consistent-return
-      Object.keys(UserRepoData.info).forEach((RepoID) => {
-        // CALCULATE HOW MANY UPLOADS DO YOU NEED
-        const remainingSlots =
-          MAX_PARALLEL_DOWNLOAD - state.downloadingQueue.length;
-
-        if (remainingSlots) {
-          // GET THE UPLOADS FROM DATABASE
-          const newDownloads = getRemainingDownloads(RepoID, remainingSlots);
-          // newDownloads is an array of - RepoID, fileName, filePath, driveID, parentDriveID, folder_id
-          // UPDATE IT FOR UI and STATUS
-          state.downloadingQueue = [...state.downloadingQueue, ...newDownloads];
-
-          // SEND TASK TO SCHEDULER
-          newDownloads.forEach((fileDownloadData) => {
-            if (fileDownloadData.parentDriveID)
-              sendSchedulerTask({
-                code: CCODES.DOWNLOAD_FILE,
-                data: { ...fileDownloadData, RepoID },
-              });
-            else log.warn('PROBLEM IN SYNCSLICER - Update downloading queue');
           });
         }
       });

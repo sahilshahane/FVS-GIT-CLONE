@@ -1,3 +1,4 @@
+from os import path
 import sys
 import os
 import argparse
@@ -115,7 +116,7 @@ def downloadFile(task):
 
     try:
         GoogleDrive.downloadFile(CCODES, driveID, fileName, filePath, RepoID)
-        # RepoID, fileName, filePath, driveID, parentDriveID, folder_id
+
         return {
             "code": CCODES["DOWNLOAD_SUCCESS"],
             "data": {
@@ -247,7 +248,19 @@ def aloneMain():
     task3 = {
       "code": CCODES["START_GOOGLE_LOGIN"]
     }
-    addTask(task3)
+
+    # addTask(task3)
+
+    task4 = {
+      "code": CCODES["INIT_DIR"],
+      "data":{
+      "localPath": path.abspath("Testing"),
+      "force": True
+      }
+    }
+
+    addTask(task4)
+
 
 
 def GUI_LAUNCH():
