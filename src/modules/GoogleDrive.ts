@@ -6,7 +6,15 @@ import {
   setRepositoryTrackingInfo,
   trackingInfo_,
 } from '../Redux/UserRepositorySlicer';
-import { getNonCreatedFolder, getParentPathFromRepoDatabase } from './Database';
+import {
+  addFileRepoDB,
+  addFolderRepoDB,
+  getNonCreatedFolder,
+  getParentPathFromRepoDatabase,
+  removeFileRepoDB,
+  removeFolderRepoDB,
+  setRepoDownload,
+} from './Database';
 import { sendSchedulerTask, CCODES } from './get_AppData';
 import ReduxStore from '../Redux/store';
 
@@ -125,7 +133,7 @@ export const createRepoFoldersInDrive = (
   isFirstTime = false
 ) => {
   const folderData = getNonCreatedFolder(RepoID);
-
+  console.log(folderData);
   if (folderData.folderData.length) {
     log.info('Creating Folders in Drive', { RepoID, folderData });
 
@@ -143,55 +151,32 @@ export const createRepoFoldersInDrive = (
   }
 };
 
-type SupportedMimeTypes = {
-  FOLDER: MimeTypes;
-};
-
-const supportedMimeTypes: SupportedMimeTypes = {
-  FOLDER: 'application/vnd.google-apps.folder',
-};
-
-const createFolderOffline = (Path: string) => {
-  const folderPath = getCrossPlatformPath(Path);
-
-  if (!fs.existsSync(folderPath)) {
-    fs.mkdirSync(folderPath);
-  }
-};
-
-const createFileOffline = (Path: string) => {
-  const filePath = getCrossPlatformPath(Path);
-
-  if (!fs.existsSync(filePath)) {
-    fs.closeSync(fs.openSync(filePath, 'w'));
-  }
-};
-
-const PerformCreateAction = (
-  mimeType: MimeTypes,
-  Path: string,
-  data: DriveChange
-) => {
-  if (!fs.existsSync(folderPath)) {
-    fs.mkdirSync(folderPath);
-  }
-  switch (mimeType) {
-    case supportedMimeTypes.FOLDER:
-      createFolderOffline(data.name);
-      break;
-    default:
-      log.info(`Unknown MimeType`);
-  }
-};
-
 class BasicChange {
   data: DriveChange;
 
   driveID: string;
 
-  constructor(data: DriveChange, driveID: string) {
+  RepoID: string;
+
+  parentPath: string;
+
+  parentFolderID: string;
+
+  constructor(data: DriveChange, driveID: string, RepoID: string) {
     this.data = data;
     this.driveID = driveID;
+    this.RepoID = RepoID;
+
+    const parentID = this.data.parents;
+
+    const { parentPath, parentFolderID } = getParentPathFromRepoDatabase({
+      RepoID,
+      parentID,
+    });
+
+    this.parentFolderID = parentFolderID;
+    this.parentPath = parentPath;
+
     this.create = this.create.bind(this);
     this.edit = this.edit.bind(this);
     this.delete = this.delete.bind(this);
@@ -214,43 +199,44 @@ class BasicChange {
 }
 
 class FolderChange extends BasicChange {
-  ParentPath: string;
-
   folderPath: string;
 
   constructor(RepoID: string, driveID: string, data: DriveChange) {
-    super(data, driveID);
-    const { parents } = this.data;
+    super(data, driveID, RepoID);
 
-    // GET THE PATH
-    this.ParentPath = getParentPathFromRepoDatabase({
-      RepoID,
-      parentID: parents,
-    });
-
-    this.folderPath = path.join(this.ParentPath, this.data.name);
-
-    this.create = this.create.bind(this);
-    this.perform = this.perform.bind(this);
+    this.folderPath = path.join(this.parentPath, this.data.name);
   }
 
   create = () => {
-    if (!fs.existsSync(this.folderPath)) {
-      fs.mkdirSync(this.folderPath);
-    }
+    if (!fs.existsSync(this.folderPath)) fs.mkdirSync(this.folderPath);
+
+    addFolderRepoDB(this.RepoID, {
+      folderPath: this.folderPath,
+      driveID: this.driveID,
+    });
   };
 
   delete = () => {
-    fs.rmSync(this.folderPath, { recursive: true, force: true });
+    if (fs.existsSync(this.folderPath))
+      fs.rmSync(this.folderPath, { recursive: true, force: true });
+
+    removeFolderRepoDB(this.RepoID, {
+      folderPath: this.folderPath,
+      driveID: this.driveID,
+    });
+  };
+
+  restore = () => {
+    this.create();
   };
 
   perform = () => {
     try {
       const { actions } = this.data;
 
-      if (actions.delete) this.delete();
-      else if (actions.create) this.create();
-      else if (actions.restore) this.create();
+      if (actions?.delete) this.delete();
+      else if (actions?.create) this.create();
+      else if (actions?.restore) this.restore();
     } catch (error) {
       log.error('Error While Applying Changes Offline', error, {
         data: this.data,
@@ -263,17 +249,66 @@ class FolderChange extends BasicChange {
 }
 
 class FileChange extends BasicChange {
-  Path: string;
+  filePath: string;
 
   constructor(RepoID: string, driveID: string, data: DriveChange) {
-    super(data, driveID);
+    super(data, driveID, RepoID);
 
-    const { parents } = this.data;
-    this.Path = getParentPathFromRepoDatabase({
-      RepoID,
-      parentID: parents,
-    });
+    this.filePath = path.join(this.parentPath, data.name);
   }
+
+  perform = () => {
+    try {
+      const { actions } = this.data;
+
+      if (actions?.delete) this.delete();
+      else if (actions?.create?.new) this.create();
+      else if (actions?.restore) this.restore();
+
+      if (actions?.edit) this.edit();
+    } catch (error) {
+      log.error('Error While Applying Changes Offline', error, {
+        data: this.data,
+      });
+
+      return false;
+    }
+    return true;
+  };
+
+  create = () => {
+    if (!fs.existsSync(this.filePath)) fs.createFileSync(this.filePath);
+
+    addFileRepoDB(this.RepoID, {
+      driveID: this.driveID,
+      folder_id: this.parentFolderID,
+      filePath: this.filePath,
+      uploaded: 1,
+      downloaded: null,
+    });
+  };
+
+  delete = () => {
+    fs.rmSync(this.filePath, { force: true });
+
+    removeFileRepoDB(this.RepoID, {
+      driveID: this.driveID,
+      folder_id: this.parentFolderID,
+    });
+  };
+
+  edit = () => {
+    // setRepoDownload(this.RepoID, {
+    //   driveID: this.driveID,
+    //   type: 'ADD',
+    //   parentPath: this.parentPath,
+    //   fileName: this.data.name,
+    // });
+  };
+
+  restore = () => {
+    this.create();
+  };
 }
 
 const getChangeObject = (
@@ -296,14 +331,22 @@ export const performGDriveChanges = ({
   changes,
   trackingInfo,
 }: PerformGDriveChangesIF) => {
-  Object.keys(changes).forEach((driveID) => {
-    const ChangeObj = getChangeObject(RepoID, driveID, changes[driveID]);
-    const result = ChangeObj.perform();
+  Object.keys(changes)
+    .sort((PREVdriveID, NEXTdriveID) => {
+      const PREVactivityTimestamp = changes[PREVdriveID].timestamp;
+      const NEXTactivityTimestamp = changes[NEXTdriveID].timestamp;
 
-    if (result) {
-      // UPDATE THE DATABASE FOR THAT SPECIFIC FILE, STILL WORKING ON IT
+      return new Date(PREVactivityTimestamp) - new Date(NEXTactivityTimestamp);
+    })
+    .forEach((driveID) => {
+      console.warn(
+        'PERFORMING CHANGE',
+        JSON.parse(JSON.stringify(changes[driveID]))
+      );
+      const ChangeObj = getChangeObject(RepoID, driveID, changes[driveID]);
+      const isChangeSuccessful = ChangeObj.perform();
+    });
 
-      ReduxStore.dispatch(setRepositoryTrackingInfo({ RepoID, trackingInfo }));
-    }
-  });
+  // UPDATE THE REPOSITORY TRACKING INFO
+  ReduxStore.dispatch(setRepositoryTrackingInfo({ RepoID, trackingInfo }));
 };

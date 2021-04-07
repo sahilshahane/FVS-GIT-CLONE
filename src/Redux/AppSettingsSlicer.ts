@@ -79,8 +79,11 @@ export const AppSettingsSlice = createSlice({
       log.info('Saved Google Login');
     },
     setProfilePhoto: (state, action: { payload: string }) => {
+      // `${imgPath}?time=${new Date().getTime()}` is added to remove browser caching for that specific URL
       if (state.cloudLoginStatus.googleDrive)
-        state.cloudLoginStatus.googleDrive.user.photoLink = action.payload;
+        state.cloudLoginStatus.googleDrive.user.photoLink = `${
+          action.payload
+        }?time=${new Date().getTime()}`;
     },
   },
 });

@@ -1,6 +1,7 @@
 import os
 from sqlite3.dbapi2 import Connection
 from HashGen import generateFileHash
+import uuid
 
 class generateMetaData():
     ignore = None
@@ -76,17 +77,19 @@ class generateMetaData():
 
         absolutePath = os.path.realpath(directory)
 
+        folderID = uuid.uuid4().hex
+
         # FIX FOR ROOT FOLDER's PARENT NOT SHOWING UP
         # if(not parentDirPath): parentDirPath = directory
 
-        DB_CURSOR.execute(folderQuery,(folderName,self.totalFolders,absolutePath))
+        DB_CURSOR.execute(folderQuery,(folderName,folderID,absolutePath))
 
         for fileName in files:
           filePath = os.path.join(directory, fileName)
           modified_time = os.path.getmtime(filePath)
           fileHash = generateFileHash(filePath,self.HASH)
 
-          DB_CURSOR.execute(fileQuery,(fileName,self.totalFolders,fileHash,modified_time,1))
+          DB_CURSOR.execute(fileQuery,(fileName,folderID,fileHash,modified_time,1))
 
           self.totalFiles+=1
 

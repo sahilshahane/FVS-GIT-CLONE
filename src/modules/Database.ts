@@ -4,6 +4,7 @@
 import Sqlite3 from 'better-sqlite3';
 import path from 'path';
 import log from 'electron-log';
+import { nanoid } from '@reduxjs/toolkit';
 import Reduxstore from '../Redux/store';
 import { DoingQueue } from '../Redux/SynchronizationSlicer';
 
@@ -89,7 +90,7 @@ export const getNonCreatedFolder = (RepoID: string) => {
   const DB = getDB(RepoID);
 
   const repoFolderData = DB.prepare(
-    `SELECT folder_id, folderPath, driveID FROM folders WHERE folder_id = 1`
+    `SELECT folder_id, folderPath, driveID FROM folders ORDER BY ROWID ASC LIMIT 1`
   ).all()[0];
 
   const folderData = DB.prepare(
@@ -209,20 +210,183 @@ export const getParentPathFromRepoDatabase = ({
 }: GetParentPathFromDatabase) => {
   const DB = getDB(RepoID);
 
-  const response = DB.prepare(
-    'SELECT folderPath FROM folders WHERE driveID = ?'
-  ).get(parentID);
+  const stmt = DB.prepare(
+    'SELECT folderPath, folder_id FROM folders WHERE driveID = ?'
+  );
+
+  let response = stmt.get(parentID);
 
   if (!response?.folderPath) {
     const { AppSettings, UserRepoData } = Reduxstore.getState();
 
-    const { rootFolderDriveID } = AppSettings.cloudLoginStatus.googleDrive;
-    if (parentID === rootFolderDriveID) {
-      const { localLocation } = UserRepoData.info[RepoID];
+    const rootFolderDriveID =
+      AppSettings.cloudLoginStatus.googleDrive?.rootFolderDriveID;
 
-      return path.resolve(localLocation, '..');
+    if (parentID === rootFolderDriveID) {
+      const RepoDriveID = UserRepoData.info[RepoID].trackingInfo?.driveID;
+
+      response = stmt.get(RepoDriveID);
     }
   }
 
-  return getCrossPlatformPath(response.folderPath);
+  return {
+    parentPath: getCrossPlatformPath(response.folderPath),
+    parentFolderID: response.folder_id,
+  };
+};
+
+type setRepoDownload_ = (
+  RepoID: string,
+  data: {
+    driveID: string;
+    type: 'ADD' | 'REMOVE';
+    parentPath: string;
+    fileName: string;
+  }
+) => void;
+
+export const setRepoDownload: setRepoDownload_ = (RepoID, data) => {
+  const DB = getDB(RepoID);
+
+  const stmt = DB.prepare(
+    `UPDATE files downloaded = NULL WHERE driveID = @driveID`
+  );
+
+  const run = DB.transaction(() => {
+    const modifiedVal = {
+      driveID: data.driveID,
+    };
+    stmt.run(modifiedVal);
+  });
+
+  // RUN THE TRANSACTION
+  run();
+
+  log.info('Updated File Data Succesfully', { RepoID, data });
+};
+
+type addFolderRepoDB_ = (
+  RepoID: string,
+  data: {
+    folderPath: string;
+    driveID?: string;
+  }
+) => void;
+
+export const addFolderRepoDB: addFolderRepoDB_ = (RepoID, data) => {
+  try {
+    const DB = getDB(RepoID);
+
+    const stmt = DB.prepare(
+      'INSERT INTO folders (folderName,folder_id,driveID,folderPath) VALUES (@folderName,@folder_id,@driveID,@folderPath)'
+    );
+    const run = DB.transaction(() => {
+      stmt.run({
+        driveID: data?.driveID,
+        folder_id: nanoid(32),
+        folderName: path.basename(data.folderPath),
+        folderPath: data.folderPath,
+      });
+    });
+
+    // RUN THE TRANSACTION
+    run();
+    log.info('Added Folder Data Succesfully', { RepoID, data });
+  } catch (errr) {
+    log.error('FOLDER ALREADY EXISTS', errr);
+  }
+};
+
+type removeFolderRepoDB_ = (
+  RepoID: string,
+  data: {
+    folderPath: string;
+    driveID?: string;
+  }
+) => void;
+
+export const removeFolderRepoDB: removeFolderRepoDB_ = (RepoID, data) => {
+  const DB = getDB(RepoID);
+
+  const stmt = DB.prepare(
+    'DELETE FROM folders WHERE folderPath = @folderPath OR driveID IS NOT NULL AND driveID = @driveID'
+  );
+
+  const run = DB.transaction(() => {
+    stmt.run({
+      folderPath: data.folderPath,
+      driveID: data.driveID,
+    });
+  });
+
+  // RUN THE TRANSACTION
+  run();
+  log.info('Removed Folder Data Succesfully', { RepoID, data });
+};
+
+type addFileRepoDB_ = (
+  RepoID: string,
+  data: {
+    folder_id: string;
+    driveID: string;
+    filePath: string;
+    uploaded?: 1 | null;
+    downloaded?: 1 | null;
+    fileHash?: string;
+    modified_time?: string;
+  }
+) => void;
+
+export const addFileRepoDB: addFileRepoDB_ = (RepoID, data) => {
+  try {
+    const DB = getDB(RepoID);
+
+    const stmt = DB.prepare(
+      'INSERT INTO files (fileName,folder_id,driveID,uploaded,downloaded,fileHash,modified_time) VALUES (@fileName,@folder_id,@driveID,@uploaded,@downloaded,@fileHash,@modified_time)'
+    );
+    const run = DB.transaction(() => {
+      stmt.run({
+        driveID: data.driveID,
+        folder_id: data.folder_id,
+        fileName: path.basename(data.filePath),
+        uploaded: data.uploaded,
+        downloaded: data.downloaded,
+        fileHash: data.fileHash,
+        modified_time: data.modified_time,
+      });
+    });
+
+    // RUN THE TRANSACTION
+    run();
+    log.info('Added File Data Succesfully', { RepoID, data });
+  } catch (errr) {
+    log.error('FOLDER ALREADY EXISTS', errr);
+  }
+};
+
+type removeFileRepoDB_ = (
+  RepoID: string,
+  data: {
+    folder_id: string;
+    driveID: string;
+  }
+) => void;
+
+export const removeFileRepoDB: removeFileRepoDB_ = (RepoID, data) => {
+  const DB = getDB(RepoID);
+
+  const stmt = DB.prepare(
+    'DELETE FROM files WHERE driveID = @driveID AND folder_id = @folder_id'
+  );
+
+  const run = DB.transaction(() => {
+    stmt.run({
+      folder_id: data.folder_id,
+      driveID: data.driveID,
+    });
+  });
+
+  // RUN THE TRANSACTION
+  run();
+  log.info('Removed File Data Succesfully', { RepoID, data });
 };
