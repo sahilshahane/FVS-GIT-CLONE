@@ -8,6 +8,8 @@ import {
 import {
   updateUploadingQueue,
   addUploadFinishedQueue,
+  addDownloadFinishedQueue,
+  updateDownloadingQueue,
 } from '../Redux/SynchronizationSlicer';
 import { CCODES } from './get_AppData';
 import ShowError, { ShowInfo } from './ErrorPopup_dialog';
@@ -15,7 +17,11 @@ import {
   saveGoogleLogin,
   saveRepositorySettings,
 } from '../Redux/AppSettingsSlicer';
-import { updateFilesDriveID, updateFolderDriveID } from './Database';
+import {
+  setRepoDownload,
+  updateFilesDriveID,
+  updateFolderDriveID,
+} from './Database';
 import { performGDriveChanges, createRepoFoldersInDrive } from './GoogleDrive';
 
 const { dispatch } = ReduxStore;
@@ -127,6 +133,34 @@ const Handler = (
     case CCODES.UPLOAD_FAILED:
       // UPDATE UPLOADS
       dispatch(updateUploadingQueue(ReduxStore.getState().UserRepoData));
+
+      break;
+    case CCODES.DOWNLOAD_SUCCESS:
+      try {
+        setRepoDownload(response.data.RepoID, {
+          driveID: response.data.driveID,
+          type: 'COMPLETE',
+        });
+
+        dispatch(
+          addDownloadFinishedQueue({
+            RepoID: response.data.RepoID,
+            driveID: response.data.driveID,
+            fileName: response.data.fileName,
+            filePath: response.data.filePath,
+          })
+        );
+      } catch (err) {
+        log.error('Failed Updating Uploaded file locally', {
+          response,
+          exception: err,
+        });
+      }
+
+      break;
+    case CCODES.DOWNLOAD_FAILED:
+      // UPDATE DOWNLOADS
+      dispatch(updateDownloadingQueue(ReduxStore.getState().UserRepoData));
 
       break;
     case CCODES.GOOGLE_LOGIN_SUCCESS:

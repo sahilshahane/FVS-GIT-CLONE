@@ -231,12 +231,18 @@ def downloadFile(CCODES, driveID, fileName, filePath, repoID):
         fileBytes, filePath = downloadGoogleWorkspaceFile(
             CCODES, driveID, filePath, repoID, googleWorkspace[fileMimeType], service)
     else:
+      request = None
+
+      try:
+        request = service.files().get_media(fileId=driveID)
+      except HTTPError:
         request = service.files().get_media(fileId=driveID, acknowledgeAbuse=True)
-        downloader = MediaIoBaseDownload(fileBytes, request)
-        done = False
-        while not done:
-            status, done = downloader.next_chunk()
-            # print(status.progress())
+
+      downloader = MediaIoBaseDownload(fileBytes, request)
+      done = False
+      while not done:
+          status, done = downloader.next_chunk()
+          # print(status.progress())
 
     fileBytes.seek(0)
     if os.path.exists(filePath):
@@ -408,7 +414,7 @@ def getActivities_API(activityService, repoDriveId, trackingTime):
     }
 
     CHANGES = {}
-    saveJSON('temp.json',activities)
+
     for activity in activities:
         driveItems = activity["targets"][0]["driveItem"]
         # this might be confusing name~title

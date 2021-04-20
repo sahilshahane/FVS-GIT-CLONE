@@ -17,6 +17,10 @@ import {
 } from './Database';
 import { sendSchedulerTask, CCODES } from './get_AppData';
 import ReduxStore from '../Redux/store';
+import {
+  updateDownloadingQueue,
+  updateUploadingQueue,
+} from '../Redux/SynchronizationSlicer';
 
 type MimeTypes =
   | `application/vnd.google-apps.audio`
@@ -234,9 +238,34 @@ class FolderChange extends BasicChange {
     try {
       const { actions } = this.data;
 
-      if (actions?.delete) this.delete();
-      else if (actions?.create) this.create();
-      else if (actions?.restore) this.restore();
+      if (actions?.delete) {
+        log.warn(
+          'PERFORMING FOLDER DELETE OEPRATION',
+          JSON.parse(
+            JSON.stringify({ data: this.data, folderPath: this.folderPath })
+          )
+        );
+
+        this.delete();
+      } else if (actions?.create?.new) {
+        log.warn(
+          'PERFORMING FOLDER CREATE OEPRATION',
+          JSON.parse(
+            JSON.stringify({ data: this.data, folderPath: this.folderPath })
+          )
+        );
+
+        this.create();
+      } else if (actions?.restore) {
+        log.warn(
+          'PERFORMING FOLDER RESTORE OEPRATION',
+          JSON.parse(
+            JSON.stringify({ data: this.data, folderPath: this.folderPath })
+          )
+        );
+
+        this.restore();
+      }
     } catch (error) {
       log.error('Error While Applying Changes Offline', error, {
         data: this.data,
@@ -261,11 +290,44 @@ class FileChange extends BasicChange {
     try {
       const { actions } = this.data;
 
-      if (actions?.delete) this.delete();
-      else if (actions?.create?.new) this.create();
-      else if (actions?.restore) this.restore();
+      if (actions?.delete) {
+        log.warn(
+          'PERFORMING FILE DELETE OEPRATION',
+          JSON.parse(
+            JSON.stringify({ data: this.data, filePath: this.filePath })
+          )
+        );
 
-      if (actions?.edit) this.edit();
+        this.delete();
+      } else if (actions?.create?.new) {
+        log.warn(
+          'PERFORMING FILE CREATE OEPRATION',
+          JSON.parse(
+            JSON.stringify({ data: this.data, filePath: this.filePath })
+          )
+        );
+
+        this.create();
+      } else if (actions?.restore) {
+        log.warn(
+          'PERFORMING FILE RESTORE OEPRATION',
+          JSON.parse(
+            JSON.stringify({ data: this.data, filePath: this.filePath })
+          )
+        );
+
+        this.restore();
+      }
+
+      if (actions?.edit) {
+        log.warn(
+          'PERFORMING FILE EDIT OEPRATION',
+          JSON.parse(
+            JSON.stringify({ data: this.data, filePath: this.filePath })
+          )
+        );
+        this.edit();
+      }
     } catch (error) {
       log.error('Error While Applying Changes Offline', error, {
         data: this.data,
@@ -298,16 +360,15 @@ class FileChange extends BasicChange {
   };
 
   edit = () => {
-    // setRepoDownload(this.RepoID, {
-    //   driveID: this.driveID,
-    //   type: 'ADD',
-    //   parentPath: this.parentPath,
-    //   fileName: this.data.name,
-    // });
+    setRepoDownload(this.RepoID, {
+      driveID: this.driveID,
+      type: 'ADD',
+    });
   };
 
   restore = () => {
     this.create();
+    this.edit();
   };
 }
 
@@ -339,14 +400,18 @@ export const performGDriveChanges = ({
       return new Date(PREVactivityTimestamp) - new Date(NEXTactivityTimestamp);
     })
     .forEach((driveID) => {
-      console.warn(
-        'PERFORMING CHANGE',
-        JSON.parse(JSON.stringify(changes[driveID]))
-      );
       const ChangeObj = getChangeObject(RepoID, driveID, changes[driveID]);
       const isChangeSuccessful = ChangeObj.perform();
     });
 
   // UPDATE THE REPOSITORY TRACKING INFO
   ReduxStore.dispatch(setRepositoryTrackingInfo({ RepoID, trackingInfo }));
+
+  const { UserRepoData } = ReduxStore.getState();
+
+  // UPDATE THE UPLOADING QUEUE
+  ReduxStore.dispatch(updateUploadingQueue(UserRepoData));
+
+  // UPDATE THE DOWNLOADING QUEUE
+  ReduxStore.dispatch(updateDownloadingQueue(UserRepoData));
 };
