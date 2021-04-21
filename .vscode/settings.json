@@ -42,5 +42,5 @@
   },
   "python.linting.enabled": true,
   "python.terminal.activateEnvironment": true,
-  "python.pythonPath": "/usr/sbin/python3.8"
+  "python.pythonPath": "/sbin/python"
 }

@@ -1,13 +1,14 @@
 /* eslint-disable react/jsx-pascal-case */
 /* eslint-disable @typescript-eslint/naming-convention */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Row, Col } from 'antd';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { nanoid } from '@reduxjs/toolkit';
 import { fdir as FDIR } from 'fdir';
 import log from 'electron-log';
 import { File, Folder, Repository } from './folder-area-ui';
 import { store } from '../Redux/store';
+import { setAllMediaFiles } from '../Redux/MediaPlayerSlicer';
 
 const ALL_Repositories = () => {
   const repositoryData = useSelector((state: store) => {
@@ -77,6 +78,12 @@ const Selected_Repository_Directory = () => {
 
   const [FILES, set_FILES] = useState([]);
   const [FOLDERS, set_FOLDERS] = useState([]);
+  const dispatch = useDispatch();
+
+  const memo = useMemo(
+    () => dispatch(setAllMediaFiles({ mediaFiles: FILES })),
+    [FILES]
+  );
 
   useEffect(() => {
     if (currentDirectory && currentDirectory !== 'Home') {

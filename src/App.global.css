@@ -121,6 +121,13 @@ body {
   margin: 2px;
 }
 
+.file-ui.is-media{
+  border: 2px solid white;
+}
+.file-ui.is-media:hover{
+  cursor: pointer;
+}
+
 .folder-ui {
   backdrop-filter: blur(51px);
   background: rgb(27, 27, 27);
@@ -330,7 +337,7 @@ body {
   max-height: 300px;
 }
 
-.video-player-background{
+.video-media-background, .image-background{
   position: absolute;
   background-color: rgba(0, 0, 0, 0.5);
   height: 100vh;
@@ -340,26 +347,28 @@ body {
   align-items: center;
   z-index: 100;
 }
-/* .video-player-background.show{
-} */
+
+.media{
+  outline: none;
+}
 
 @media only screen and (min-width: 500px) {
-  .video-player{
+  .media{
     width: 400px;
   }
 }
 @media only screen and (min-width: 768px) {
-  .video-player{
+  .media{
     width: 600px;
   }
 }
 @media only screen and (min-width: 991px) {
-  .video-player{
+  .media{
     width: 800px;
   }
 }
 @media only screen and (min-width: 1199px) {
-  .video-player{
+  .media{
     width: 1000px;
   }
 }
