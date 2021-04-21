@@ -1,7 +1,7 @@
 import os
 from sqlite3.dbapi2 import Connection
-from HashGen import generateFileHash
-import uuid
+from HashGen import generateHash,generateFileHash
+
 
 class generateMetaData():
     ignore = None
@@ -14,7 +14,7 @@ class generateMetaData():
     def __init__(self,CCODES, DIR_PATH, DB_CONNECTION:Connection ,HASH="md5",ignore=None):
         self.ignore = ignore
         self.DB_CONNECTION = DB_CONNECTION
-        self.DIR_PATH = DIR_PATH
+        self.DIR_PATH = os.path.normpath(DIR_PATH)
         self.HASH = HASH
         self.generate(CCODES)
 
@@ -45,13 +45,19 @@ class generateMetaData():
     def generate(self,CCODES,indent=None):
       DB_CURSOR = self.DB_CONNECTION.cursor()
 
-      for directory,folders,files in os.walk(self.DIR_PATH):
-        folderName = os.path.basename(directory)
+      RepoParentDirectoryPath = os.path.normpath(f'{self.DIR_PATH}{os.path.sep}..')
 
-        if self.ignoreFunc(directory,folderName): continue
+      for absoluteDirectoryPath,folders,files in os.walk(self.DIR_PATH):
+        folderName = os.path.basename(absoluteDirectoryPath)
+
+
+        relativeDirectoryPath = absoluteDirectoryPath[len(RepoParentDirectoryPath) + 1 : len(absoluteDirectoryPath)]
+
+
+        if self.ignoreFunc(relativeDirectoryPath,folderName): continue
 
         # FILTER FILES WITH IGNORE DATA [data input = .uspignore file]
-        files = [fileName for fileName in files if not (self.ignoreFunc(directory,fileName=fileName))]
+        files = [fileName for fileName in files if not (self.ignoreFunc(relativeDirectoryPath,fileName=fileName))]
 
         fileQuery = '''INSERT INTO files
 
@@ -75,17 +81,15 @@ class generateMetaData():
                           VALUES (?,?,?)
                       '''
 
-        absolutePath = os.path.realpath(directory)
-
-        folderID = uuid.uuid4().hex
+        folderID = generateHash(data=relativeDirectoryPath)
 
         # FIX FOR ROOT FOLDER's PARENT NOT SHOWING UP
         # if(not parentDirPath): parentDirPath = directory
 
-        DB_CURSOR.execute(folderQuery,(folderName,folderID,absolutePath))
+        DB_CURSOR.execute(folderQuery,(folderName,folderID,absoluteDirectoryPath))
 
         for fileName in files:
-          filePath = os.path.join(directory, fileName)
+          filePath = os.path.join(absoluteDirectoryPath, fileName)
           modified_time = os.path.getmtime(filePath)
           fileHash = generateFileHash(filePath,self.HASH)
 
@@ -94,7 +98,6 @@ class generateMetaData():
           self.totalFiles+=1
 
       DB_CURSOR.close()
-
       self.DB_CONNECTION.commit()
 
     def getInfo(self):

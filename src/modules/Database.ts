@@ -8,6 +8,8 @@ import { nanoid } from '@reduxjs/toolkit';
 import Reduxstore from '../Redux/store';
 import { DoingQueue } from '../Redux/SynchronizationSlicer';
 
+const TAG = 'Database.ts > ';
+
 const connect = (filePath: string) => {
   return new Sqlite3(filePath);
 };
@@ -16,25 +18,48 @@ const DB_CONNECTIONS: {
   [RepoID: string]: Sqlite3.Database;
 } = {};
 
-export const ConnectAllDatabases = () => {
-  const { UserRepoData } = Reduxstore.getState();
-  Object.keys(UserRepoData.info).forEach((RepoID) => getDB(RepoID));
+export const InitializeDatabase = (RepoID: string) => {
+  return getDB(RepoID);
+};
+
+export const disconnectDB = (RepoID: string) => {
+  try {
+    if (DB_CONNECTIONS[RepoID]) {
+      DB_CONNECTIONS[RepoID].close();
+      log.info(TAG, 'Disconnected from database', { RepoID });
+    } else {
+      log.warn(
+        TAG,
+        'Database connection does not exists, nothing to disconnect'
+      );
+    }
+  } catch (error) {
+    log.error(TAG, 'Failed to disconnect from database', { RepoID, error });
+    return false;
+  }
+  return true;
 };
 
 const getDB = (RepoID: string | number) => {
   // IF DB EXSISTS IN DB_CONNECTIONS, just Return it
   if (DB_CONNECTIONS[RepoID]) return DB_CONNECTIONS[RepoID];
-  console.log(DB_CONNECTIONS);
+
   const { UserRepoData } = Reduxstore.getState();
 
   const { localLocation } = UserRepoData.info[RepoID];
   const DB_FILE_PATH = path.join(localLocation, '.usp', 'database.db');
-  const DB = connect(DB_FILE_PATH);
+  try {
+    const DB = connect(DB_FILE_PATH);
 
-  // ADD IT to DB_CONNECTIONS
-  DB_CONNECTIONS[RepoID] = DB;
+    // ADD IT to DB_CONNECTIONS
+    DB_CONNECTIONS[RepoID] = DB;
+    log.info(TAG, 'Connected to Database Successfully', { RepoID });
+    return DB;
+  } catch (error) {
+    log.error(TAG, `Failed to connect to database`, { RepoID, error });
+  }
 
-  return DB;
+  return false;
 };
 
 export const getRemainingUploadsName = (RepoID: string | number) => {
@@ -223,11 +248,6 @@ export const getResults = async (
   };
 };
 
-const getCrossPlatformPath = (Path: string) => {
-  if (Path && process.platform === 'linux') return Path.replaceAll('\\', '/');
-  return Path;
-};
-
 type GetParentPathFromDatabase = {
   RepoID: string;
   parentID: string;
@@ -243,7 +263,13 @@ export const getParentPathFromRepoDatabase = ({
     'SELECT folderPath, folder_id FROM folders WHERE driveID = ?'
   );
 
-  let response = stmt.get(parentID);
+  let response: {
+    folderPath?: string;
+    folder_id?: string;
+    isRootFolder?: boolean;
+  } = {
+    ...stmt.get(parentID),
+  };
 
   if (!response?.folderPath) {
     const { AppSettings, UserRepoData } = Reduxstore.getState();
@@ -252,15 +278,21 @@ export const getParentPathFromRepoDatabase = ({
       AppSettings.cloudLoginStatus.googleDrive?.rootFolderDriveID;
 
     if (parentID === rootFolderDriveID) {
-      const RepoDriveID = UserRepoData.info[RepoID].trackingInfo?.driveID;
+      const folderPath = path.normalize(
+        UserRepoData.info[RepoID].localLocation + path.sep + '..'
+      );
 
-      response = stmt.get(RepoDriveID);
+      response = {
+        folderPath,
+        isRootFolder: true,
+      };
     }
   }
 
   return {
-    parentPath: getCrossPlatformPath(response.folderPath),
+    parentPath: response.folderPath,
     parentFolderID: response.folder_id,
+    isRootFolder: response.isRootFolder,
   };
 };
 
@@ -290,9 +322,13 @@ export const addFolderRepoDB: addFolderRepoDB_ = (RepoID, data) => {
 
     // RUN THE TRANSACTION
     run();
-    log.info('Added Folder Data Succesfully', { RepoID, data });
+    log.info(TAG, 'Added Folder Data Succesfully', { RepoID, data });
   } catch (errr) {
-    log.error('FOLDER ALREADY EXISTS', errr);
+    log.error(TAG, 'FOLDER ALREADY EXISTS (this is normal)', {
+      RepoID,
+      data,
+      errr,
+    });
   }
 };
 

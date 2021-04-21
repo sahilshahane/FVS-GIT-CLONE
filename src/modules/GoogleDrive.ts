@@ -3,12 +3,14 @@ import log from 'electron-log';
 import fs from 'fs-extra';
 import path from 'path';
 import {
+  removeRepository,
   setRepositoryTrackingInfo,
   trackingInfo_,
 } from '../Redux/UserRepositorySlicer';
 import {
   addFileRepoDB,
   addFolderRepoDB,
+  disconnectDB,
   getNonCreatedFolder,
   getParentPathFromRepoDatabase,
   removeFileRepoDB,
@@ -21,6 +23,9 @@ import {
   updateDownloadingQueue,
   updateUploadingQueue,
 } from '../Redux/SynchronizationSlicer';
+import { removeRepositoryDialog } from '../Components/remove-Repository';
+
+const TAG = 'GoogleDrive.ts > ';
 
 type MimeTypes =
   | `application/vnd.google-apps.audio`
@@ -137,9 +142,9 @@ export const createRepoFoldersInDrive = (
   isFirstTime = false
 ) => {
   const folderData = getNonCreatedFolder(RepoID);
-  console.log(folderData);
-  if (folderData.folderData.length) {
-    log.info('Creating Folders in Drive', { RepoID, folderData });
+
+  if (folderData.folderData.length || !folderData.repoFolderData.driveID) {
+    log.info(TAG, 'Creating Folders in Drive', { RepoID, folderData });
 
     folderData.repoFolderData.RepoName = RepoName;
 
@@ -155,6 +160,13 @@ export const createRepoFoldersInDrive = (
   }
 };
 
+class RootFolderDeleted extends Error {
+  constructor(message = '') {
+    super(message); // (1)
+    this.name = 'RootFolderDeleted'; // (2)
+  }
+}
+
 class BasicChange {
   data: DriveChange;
 
@@ -162,9 +174,11 @@ class BasicChange {
 
   RepoID: string;
 
-  parentPath: string;
+  parentPath: string | undefined;
 
-  parentFolderID: string;
+  parentFolderID: string | undefined;
+
+  isRootFolder: boolean | undefined;
 
   constructor(data: DriveChange, driveID: string, RepoID: string) {
     this.data = data;
@@ -173,13 +187,18 @@ class BasicChange {
 
     const parentID = this.data.parents;
 
-    const { parentPath, parentFolderID } = getParentPathFromRepoDatabase({
+    const {
+      parentPath,
+      parentFolderID,
+      isRootFolder,
+    } = getParentPathFromRepoDatabase({
       RepoID,
       parentID,
     });
 
     this.parentFolderID = parentFolderID;
     this.parentPath = parentPath;
+    this.isRootFolder = isRootFolder;
 
     this.create = this.create.bind(this);
     this.edit = this.edit.bind(this);
@@ -212,7 +231,7 @@ class FolderChange extends BasicChange {
   }
 
   create = () => {
-    if (!fs.existsSync(this.folderPath)) fs.mkdirSync(this.folderPath);
+    fs.ensureDirSync(this.folderPath);
 
     addFolderRepoDB(this.RepoID, {
       folderPath: this.folderPath,
@@ -221,13 +240,27 @@ class FolderChange extends BasicChange {
   };
 
   delete = () => {
-    if (fs.existsSync(this.folderPath))
-      fs.rmSync(this.folderPath, { recursive: true, force: true });
+    if (this.isRootFolder) {
+      // const onOk = () => {
+      //   removeRepository(this.RepoID);
+      //   disconnectDB(this.RepoID);
+      //   fs.removeSync(this.folderPath);
+      // };
 
-    removeFolderRepoDB(this.RepoID, {
-      folderPath: this.folderPath,
-      driveID: this.driveID,
-    });
+      removeRepositoryDialog({ RepoID: this.RepoID });
+
+      ReduxStore.dispatch(removeRepository(this.RepoID));
+      disconnectDB(this.RepoID);
+      fs.removeSync(this.folderPath);
+
+      throw new RootFolderDeleted();
+    } else {
+      fs.removeSync(this.folderPath);
+      removeFolderRepoDB(this.RepoID, {
+        folderPath: this.folderPath,
+        driveID: this.driveID,
+      });
+    }
   };
 
   restore = () => {
@@ -235,45 +268,39 @@ class FolderChange extends BasicChange {
   };
 
   perform = () => {
-    try {
-      const { actions } = this.data;
+    const { actions } = this.data;
 
-      if (actions?.delete) {
-        log.warn(
-          'PERFORMING FOLDER DELETE OEPRATION',
-          JSON.parse(
-            JSON.stringify({ data: this.data, folderPath: this.folderPath })
-          )
-        );
+    if (actions?.delete) {
+      log.warn(
+        TAG,
+        'PERFORMING FOLDER DELETE OEPRATION',
+        JSON.parse(
+          JSON.stringify({ data: this.data, folderPath: this.folderPath })
+        )
+      );
 
-        this.delete();
-      } else if (actions?.create?.new) {
-        log.warn(
-          'PERFORMING FOLDER CREATE OEPRATION',
-          JSON.parse(
-            JSON.stringify({ data: this.data, folderPath: this.folderPath })
-          )
-        );
+      this.delete();
+    } else if (actions?.create?.new) {
+      log.warn(
+        TAG,
+        'PERFORMING FOLDER CREATE OEPRATION',
+        JSON.parse(
+          JSON.stringify({ data: this.data, folderPath: this.folderPath })
+        )
+      );
 
-        this.create();
-      } else if (actions?.restore) {
-        log.warn(
-          'PERFORMING FOLDER RESTORE OEPRATION',
-          JSON.parse(
-            JSON.stringify({ data: this.data, folderPath: this.folderPath })
-          )
-        );
+      this.create();
+    } else if (actions?.restore) {
+      log.warn(
+        TAG,
+        'PERFORMING FOLDER RESTORE OEPRATION',
+        JSON.parse(
+          JSON.stringify({ data: this.data, folderPath: this.folderPath })
+        )
+      );
 
-        this.restore();
-      }
-    } catch (error) {
-      log.error('Error While Applying Changes Offline', error, {
-        data: this.data,
-      });
-
-      return false;
+      this.restore();
     }
-    return true;
   };
 }
 
@@ -287,59 +314,46 @@ class FileChange extends BasicChange {
   }
 
   perform = () => {
-    try {
-      const { actions } = this.data;
+    const { actions } = this.data;
 
-      if (actions?.delete) {
-        log.warn(
-          'PERFORMING FILE DELETE OEPRATION',
-          JSON.parse(
-            JSON.stringify({ data: this.data, filePath: this.filePath })
-          )
-        );
+    if (actions?.delete) {
+      log.warn(
+        TAG,
+        'PERFORMING FILE DELETE OEPRATION',
+        JSON.parse(JSON.stringify({ data: this.data, filePath: this.filePath }))
+      );
 
-        this.delete();
-      } else if (actions?.create?.new) {
-        log.warn(
-          'PERFORMING FILE CREATE OEPRATION',
-          JSON.parse(
-            JSON.stringify({ data: this.data, filePath: this.filePath })
-          )
-        );
+      this.delete();
+    } else if (actions?.create?.new) {
+      log.warn(
+        TAG,
+        'PERFORMING FILE CREATE OEPRATION',
+        JSON.parse(JSON.stringify({ data: this.data, filePath: this.filePath }))
+      );
 
-        this.create();
-      } else if (actions?.restore) {
-        log.warn(
-          'PERFORMING FILE RESTORE OEPRATION',
-          JSON.parse(
-            JSON.stringify({ data: this.data, filePath: this.filePath })
-          )
-        );
+      this.create();
+    } else if (actions?.restore) {
+      log.warn(
+        TAG,
+        'PERFORMING FILE RESTORE OEPRATION',
+        JSON.parse(JSON.stringify({ data: this.data, filePath: this.filePath }))
+      );
 
-        this.restore();
-      }
-
-      if (actions?.edit) {
-        log.warn(
-          'PERFORMING FILE EDIT OEPRATION',
-          JSON.parse(
-            JSON.stringify({ data: this.data, filePath: this.filePath })
-          )
-        );
-        this.edit();
-      }
-    } catch (error) {
-      log.error('Error While Applying Changes Offline', error, {
-        data: this.data,
-      });
-
-      return false;
+      this.restore();
     }
-    return true;
+
+    if (actions?.edit) {
+      log.warn(
+        TAG,
+        'PERFORMING FILE EDIT OEPRATION',
+        JSON.parse(JSON.stringify({ data: this.data, filePath: this.filePath }))
+      );
+      this.edit();
+    }
   };
 
   create = () => {
-    if (!fs.existsSync(this.filePath)) fs.createFileSync(this.filePath);
+    fs.ensureFileSync(this.filePath);
 
     addFileRepoDB(this.RepoID, {
       driveID: this.driveID,
@@ -351,7 +365,7 @@ class FileChange extends BasicChange {
   };
 
   delete = () => {
-    fs.rmSync(this.filePath, { force: true });
+    fs.removeSync(this.filePath);
 
     removeFileRepoDB(this.RepoID, {
       driveID: this.driveID,
@@ -387,31 +401,62 @@ const getChangeObject = (
   }
 };
 
+const getSortedChanges = (changes: { [driveID: string]: DriveChange }) => {
+  return Object.keys(changes).sort((PREVdriveID, NEXTdriveID) => {
+    const PREVactivityTimestamp: number = new Date(
+      changes[PREVdriveID].timestamp
+    );
+    const NEXTactivityTimestamp: number = new Date(
+      changes[NEXTdriveID].timestamp
+    );
+
+    return PREVactivityTimestamp - NEXTactivityTimestamp;
+  });
+};
+
 export const performGDriveChanges = ({
   RepoID,
   changes,
   trackingInfo,
 }: PerformGDriveChangesIF) => {
-  Object.keys(changes)
-    .sort((PREVdriveID, NEXTdriveID) => {
-      const PREVactivityTimestamp = changes[PREVdriveID].timestamp;
-      const NEXTactivityTimestamp = changes[NEXTdriveID].timestamp;
+  const failedUpdates: { driveID: string; error: any }[] = [];
 
-      return new Date(PREVactivityTimestamp) - new Date(NEXTactivityTimestamp);
-    })
-    .forEach((driveID) => {
+  getSortedChanges(changes).every((driveID) => {
+    try {
       const ChangeObj = getChangeObject(RepoID, driveID, changes[driveID]);
-      const isChangeSuccessful = ChangeObj.perform();
-    });
+      ChangeObj.perform();
 
-  // UPDATE THE REPOSITORY TRACKING INFO
-  ReduxStore.dispatch(setRepositoryTrackingInfo({ RepoID, trackingInfo }));
+      // UPDATE THE REPOSITORY TRACKING INFO
+      ReduxStore.dispatch(
+        setRepositoryTrackingInfo({
+          RepoID,
+          trackingInfo: {
+            ...trackingInfo,
+            lastChecked: ChangeObj.data.timestamp,
+          },
+        })
+      );
+    } catch (error) {
+      failedUpdates.push({ driveID, error });
+      if (error instanceof RootFolderDeleted) return false;
+      else log.error(TAG, 'Failed Performing Changes', error);
+    }
+    return true;
+  });
 
-  const { UserRepoData } = ReduxStore.getState();
+  if (failedUpdates.length) {
+    const { UserRepoData } = ReduxStore.getState();
 
-  // UPDATE THE UPLOADING QUEUE
-  ReduxStore.dispatch(updateUploadingQueue(UserRepoData));
+    // UPDATE THE UPLOADING QUEUE
+    ReduxStore.dispatch(updateUploadingQueue(UserRepoData));
 
-  // UPDATE THE DOWNLOADING QUEUE
-  ReduxStore.dispatch(updateDownloadingQueue(UserRepoData));
+    // UPDATE THE DOWNLOADING QUEUE
+    ReduxStore.dispatch(updateDownloadingQueue(UserRepoData));
+  } else {
+    log.error(
+      TAG,
+      'Not Updating Database, Errors were found while performing offline changes',
+      failedUpdates
+    );
+  }
 };

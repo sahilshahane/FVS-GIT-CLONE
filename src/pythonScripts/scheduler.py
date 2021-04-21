@@ -261,6 +261,9 @@ def aloneMain():
 
 
 def GUI_LAUNCH():
+
+    output('Python Server Started...')
+
     while(True):
         task = sys.stdin.readline()[:-1]
         try:
