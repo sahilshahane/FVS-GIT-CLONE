@@ -1,3 +1,4 @@
+/* eslint-disable import/no-cycle */
 /* eslint global-require: off, no-console: off */
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -16,8 +17,11 @@ import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { PythonShell } from 'python-shell';
-import fs from 'fs';
+import fs from 'fs-extra';
 import os from 'os';
+import MenuBuilder from './menu';
+
+const TAG = 'main.dev.ts > ';
 
 export default class AppUpdater {
   constructor() {
@@ -77,7 +81,7 @@ const platforms = {
   AIX: 'AIX',
 };
 
-const platformsNames: any = {
+const platformsNames = {
   win32: platforms.WINDOWS,
   darwin: platforms.MAC,
   linux: platforms.LINUX,
@@ -190,6 +194,7 @@ const createWindow = async () => {
   });
 
   let savedOnce = false;
+
   mainWindow.on('close', (e) => {
     if (!savedOnce) {
       e.preventDefault();
@@ -202,11 +207,42 @@ const createWindow = async () => {
   //   mainWindow = null;
   // });
 
+  const menuBuilder = new MenuBuilder(mainWindow);
+  menuBuilder.buildMenu();
+
   // Open urls in the user's browser
   mainWindow.webContents.on('new-window', (event, url) => {
     event.preventDefault();
     shell.openExternal(url);
   });
+};
+
+const stopPythonServer = () => {
+  ipcMain.removeAllListeners('scheduler-task');
+  if (pythonScheduler) {
+    log.info(TAG, 'Stopping Python Server...');
+    pythonScheduler.end((err, exitcode, exitsignal) => {
+      if (err) log.error(`Python Exit Error : ${err}`);
+      log.info(`Python Exit Code : ${exitcode}`);
+      log.info(`Python Exit Sigal : ${exitsignal}`);
+    });
+  }
+};
+
+export const restartPythonServer = () => {
+  if (process.env.NODE_ENV === 'development') {
+    stopPythonServer();
+    log.info(TAG, 'Restarting Python Server...');
+    pythonScheduler = Create_PythonScheduler();
+  }
+};
+
+export const clearAllRepositories = () => {
+  mainWindow.webContents.send('clear-user-repositories');
+};
+
+export const SaveRepositories = () => {
+  mainWindow.webContents.send('save-user-repositories');
 };
 
 /**
@@ -256,11 +292,10 @@ ipcMain.on('get-APP_HOME_PATH', (evt) => {
 });
 
 ipcMain.on('exit-normal', () => {
-  if (pythonScheduler)
-    pythonScheduler.end((err, exitcode, exitsignal) => {
-      if (err) log.error(`Python Exit Error : ${err}`);
-      log.info(`Python Exit Code : ${exitcode}`);
-      log.info(`Python Exit Sigal : ${exitsignal}`);
-    });
+  stopPythonServer();
   app.quit();
+});
+
+ipcMain.on('restart-python-server', () => {
+  restartPythonServer();
 });

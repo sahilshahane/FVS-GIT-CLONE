@@ -2,10 +2,13 @@
 import { createSlice } from '@reduxjs/toolkit';
 import fs from 'fs-extra';
 import path from 'path';
+import log from 'electron-log';
 import {
   USER_REPOSITORY_DATA,
   USER_REPOSITORY_DATA_FILE_PATH,
 } from '../modules/get_AppData';
+
+const TAG = 'UserRepositorySlicer.ts > ';
 
 export type trackingInfo_ = {
   lastChecked: string;
@@ -71,6 +74,10 @@ interface setCurrentDirectory_ {
   };
 }
 
+interface removeRepository_ {
+  payload: string;
+}
+
 const GET_INITIAL_STATE: () => USER_REPOSITORY_DATA_STRUCTURE = () => {
   const data: USER_REPOSITORY_DATA_STRUCTURE = USER_REPOSITORY_DATA;
 
@@ -78,9 +85,12 @@ const GET_INITIAL_STATE: () => USER_REPOSITORY_DATA_STRUCTURE = () => {
   data.currentDirectory = { RepoID: null, localLocation: 'Home' };
   return { ...USER_REPOSITORY_DATA, ...data };
 };
+
 const SAVE = async (state: USER_REPOSITORY_DATA_STRUCTURE) => {
-  fs.promises.writeFile(USER_REPOSITORY_DATA_FILE_PATH, JSON.stringify(state));
+  fs.writeJsonSync(USER_REPOSITORY_DATA_FILE_PATH, state);
+  log.info(TAG, 'Saving User Repository Data');
 };
+
 export const USER_REPOSITORY_Slice = createSlice({
   name: 'UserRepoData',
   initialState: GET_INITIAL_STATE(),
@@ -133,9 +143,24 @@ export const USER_REPOSITORY_Slice = createSlice({
     saveUserRepositoryData: (state) => {
       SAVE(state);
     },
+    clearUserRepositories: (state) => {
+      state.info = {};
+      log.info(TAG, 'Clearing All User Repositories');
+      SAVE(state);
+    },
     setSyncStatus: (state, action: setSyncStatus) => {
       const { RepoID, status } = action.payload;
       state.info[RepoID].syncStatus = status;
+    },
+    removeRepository: (state, action: removeRepository_) => {
+      const repoToBeRemoved = state.info[action.payload];
+      delete state.info[action.payload];
+      log.warn(
+        TAG,
+        'Removed a Repository',
+        JSON.parse(JSON.stringify(repoToBeRemoved))
+      );
+      return state;
     },
   },
 });
@@ -145,6 +170,8 @@ export const {
   setCurrentDirectory,
   saveUserRepositoryData,
   setRepositoryTrackingInfo,
+  clearUserRepositories,
+  removeRepository,
 } = USER_REPOSITORY_Slice.actions;
 
 export default USER_REPOSITORY_Slice.reducer;

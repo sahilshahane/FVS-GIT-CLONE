@@ -49,8 +49,7 @@ npm-debug.log.*
 *.sass.d.ts
 *.scss.d.ts
 
-Testing
-Testing/.usp
+Testing/**/**
 
 __pycache__
 test.py

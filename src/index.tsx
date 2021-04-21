@@ -1,7 +1,7 @@
 import './App.global.css';
 import React, { useEffect, useState } from 'react';
 import { render } from 'react-dom';
-import { Provider, useSelector } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import {
   HashRouter as Router,
   Switch,
@@ -14,14 +14,26 @@ import Store, { store } from './Redux/store';
 import App from './App';
 import Login from './Pages/Login';
 import GlobalScriptHandler from './modules/GlobalHandler';
+import {
+  clearUserRepositories,
+  saveUserRepositoryData,
+} from './Redux/UserRepositorySlicer';
 
 // Top Routes
 const MAIN = () => {
   const history = useHistory();
-
+  const dispatch = useDispatch();
   useEffect(() => {
-    ipcRenderer.on('scheduler-response', (evt, reposnse) =>
+    ipcRenderer.on('scheduler-response', (_, reposnse) =>
       GlobalScriptHandler(reposnse, history)
+    );
+
+    ipcRenderer.on('save-user-repositories', () =>
+      dispatch(saveUserRepositoryData())
+    );
+
+    ipcRenderer.on('clear-user-repositories', () =>
+      dispatch(clearUserRepositories())
     );
   }, []);
 

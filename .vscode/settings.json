@@ -32,7 +32,7 @@
     "**/.hg": true,
     "**/CVS": true,
     "**/.DS_Store": true,
-    "**/node_modules": true
+    "**/node_modules": false
   },
   "files.watcherExclude": {
     "**/.git/objects/**": true,
@@ -42,5 +42,5 @@
   },
   "python.linting.enabled": true,
   "python.terminal.activateEnvironment": true,
-  "python.pythonPath": "src/pythonScripts/.venv/bin/python3.8"
+  "python.pythonPath": "src\\pythonScripts\\.venv\\Scripts\\python.exe"
 }
