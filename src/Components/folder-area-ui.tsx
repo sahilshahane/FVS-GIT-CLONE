@@ -1,7 +1,8 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-import React, { useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+import React from 'react';
 import { useDispatch } from 'react-redux';
 import path from 'path';
+import { FaImage, FaVideo } from 'react-icons/fa';
 import {
   RepositoryInfo,
   setCurrentDirectory,
@@ -10,23 +11,29 @@ import { getMediaType } from '../modules/MediaPlayer';
 import { showMediaPlayer } from '../Redux/MediaPlayerSlicer';
 
 export const File = ({ currDir, filePath }: any) => {
-  // console.log('File-UI recieved data ', fileInfo);
   const fileName = path.basename(filePath);
   const syncStatus = false;
   const dispatch = useDispatch();
-
+  const mediaType = getMediaType(fileName);
   let classname = 'file-ui';
 
   const HandleShowMediaPlayer = () => {
     if (getMediaType(fileName) !== 'other') {
-      classname += ' is-media';
       dispatch(showMediaPlayer(path.normalize(currDir + path.sep + filePath)));
     }
   };
 
+  if (mediaType !== 'other') {
+    mediaType === 'video'
+      ? (classname += ' video-media')
+      : (classname += ' image-media');
+  }
+
   return (
     <div className={classname} onDoubleClick={HandleShowMediaPlayer}>
       <h3>{fileName}</h3>
+      {classname.indexOf('video-media') !== -1 && <FaVideo />}
+      {classname.indexOf('image-media') !== -1 && <FaImage />}
       <span className={syncStatus ? 'synced-true' : 'synced-false'} />
     </div>
   );

@@ -121,11 +121,9 @@ body {
   margin: 2px;
 }
 
-.file-ui.is-media{
-  border: 2px solid white;
-}
-.file-ui.is-media:hover{
+.file-ui.video-media:hover, .file-ui.image-media:hover{
   cursor: pointer;
+  background-color: rgba(0, 0, 0, 0.425);
 }
 
 .folder-ui {
@@ -371,4 +369,14 @@ body {
   .media{
     width: 1000px;
   }
+}
+
+.icon{
+  border-radius: 10px;
+  padding: 5px;
+  color: white;
+}
+
+.icon:hover{
+  cursor: pointer;
 }

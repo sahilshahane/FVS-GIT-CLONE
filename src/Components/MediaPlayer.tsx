@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import ReactPlayer from 'react-player/lazy';
+import { AiOutlineClose } from 'react-icons/ai';
+import { MdNavigateNext, MdNavigateBefore } from 'react-icons/md';
 import { getMediaType } from '../modules/MediaPlayer';
 import { closeMediaPlayer } from '../Redux/MediaPlayerSlicer';
 import { store } from '../Redux/store';
@@ -78,46 +80,38 @@ const MediaPlayer = () => {
           transform: `scale(${showMediaPlayer ? 1 : 0})`,
         }}
       >
-        <div
+        <AiOutlineClose
+          className="icon"
           style={{
-            visibility: showPrevBtn ? 'visible' : 'hidden',
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
           }}
-        >
-          <button
-            type="button"
-            style={{ color: 'black' }}
-            onClick={handlePreviousMedia}
-          >
-            PREVIOUS
-          </button>
-        </div>
+          size="50px"
+          onClick={handleExit}
+        />
+
+        <MdNavigateBefore
+          className="icon"
+          size="40px"
+          visibility={showPrevBtn ? 'visible' : 'hidden'}
+          onClick={handlePreviousMedia}
+        />
 
         {mediaFileStack.length && mediaType === 'image' && (
-          <img src={mediaLocation} className="media" alt="A imsge" />
+          <img src={mediaLocation} className="media" alt="" />
         )}
 
         {mediaFileStack.length && mediaType === 'video' && (
           <ReactPlayer url={mediaLocation} className="media" controls />
         )}
-        <div>
-          <button type="button" style={{ color: 'black' }} onClick={handleExit}>
-            Exit
-          </button>
 
-          <div
-            style={{
-              visibility: showNextBtn ? 'visible' : 'hidden',
-            }}
-          >
-            <button
-              type="button"
-              style={{ color: 'black' }}
-              onClick={handleNextMedia}
-            >
-              NEXT
-            </button>
-          </div>
-        </div>
+        <MdNavigateNext
+          className="icon"
+          size="40px"
+          visibility={showNextBtn ? 'visible' : 'hidden'}
+          onClick={handleNextMedia}
+        />
       </div>
     </>
   );
