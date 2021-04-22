@@ -1,70 +1,76 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import { createSlice } from '@reduxjs/toolkit';
-import path from 'path';
 // eslint-disable-next-line import/no-cycle
-import { checkExtensionType } from '../Components/folder-area-ui';
+import { getMediaType } from '../modules/MediaPlayer';
+
+export interface MEDIA_PLAYER_INTERFACE {
+  showMediaPlayer: boolean;
+  mediaFileStack: string[] | [];
+  currentPlayingIndex?: number;
+  currentPlayingPath?: string;
+}
+
+const GET: () => MEDIA_PLAYER_INTERFACE = () => {
+  return { mediaFileStack: [], showMediaPlayer: false };
+};
+
+interface SetAllMediaFilesIF {
+  payload: { mediaFilePaths: string[] };
+}
 
 export const MediaPlayerSlice = createSlice({
   name: 'mediaPlayer',
-  initialState: {
-    mediaType: '',
-    mediaLocation: '',
-    allMediaFiles: [],
-  },
+  initialState: GET(),
   reducers: {
-    changeMediaType: (state, action) => {
-      state.mediaType = action.payload.mediaType;
-      state.mediaLocation = action.payload.mediaPath;
-    },
-    setAllMediaFiles: (state, action) => {
-      const mediaFiles: string[] = [];
-      const allFiles = action.payload.mediaFiles;
+    setMediaFileStack: (state, action: SetAllMediaFilesIF) => {
+      const { mediaFilePaths } = action.payload;
 
-      allFiles.forEach((file: string) => {
-        const ext = path.extname(file);
-        const type = checkExtensionType(ext);
-        if (type === 'image' || type === 'video') {
-          mediaFiles.push(file);
-        }
-      });
-      state.allMediaFiles = mediaFiles;
-    },
-    changeToNextMedia: (state) => {
-      const parentPath = path.dirname(state.mediaLocation);
-      const currentMediaIndex = state.allMediaFiles.indexOf(
-        path.basename(state.mediaLocation)
+      state.mediaFileStack = mediaFilePaths.filter(
+        (filePath) => getMediaType(filePath) !== 'other'
       );
-      let nextMediaIndex = 0;
-      let nextMedia = '';
-
-      if (currentMediaIndex !== state.allMediaFiles.length - 1) {
-        nextMediaIndex = currentMediaIndex + 1;
-      }
-      nextMedia = state.allMediaFiles[nextMediaIndex];
-      state.mediaLocation = path.join(parentPath, nextMedia);
-      state.mediaType = checkExtensionType(path.extname(nextMedia));
     },
-    changeToPreviousMedia: (state) => {
-      const parentPath = path.dirname(state.mediaLocation);
-      const currentMediaIndex = state.allMediaFiles.indexOf(
-        path.basename(state.mediaLocation)
-      );
-      let nextMediaIndex = state.allMediaFiles.length - 1;
-      let nextMedia = '';
-
-      if (currentMediaIndex !== 0) {
-        nextMediaIndex = currentMediaIndex - 1;
+    playNextMedia: (state) => {
+      const { mediaFileStack, currentPlayingIndex } = state;
+      if (
+        typeof currentPlayingIndex === 'number' &&
+        currentPlayingIndex + 1 !== state.mediaFileStack.length
+      ) {
+        state.currentPlayingPath = mediaFileStack[currentPlayingIndex + 1];
+        state.currentPlayingIndex = currentPlayingIndex + 1;
       }
-      nextMedia = state.allMediaFiles[nextMediaIndex];
-      state.mediaLocation = path.join(parentPath, nextMedia);
-      state.mediaType = checkExtensionType(path.extname(nextMedia));
+    },
+    playPreviousMedia: (state) => {
+      const { mediaFileStack, currentPlayingIndex } = state;
+      if (
+        typeof currentPlayingIndex === 'number' &&
+        currentPlayingIndex - 1 >= 0
+      ) {
+        state.currentPlayingPath = mediaFileStack[currentPlayingIndex - 1];
+        state.currentPlayingIndex = currentPlayingIndex - 1;
+      }
+    },
+    showMediaPlayer: (state, action: { payload: string }) => {
+      const filePath = action.payload;
+      if (filePath) {
+        state.currentPlayingPath = filePath;
+        state.currentPlayingIndex = state.mediaFileStack.findIndex(
+          (val) => val === filePath
+        );
+      }
+
+      state.showMediaPlayer = true;
+    },
+    closeMediaPlayer: (state) => {
+      state.showMediaPlayer = false;
     },
   },
 });
 
 export default MediaPlayerSlice.reducer;
 export const {
-  changeMediaType,
-  setAllMediaFiles,
-  changeToNextMedia,
-  changeToPreviousMedia,
+  setMediaFileStack,
+  playNextMedia,
+  playPreviousMedia,
+  closeMediaPlayer,
+  showMediaPlayer,
 } = MediaPlayerSlice.actions;

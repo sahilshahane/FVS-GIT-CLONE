@@ -8,7 +8,8 @@ import { fdir as FDIR } from 'fdir';
 import log from 'electron-log';
 import { File, Folder, Repository } from './folder-area-ui';
 import { store } from '../Redux/store';
-import { setAllMediaFiles } from '../Redux/MediaPlayerSlicer';
+import { setMediaFileStack } from '../Redux/MediaPlayerSlicer';
+import path from 'path';
 
 const ALL_Repositories = () => {
   const repositoryData = useSelector((state: store) => {
@@ -76,14 +77,10 @@ const Selected_Repository_Directory = () => {
     state.AppSettings.directorySortBy.type,
   ]);
 
-  const [FILES, set_FILES] = useState([]);
-  const [FOLDERS, set_FOLDERS] = useState([]);
-  const dispatch = useDispatch();
+  const [FILES, set_FILES] = useState<string[]>([]);
+  const [FOLDERS, set_FOLDERS] = useState<string[]>([]);
 
-  const memo = useMemo(
-    () => dispatch(setAllMediaFiles({ mediaFiles: FILES })),
-    [FILES]
-  );
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (currentDirectory && currentDirectory !== 'Home') {
@@ -94,10 +91,21 @@ const Selected_Repository_Directory = () => {
 
       // FOR FILES
       getFiles(currentDirectory)
-        .then((filePaths) => set_FILES(filePaths))
+        .then((filePaths) => {
+          set_FILES(filePaths);
+
+          dispatch(
+            setMediaFileStack({
+              mediaFilePaths: filePaths.map((val) =>
+                path.normalize(currentDirectory + path.sep + val)
+              ),
+            })
+          );
+          return filePaths;
+        })
         .catch((err) => log.error('Failed Retrieving Files', err));
     }
-  }, [currentDirectory]);
+  }, [currentDirectory, dispatch]);
 
   return (
     <Row gutter={[5, 5]} className="folder-area">

@@ -13,14 +13,14 @@ import SynchronizationSlice, {
   SYNC_DATA_STRUCTURE,
   updateUploadingQueue,
 } from './SynchronizationSlicer';
-import MediaPlayerSlice from './MediaPlayerSlicer';
+import MediaPlayerSlice, { MEDIA_PLAYER_INTERFACE } from './MediaPlayerSlicer';
 
 export default configureStore({
   reducer: {
     AppSettings: AppSettingsReducer,
     UserRepoData: User_Repository_Reducer,
     Sync: SynchronizationSlice,
-    Media: MediaPlayerSlice,
+    MediaPlayer: MediaPlayerSlice,
   },
   enhancers: [
     applyMiddleware((storeAPI) => (next) => (action) => {
@@ -46,4 +46,5 @@ export interface store {
   AppSettings: AppSettings_DATA_STRUCTURE;
   UserRepoData: USER_REPOSITORY_DATA_STRUCTURE;
   Sync: SYNC_DATA_STRUCTURE;
+  MediaPlayer: MEDIA_PLAYER_INTERFACE;
 }

@@ -1,129 +1,112 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable jsx-a11y/media-has-caption */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { getMediaType } from '../modules/MediaPlayer';
 import {
-  changeMediaType,
-  changeToNextMedia,
-  changeToPreviousMedia,
+  closeMediaPlayer,
+  playNextMedia,
+  playPreviousMedia,
 } from '../Redux/MediaPlayerSlicer';
+import { store } from '../Redux/store';
 
 const MediaPlayer = () => {
-  const mediaType = useSelector((state) => state.Media.mediaType);
-  const mediaLocation = useSelector((state) => state.Media.mediaLocation);
+  const [mediaLocation, setMediaLocation] = useState('');
+
+  const {
+    mediaFileStack,
+    showMediaPlayer,
+    currentPlayingIndex,
+    currentPlayingPath,
+  } = useSelector((state: store) => state.MediaPlayer);
+
+  const [mediaType, setMediaType] = useState<'video' | 'image' | 'other'>();
+  const [showNextBtn, setShowNextBtn] = useState(true);
+  const [showPrevBtn, setShowPrevBtn] = useState(true);
+
   const dispatch = useDispatch();
 
-  const addVideoListeners = () => {
-    const videoPlayerBackground = document.querySelector(
-      '.video-media-background'
-    );
-    const videoPlayer = document.querySelector('.media');
+  useEffect(() => {
+    if (mediaFileStack.length) {
+      if (currentPlayingIndex === mediaFileStack.length - 1)
+        setShowNextBtn(false);
+      else setShowNextBtn(true);
 
-    videoPlayer?.addEventListener('click', (e) => {
-      e.stopPropagation();
-    });
+      if (currentPlayingIndex === 0) setShowPrevBtn(false);
+      else setShowPrevBtn(true);
 
-    videoPlayer?.addEventListener('keydown', (e) => {
-      if (e.code === 'Escape') {
-        videoPlayer?.pause();
-        dispatch(changeMediaType(false));
+      if (currentPlayingPath && currentPlayingPath !== mediaLocation) {
+        setMediaType(getMediaType(currentPlayingPath));
+        setMediaLocation(currentPlayingPath);
       }
-      e.stopPropagation();
-    });
-    videoPlayerBackground?.addEventListener('click', () => {
-      videoPlayer?.pause();
-      dispatch(changeMediaType(false));
-    });
+    }
+  }, [currentPlayingIndex, currentPlayingPath, mediaFileStack, mediaLocation]);
+
+  const handleNextMedia = () => {
+    dispatch(playNextMedia());
   };
-
-  const addButtonListeners = () => {
-    const btnPrev = document.querySelector('.btn-prev');
-    const btnNext = document.querySelector('.btn-next');
-
-    btnNext?.addEventListener('click', (e) => {
-      dispatch(changeToNextMedia());
-      e.stopPropagation();
-    });
-
-    btnPrev?.addEventListener('click', (e) => {
-      dispatch(changeToPreviousMedia());
-      e.stopPropagation();
-    });
+  const handlePreviousMedia = () => {
+    dispatch(playPreviousMedia());
   };
-
-  const addImageListeners = () => {
-    const imageBackground = document.querySelector('.image-background');
-    const image = document.querySelector('.media');
-
-    imageBackground?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      dispatch(changeMediaType(false));
-    });
-
-    image?.addEventListener('click', (e) => {
-      e.stopPropagation();
-    });
-  };
-
+  const handleExit = () => dispatch(closeMediaPlayer());
   return (
     <>
-      {mediaType === 'video' ? (
+      <div
+        style={{
+          position: 'absolute',
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.5)',
+          zIndex: 2,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          transition: 'all 0.2s',
+          opacity: `${showMediaPlayer ? '100%' : '0%'}`,
+          transform: `scale(${showMediaPlayer ? 1 : 0})`,
+        }}
+      >
         <div
-          className="video-media-background"
-          onLoadStart={() => {
-            addVideoListeners();
-            addButtonListeners();
+          style={{
+            visibility: showPrevBtn ? 'visible' : 'hidden',
           }}
         >
           <button
             type="button"
-            className="btn btn-prev"
             style={{ color: 'black' }}
+            onClick={handlePreviousMedia}
           >
             PREVIOUS
           </button>
-          <video src={mediaLocation} className="media" controls />
-          <button
-            type="button"
-            className="btn btn-next"
-            style={{ color: 'black' }}
-          >
-            NEXT
-          </button>
         </div>
-      ) : (
-        ''
-      )}
 
-      {mediaType === 'image' ? (
-        <div className="image-background">
-          <button
-            type="button"
-            className="btn btn-prev"
-            style={{ color: 'black' }}
-          >
-            PREVIOUS
+        {mediaFileStack.length && mediaType === 'image' && (
+          <img src={mediaLocation} className="media" alt="A imsge" />
+        )}
+
+        {mediaFileStack.length && mediaType === 'video' && (
+          <video src={mediaLocation} className="media" controls />
+        )}
+        <div>
+          <button type="button" style={{ color: 'black' }} onClick={handleExit}>
+            Exit
           </button>
-          <img
-            src={mediaLocation}
-            onLoad={() => {
-              addImageListeners();
-              addButtonListeners();
+
+          <div
+            style={{
+              visibility: showNextBtn ? 'visible' : 'hidden',
             }}
-            className="media"
-            alt="A imsge"
-          />
-          <button
-            type="button"
-            className="btn btn-next"
-            style={{ color: 'black' }}
           >
-            NEXT
-          </button>
+            <button
+              type="button"
+              style={{ color: 'black' }}
+              onClick={handleNextMedia}
+            >
+              NEXT
+            </button>
+          </div>
         </div>
-      ) : (
-        ''
-      )}
+      </div>
     </>
   );
 };
