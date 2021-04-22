@@ -1,15 +1,15 @@
 /* eslint-disable react/jsx-pascal-case */
 /* eslint-disable @typescript-eslint/naming-convention */
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Row, Col } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
 import { nanoid } from '@reduxjs/toolkit';
 import { fdir as FDIR } from 'fdir';
 import log from 'electron-log';
+import path from 'path';
 import { File, Folder, Repository } from './folder-area-ui';
 import { store } from '../Redux/store';
 import { setMediaFileStack } from '../Redux/MediaPlayerSlicer';
-import path from 'path';
 
 const ALL_Repositories = () => {
   const repositoryData = useSelector((state: store) => {
@@ -39,32 +39,24 @@ const ALL_Repositories = () => {
 };
 
 // create the builder
-const folderCrawler = new FDIR();
-const fileCrawler = new FDIR();
+const folderCrawler = new FDIR()
+  .withMaxDepth(1)
+  .onlyDirs()
+  .exclude((dirName) => dirName === '.usp');
+const fileCrawler = new FDIR()
+  .withMaxDepth(0)
+  .exclude((dirName) => dirName === '.usp')
+  .filter((fileName) => fileName !== '.uspignore');
 
-const getFolders = (Path: string) => {
-  return folderCrawler
-    .withMaxDepth(1)
-    .onlyDirs()
-    .exclude((dirName) => dirName === '.usp')
-    .crawl(Path)
-    .withPromise()
-    .then((folderPaths: Array<string>) => {
-      folderPaths.shift();
-      return folderPaths;
-    });
+const getFolders: (Path: string) => Promise<string[]> = async (Path) => {
+  const folders = folderCrawler.crawl(Path).sync();
+  folders.shift();
+  return folders;
 };
 
-const getFiles = (Path: string) => {
-  return fileCrawler
-    .withMaxDepth(0)
-    .exclude((dirName) => dirName === '.usp')
-    .filter((fileName) => fileName !== '.uspignore')
-    .crawl(Path)
-    .withPromise()
-    .then((filePath: Array<string>) => {
-      return filePath;
-    });
+const getFiles: (Path: string) => Promise<string[]> = async (Path: string) => {
+  const files = fileCrawler.crawl(Path).sync();
+  return files;
 };
 
 const Selected_Repository_Directory = () => {
@@ -84,9 +76,16 @@ const Selected_Repository_Directory = () => {
 
   useEffect(() => {
     if (currentDirectory && currentDirectory !== 'Home') {
+      console.log('Changing...', currentDirectory);
+      set_FILES([]);
+      set_FOLDERS([]);
       // FOR FOLDERS
       getFolders(currentDirectory)
-        .then((folderPaths) => set_FOLDERS(folderPaths))
+        .then((folderPaths) => {
+          set_FOLDERS(folderPaths);
+
+          return folderPaths;
+        })
         .catch((err) => log.error('Failed Retrieving Folders', err));
 
       // FOR FILES
@@ -145,16 +144,22 @@ const Selected_Repository_Directory = () => {
 };
 
 const DisplayArea = () => {
-  const currentDirectory = useSelector((state: store) => {
-    return state.UserRepoData.currentDirectory.localLocation;
-  });
+  const currentDirectoryInfo = useSelector(
+    (state: store) => state.UserRepoData.currentDirectory
+  );
+  const SelectedRepo = currentDirectoryInfo.RepoID;
+  const currentDirectory = currentDirectoryInfo.localLocation;
+
+  const RepoInfo = useSelector((state: store) => state.UserRepoData.info);
 
   return (
     <div id="SelectionArea">
-      {currentDirectory === 'Home' ? (
-        <ALL_Repositories />
-      ) : (
+      {SelectedRepo &&
+      currentDirectory !== 'Home' &&
+      !!RepoInfo[SelectedRepo] ? (
         <Selected_Repository_Directory />
+      ) : (
+        <ALL_Repositories />
       )}
     </div>
   );

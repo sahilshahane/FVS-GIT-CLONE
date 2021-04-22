@@ -368,7 +368,7 @@ def getActivities_API(activityService, repoDriveId, trackingTime):
         response = activityService.activity().query(
             body={
                 "ancestorName": f"items/{repoDriveId}",
-                "filter": f'time >= "{trackingTime}"',
+                "filter": f'time > "{trackingTime}"',
                 "pageToken": pageToken
             },
             fields="activities(primaryActionDetail,actions,targets(driveItem(name,title,mimeType)),timestamp)"

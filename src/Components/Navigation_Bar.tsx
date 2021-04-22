@@ -19,7 +19,7 @@ const changeLocation = async (pathIndex: number) => {
       ?.split(path.sep)
       .slice(0, RepositoryLocationArray.length + pathIndex)
       .join(path.sep);
-
+    console.log('Going to', traversedLocation);
     ReduxStore.dispatch(
       setCurrentDirectory({ localLocation: traversedLocation })
     );
@@ -38,19 +38,17 @@ const FileSysten_NavigationBar = () => {
 
   const UserRepoData = useSelector((state: store) => state.UserRepoData);
 
-  const [BreadCrumbPath, setBreadCrumbPath] = useState([]);
+  const [BreadCrumbPath, setBreadCrumbPath] = useState<string[]>([]);
 
   useEffect(() => {
-    if (currentDirectory !== 'Home' && currentDirectory) {
-      if (RepoID) {
-        const RepoInfo = UserRepoData.info[RepoID];
+    if (currentDirectory !== 'Home' && currentDirectory && RepoID) {
+      const RepoInfo = UserRepoData.info[RepoID];
 
-        const newBreadLoc = currentDirectory
-          .split(path.sep)
-          .slice(RepoInfo.localLocation.split(path.sep).length);
+      const newBreadLoc = currentDirectory
+        .split(path.sep)
+        .slice(RepoInfo.localLocation.split(path.sep).length);
 
-        setBreadCrumbPath([RepoInfo.displayName, ...newBreadLoc]);
-      }
+      setBreadCrumbPath([RepoInfo.displayName, ...newBreadLoc]);
     } else setBreadCrumbPath([]);
   }, [RepoID, UserRepoData.info, currentDirectory]);
 
@@ -60,7 +58,9 @@ const FileSysten_NavigationBar = () => {
         <Breadcrumb.Item
           className="breadcrumb-item"
           onClick={() =>
-            dispatch(setCurrentDirectory({ localLocation: 'Home' }))
+            dispatch(
+              setCurrentDirectory({ RepoID: null, localLocation: 'Home' })
+            )
           }
         >
           Home

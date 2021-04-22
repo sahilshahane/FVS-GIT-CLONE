@@ -2,23 +2,17 @@
 /* eslint-disable jsx-a11y/media-has-caption */
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import ReactPlayer from 'react-player/lazy';
 import { getMediaType } from '../modules/MediaPlayer';
-import {
-  closeMediaPlayer,
-  playNextMedia,
-  playPreviousMedia,
-} from '../Redux/MediaPlayerSlicer';
+import { closeMediaPlayer } from '../Redux/MediaPlayerSlicer';
 import { store } from '../Redux/store';
 
 const MediaPlayer = () => {
   const [mediaLocation, setMediaLocation] = useState('');
-
-  const {
-    mediaFileStack,
-    showMediaPlayer,
-    currentPlayingIndex,
-    currentPlayingPath,
-  } = useSelector((state: store) => state.MediaPlayer);
+  const [currentPlayingIndex, setCurrentPlayingIndex] = useState(-1);
+  const { mediaFileStack, showMediaPlayer, currentPlayingPath } = useSelector(
+    (state: store) => state.MediaPlayer
+  );
 
   const [mediaType, setMediaType] = useState<'video' | 'image' | 'other'>();
   const [showNextBtn, setShowNextBtn] = useState(true);
@@ -27,27 +21,45 @@ const MediaPlayer = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (mediaFileStack.length) {
-      if (currentPlayingIndex === mediaFileStack.length - 1)
-        setShowNextBtn(false);
-      else setShowNextBtn(true);
-
-      if (currentPlayingIndex === 0) setShowPrevBtn(false);
-      else setShowPrevBtn(true);
-
-      if (currentPlayingPath && currentPlayingPath !== mediaLocation) {
-        setMediaType(getMediaType(currentPlayingPath));
-        setMediaLocation(currentPlayingPath);
-      }
+    if (
+      currentPlayingIndex < mediaFileStack.length &&
+      currentPlayingIndex >= 0
+    ) {
+      const newMediaPath = mediaFileStack[currentPlayingIndex];
+      setMediaType(getMediaType(newMediaPath));
+      setMediaLocation(newMediaPath);
+      setShowNextBtn(currentPlayingIndex !== mediaFileStack.length - 1);
+      setShowPrevBtn(currentPlayingIndex !== 0);
     }
-  }, [currentPlayingIndex, currentPlayingPath, mediaFileStack, mediaLocation]);
+  }, [currentPlayingIndex]);
+
+  useEffect(() => {
+    if (
+      mediaFileStack.length &&
+      currentPlayingPath !== mediaLocation &&
+      currentPlayingPath
+    ) {
+      setMediaType(getMediaType(currentPlayingPath));
+      setMediaLocation(currentPlayingPath);
+      const newIndex = mediaFileStack.findIndex(
+        (val) => currentPlayingPath === val
+      );
+      setCurrentPlayingIndex(newIndex);
+    }
+  }, [currentPlayingPath, mediaFileStack]);
 
   const handleNextMedia = () => {
-    dispatch(playNextMedia());
+    if (currentPlayingIndex + 1 < mediaFileStack.length) {
+      setCurrentPlayingIndex(currentPlayingIndex + 1);
+    }
   };
+
   const handlePreviousMedia = () => {
-    dispatch(playPreviousMedia());
+    if (currentPlayingIndex - 1 >= 0) {
+      setCurrentPlayingIndex(currentPlayingIndex - 1);
+    }
   };
+
   const handleExit = () => dispatch(closeMediaPlayer());
   return (
     <>
@@ -85,7 +97,7 @@ const MediaPlayer = () => {
         )}
 
         {mediaFileStack.length && mediaType === 'video' && (
-          <video src={mediaLocation} className="media" controls />
+          <ReactPlayer url={mediaLocation} className="media" controls />
         )}
         <div>
           <button type="button" style={{ color: 'black' }} onClick={handleExit}>

@@ -439,12 +439,12 @@ export const performGDriveChanges = ({
     } catch (error) {
       failedUpdates.push({ driveID, error });
       if (error instanceof RootFolderDeleted) return false;
-      else log.error(TAG, 'Failed Performing Changes', error);
+      log.error(TAG, 'Failed Performing Changes', error);
     }
     return true;
   });
 
-  if (failedUpdates.length) {
+  if (failedUpdates.length === 0) {
     const { UserRepoData } = ReduxStore.getState();
 
     // UPDATE THE UPLOADING QUEUE
@@ -455,7 +455,7 @@ export const performGDriveChanges = ({
   } else {
     log.error(
       TAG,
-      'Not Updating Database, Errors were found while performing offline changes',
+      'Not Updating Uploads and Downloads, Errors were found while performing offline changes',
       failedUpdates
     );
   }

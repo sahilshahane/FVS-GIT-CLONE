@@ -65,7 +65,6 @@ export const Repository = ({
     dispatch(setCurrentDirectory({ RepoID, localLocation }));
   };
 
-  useEffect(() => {}, [info.syncStatus]);
   return (
     <div onDoubleClick={changeLocation} className="folder-ui">
       <h3>{info.displayName}</h3>

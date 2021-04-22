@@ -16,7 +16,7 @@ export type trackingInfo_ = {
 };
 export type currentDirectory = {
   RepoID: string | null;
-  localLocation: string | null;
+  localLocation: 'Home' | string | null;
 };
 
 export interface RepositoryInfo {
@@ -69,7 +69,7 @@ interface setRepositoryTrackingInfo_ {
 
 interface setCurrentDirectory_ {
   payload: {
-    RepoID?: string;
+    RepoID?: string | null;
     localLocation?: string;
   };
 }
@@ -129,16 +129,11 @@ export const USER_REPOSITORY_Slice = createSlice({
     },
     setCurrentDirectory: (state, action: setCurrentDirectory_) => {
       const { RepoID, localLocation } = action.payload;
-      if (!localLocation)
-        state.currentDirectory = {
-          ...state.currentDirectory,
-          localLocation: 'Home',
-        };
-      else if (localLocation !== state.currentDirectory.localLocation) {
+      if (localLocation !== undefined)
         state.currentDirectory = { ...state.currentDirectory, localLocation };
-      }
 
-      if (RepoID) state.currentDirectory.RepoID = RepoID;
+      if (RepoID !== undefined)
+        state.currentDirectory = { ...state.currentDirectory, RepoID };
     },
     saveUserRepositoryData: (state) => {
       SAVE(state);

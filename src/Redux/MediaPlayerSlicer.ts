@@ -6,7 +6,6 @@ import { getMediaType } from '../modules/MediaPlayer';
 export interface MEDIA_PLAYER_INTERFACE {
   showMediaPlayer: boolean;
   mediaFileStack: string[] | [];
-  currentPlayingIndex?: number;
   currentPlayingPath?: string;
 }
 
@@ -29,35 +28,9 @@ export const MediaPlayerSlice = createSlice({
         (filePath) => getMediaType(filePath) !== 'other'
       );
     },
-    playNextMedia: (state) => {
-      const { mediaFileStack, currentPlayingIndex } = state;
-      if (
-        typeof currentPlayingIndex === 'number' &&
-        currentPlayingIndex + 1 !== state.mediaFileStack.length
-      ) {
-        state.currentPlayingPath = mediaFileStack[currentPlayingIndex + 1];
-        state.currentPlayingIndex = currentPlayingIndex + 1;
-      }
-    },
-    playPreviousMedia: (state) => {
-      const { mediaFileStack, currentPlayingIndex } = state;
-      if (
-        typeof currentPlayingIndex === 'number' &&
-        currentPlayingIndex - 1 >= 0
-      ) {
-        state.currentPlayingPath = mediaFileStack[currentPlayingIndex - 1];
-        state.currentPlayingIndex = currentPlayingIndex - 1;
-      }
-    },
     showMediaPlayer: (state, action: { payload: string }) => {
       const filePath = action.payload;
-      if (filePath) {
-        state.currentPlayingPath = filePath;
-        state.currentPlayingIndex = state.mediaFileStack.findIndex(
-          (val) => val === filePath
-        );
-      }
-
+      if (filePath) state.currentPlayingPath = filePath;
       state.showMediaPlayer = true;
     },
     closeMediaPlayer: (state) => {
@@ -69,8 +42,6 @@ export const MediaPlayerSlice = createSlice({
 export default MediaPlayerSlice.reducer;
 export const {
   setMediaFileStack,
-  playNextMedia,
-  playPreviousMedia,
   closeMediaPlayer,
   showMediaPlayer,
 } = MediaPlayerSlice.actions;
