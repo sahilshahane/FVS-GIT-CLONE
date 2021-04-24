@@ -66,6 +66,10 @@ const FileSysten_NavigationBar = () => {
           Home
         </Breadcrumb.Item>
         {BreadCrumbPath.map((pathName: string, pathIndex: number) => {
+          if (pathName.length > 20) {
+            pathName = pathName.substr(0, 17) + '...';
+          }
+
           return (
             <Breadcrumb.Item
               key={nanoid()}

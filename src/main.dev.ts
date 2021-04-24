@@ -13,13 +13,21 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import path from 'path';
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  shell,
+  Notification,
+} from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { PythonShell } from 'python-shell';
 import fs from 'fs-extra';
 import os from 'os';
 import MenuBuilder from './menu';
+import { NotificationInfo } from './modules/GlobalHandler';
 
 const TAG = 'main.dev.ts > ';
 
@@ -167,8 +175,11 @@ const createWindow = async () => {
 
   mainWindow = new BrowserWindow({
     show: false,
+    center: true,
     width: 1024,
     height: 728,
+    minWidth: 600,
+    minHeight: 600,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
@@ -298,4 +309,9 @@ ipcMain.on('exit-normal', () => {
 
 ipcMain.on('restart-python-server', () => {
   restartPythonServer();
+});
+
+ipcMain.on('show-notification', (evt, notificationInfo: NotificationInfo) => {
+  console.log(notificationInfo);
+  new Notification(notificationInfo).show();
 });

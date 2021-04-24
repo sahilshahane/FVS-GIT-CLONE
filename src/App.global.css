@@ -83,14 +83,6 @@ body {
 
 .synced-true,
 .synced-false {
-  /* height: 15px;
-  width: 15px;
-  border-radius: 50%;
-  display: inline-block;
-  position: absolute;
-  top: 10px;
-  right: 10px; */
-
   height: 100%;
   width: 15px;
   position: absolute;
@@ -105,6 +97,30 @@ body {
   background-color: var(--fire-brick);
 }
 
+.file-ui, .folder-ui{
+  height: 75px;
+  border-radius: 5px;
+  padding-left: 10px;
+  padding-top: 7px;
+  padding-right: 20px;
+  margin: 2px;
+  overflow-x: none;
+  hyphens: none;
+  white-space: nowrap;
+}
+
+@keyframes horizontalScroll {
+  0%   {left: 100%;}
+  35%  {left: 0%;}
+  45%  {left: 0%}
+  100% {left: -250%;}
+}
+
+.file-ui .scroll, .folder-ui .scroll{
+  position: relative;
+  animation: horizontalScroll 9s infinite;
+}
+
 .folder-ui:hover,
 .breadcrumb-item:hover {
   cursor: pointer;
@@ -113,12 +129,6 @@ body {
 .file-ui {
   backdrop-filter: blur(51px);
   background-color: rgba(0, 0, 0, 0.225);
-  height: 75px;
-  border-radius: 5px;
-  /* border: 1px solid white; */
-  padding-left: 10px;
-  padding-top: 7px;
-  margin: 2px;
 }
 
 .file-ui.video-media:hover, .file-ui.image-media:hover{
@@ -129,11 +139,7 @@ body {
 .folder-ui {
   backdrop-filter: blur(51px);
   background: rgb(27, 27, 27);
-  height: 75px;
-  border-radius: 5px;
-  padding-left: 10px;
-  padding-top: 7px;
-  margin: 2px;
+  
 }
 .folder-ui:hover {
   background-color: rgb(18, 18, 18);
@@ -348,8 +354,33 @@ body {
 
 .media{
   outline: none;
+  padding: 40px 0px;
+  max-height: 90%;
+  max-width: 90%;
 }
 
+.icon{
+  border-radius: 10px;
+  padding: 5px;
+  color: white;
+}
+
+.icon:hover{
+  cursor: pointer;
+}
+
+::-webkit-scrollbar{
+  width: 0px;
+}
+
+.stop-scrolling {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Zombie code indexes */
+
+/*      1
 @media only screen and (min-width: 500px) {
   .media{
     width: 400px;
@@ -369,14 +400,5 @@ body {
   .media{
     width: 1000px;
   }
-}
-
-.icon{
-  border-radius: 10px;
-  padding: 5px;
-  color: white;
-}
-
-.icon:hover{
-  cursor: pointer;
-}
+} 
+*/

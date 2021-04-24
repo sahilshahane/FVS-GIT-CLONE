@@ -31,7 +31,13 @@ export const File = ({ currDir, filePath }: any) => {
 
   return (
     <div className={classname} onDoubleClick={HandleShowMediaPlayer}>
-      <h3>{fileName}</h3>
+      <div
+        style={{
+          overflow: 'hidden',
+        }}
+      >
+        <p className={fileName.length > 25 ? 'scroll' : ''}>{fileName}</p>
+      </div>
       {classname.indexOf('video-media') !== -1 && <FaVideo />}
       {classname.indexOf('image-media') !== -1 && <FaImage />}
       <span className={syncStatus ? 'synced-true' : 'synced-false'} />
@@ -52,7 +58,13 @@ export const Folder = ({ folderPath }: any) => {
 
   return (
     <div onDoubleClick={changeLocation} className="folder-ui">
-      <h3>{folderName}</h3>
+      <div
+        style={{
+          overflow: 'hidden',
+        }}
+      >
+        <p className={folderName.length > 25 ? 'scroll' : ''}>{folderName}</p>
+      </div>
       <span className={syncStatus ? 'synced-true' : 'synced-false'} />
     </div>
   );
@@ -74,7 +86,15 @@ export const Repository = ({
 
   return (
     <div onDoubleClick={changeLocation} className="folder-ui">
-      <h3>{info.displayName}</h3>
+      <div
+        style={{
+          overflow: 'hidden',
+        }}
+      >
+        <p className={info.displayName.length > 25 ? 'scroll' : ''}>
+          {info.displayName}
+        </p>
+      </div>
       <span className={info.syncStatus ? 'synced-true' : 'synced-false'} />
     </div>
   );

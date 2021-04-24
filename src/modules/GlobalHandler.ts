@@ -1,5 +1,6 @@
 import { batch } from 'react-redux';
 import log from 'electron-log';
+import { ipcMain, ipcRenderer } from 'electron';
 import ReduxStore from '../Redux/store';
 import {
   addRepository,
@@ -25,6 +26,13 @@ import {
 import { performGDriveChanges, createRepoFoldersInDrive } from './GoogleDrive';
 
 const { dispatch } = ReduxStore;
+
+export interface NotificationInfo {
+  title: string;
+  body: string;
+  silent?: boolean;
+  timeoutType?: 'never' | 'default';
+}
 
 const Handler = (
   response: {
@@ -178,6 +186,10 @@ const Handler = (
       });
       break;
   }
+};
+
+export const showNotification = (notificationInfo: NotificationInfo) => {
+  ipcRenderer.send('show-notification', notificationInfo);
 };
 
 export default Handler;

@@ -22,7 +22,16 @@ const MediaPlayer = () => {
 
   const dispatch = useDispatch();
 
+  function disableScroll() {
+    document.body.classList.add('stop-scrolling');
+  }
+
+  function enableScroll() {
+    document.body.classList.remove('stop-scrolling');
+  }
+
   useEffect(() => {
+    console.log('IN UE 1');
     if (
       currentPlayingIndex < mediaFileStack.length &&
       currentPlayingIndex >= 0
@@ -33,9 +42,16 @@ const MediaPlayer = () => {
       setShowNextBtn(currentPlayingIndex !== mediaFileStack.length - 1);
       setShowPrevBtn(currentPlayingIndex !== 0);
     }
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+
+    if (showMediaPlayer) {
+      disableScroll();
+    }
   }, [currentPlayingIndex]);
 
   useEffect(() => {
+    console.log('IN UE 2');
     if (
       mediaFileStack.length &&
       currentPlayingPath !== mediaLocation &&
@@ -48,6 +64,9 @@ const MediaPlayer = () => {
       );
       setCurrentPlayingIndex(newIndex);
     }
+
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
   }, [currentPlayingPath, mediaFileStack]);
 
   const handleNextMedia = () => {
@@ -62,14 +81,18 @@ const MediaPlayer = () => {
     }
   };
 
-  const handleExit = () => dispatch(closeMediaPlayer());
+  const handleExit = () => {
+    enableScroll();
+    dispatch(closeMediaPlayer());
+  };
+
   return (
     <>
       <div
         style={{
           position: 'absolute',
           width: '100vw',
-          height: '100vh',
+          height: '100%',
           background: 'rgba(0,0,0,0.5)',
           zIndex: 2,
           display: 'flex',

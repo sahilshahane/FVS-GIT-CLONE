@@ -42,5 +42,5 @@
   },
   "python.linting.enabled": true,
   "python.terminal.activateEnvironment": true,
-  "python.pythonPath": "src\\pythonScripts\\.venv\\Scripts\\python.exe"
+  "python.pythonPath": "/sbin/python"
 }

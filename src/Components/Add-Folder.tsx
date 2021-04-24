@@ -6,9 +6,16 @@ import { nanoid } from '@reduxjs/toolkit';
 import log from 'electron-log';
 import { selectDirectory } from '../modules/select_directory_dialog';
 import { CCODES, sendSchedulerTask } from '../modules/get_AppData';
+import { showNotification } from '../modules/GlobalHandler';
 
 const initFolder = async () => {
   let SELECTED_FOLDER = null;
+
+  const info = {
+    title: 'Adding new folder',
+    body: 'body for adding a new folder',
+  };
+  showNotification(info);
 
   if (process.env.NODE_ENV === 'development')
     SELECTED_FOLDER = path.resolve('Testing');
