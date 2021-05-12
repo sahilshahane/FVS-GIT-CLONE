@@ -68,9 +68,10 @@ class generateMetaData():
 
                           (folderName,
                             folder_id,
-                            folderPath)
+                            folderPath,
+                            deleted)
 
-                          VALUES (?,?,?)
+                          VALUES (?,?,?,?)
                       '''
 
       elif(self._TYPE == self.TYPES.detect):
@@ -120,8 +121,11 @@ class generateMetaData():
 
         # FIX FOR ROOT FOLDER's PARENT NOT SHOWING UP
         # if(not parentDirPath): parentDirPath = directory
-
-        DB_CURSOR.execute(folderQuery,(folderName,folderID,absoluteDirectoryPath))
+        
+        if(self._TYPE == self.TYPES.initialize):
+          DB_CURSOR.execute(folderQuery,(folderName,folderID,absoluteDirectoryPath,None))
+        elif(self._TYPE == self.TYPES.detect):
+          DB_CURSOR.execute(folderQuery,(folderName,folderID,absoluteDirectoryPath))
 
         for fileName in files:
           filePath = os.path.join(absoluteDirectoryPath, fileName)

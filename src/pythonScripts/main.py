@@ -213,6 +213,7 @@ def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
                       folder_id TEXT NOT NULL,
                       driveID TEXT,
                       folderPath TEXT PRIMARY KEY,
+                      deleted INTEGER,
                       UNIQUE(folderName,folder_id)
                     )''')
 
@@ -295,7 +296,7 @@ def checkLocalChanges(CCODES, APP_SETTINGS, DIR_PATH):
                           ON temp_files.fileName = newTable.fileName 
                           AND temp_files.folder_id = newTable.folder_id  
                           '''
-                          
+
   DELETED_FILES_QUERY = ''' UPDATE files SET deleted = 1 FROM ( 
                                                               SELECT 
                                                               files.fileName,
@@ -318,21 +319,64 @@ def checkLocalChanges(CCODES, APP_SETTINGS, DIR_PATH):
                                                           ) AS genTab2 
                             WHERE files.fileName = genTab2.fileName AND files.folder_id = genTab2.folder_id 
                         '''
-  
+  NEW_FOLDERS_QUERY = '''
+                      INSERT INTO folders (folderName,folderPath,folder_id)
+                                          SELECT 
+                                          folderName,
+                                          folderPath,
+                                          folder_id 
+                                          FROM temp_folders 
+                                          EXCEPT 
+                                          SELECT 
+                                          folderName,
+                                          folderPath,
+                                          folder_id 
+                                          FROM folders
+                    '''
+
+  DELETED_FOLDERS_QUERY = '''
+    UPDATE folders SET deleted = 1 FROM ( 
+                                          SELECT 
+                                          folders.folderName,
+                                          folders.folder_id
+                                          FROM 
+                                          (
+                                            SELECT 
+                                            folderName, 
+                                            folder_id FROM folders 
+                                              EXCEPT 
+                                            SELECT 
+                                            folderName, 
+                                            folder_id FROM temp_folders
+                                          ) AS genTab1 
+
+                                          LEFT JOIN folders 
+                                          ON folders.folderName = genTab1.folderName 
+                                          AND folders.folder_id = genTab1.folder_id
+                                          WHERE folders.deleted IS NULL
+                                        ) AS genTab2 
+          WHERE folders.folderName = genTab2. folderName AND folders.folder_id = genTab2.folder_id 
+  '''
+
   data = {"FILES":dict(),"FOLDERS":dict()}
   DB_CURSOR = DB_CONNECTION.cursor()
 
   DB_CURSOR = DB_CURSOR.execute(MODIFIED_FILES_QUERY)
   data["FILES"]["MODIFIED"] = DB_CURSOR.rowcount
 
-  DB_CURSOR.execute(NEW_FILES_QUERY)
+  DB_CURSOR = DB_CURSOR.execute(NEW_FILES_QUERY)
   data["FILES"]["NEW"] = DB_CURSOR.rowcount
 
-  DB_CURSOR.execute(DELETED_FILES_QUERY)
+  DB_CURSOR = DB_CURSOR.execute(DELETED_FILES_QUERY)
   data["FILES"]["DELETED"] = DB_CURSOR.rowcount
 
-  DB_CURSOR.execute("DELETE FROM temp_files").execute("DELETE FROM temp_folders") # CLEAR CURRENT SESSION DATA
+  DB_CURSOR = DB_CURSOR.execute(NEW_FOLDERS_QUERY)
+  data["FOLDERS"]["NEW"] = DB_CURSOR.rowcount
 
+  DB_CURSOR = DB_CURSOR.execute(DELETED_FOLDERS_QUERY)
+  data["FOLDERS"]["DELETED"] = DB_CURSOR.rowcount
+
+  # DB_CURSOR = DB_CURSOR.execute("DELETE FROM temp_files").execute("DELETE FROM temp_folders") # CLEAR CURRENT SESSION DATA
   DB_CURSOR.close()
   DB_CONNECTION.commit()
 
