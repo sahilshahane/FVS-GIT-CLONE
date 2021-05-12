@@ -1,21 +1,27 @@
+from enum import Enum
 import os
 from sqlite3.dbapi2 import Connection
 from HashGen import generateHash,generateFileHash
 
-
 class generateMetaData():
+    class TYPES(Enum):
+      initialize = 1
+      detect = 2
+
     ignore = None
     totalFiles = 0
     totalFolders = 0
     DB_CONNECTION: Connection = None
     DIR_PATH = None
     HASH = None
+    _TYPE:TYPES = None
 
-    def __init__(self,CCODES, DIR_PATH, DB_CONNECTION:Connection ,HASH="md5",ignore=None):
+    def __init__(self,CCODES, DIR_PATH, DB_CONNECTION:Connection,generateType:TYPES,HASH="md5",ignore=None):
         self.ignore = ignore
         self.DB_CONNECTION = DB_CONNECTION
         self.DIR_PATH = os.path.normpath(DIR_PATH)
         self.HASH = HASH
+        self._TYPE = generateType
         self.generate(CCODES)
 
     def ignoreFunc(self,ParentDirectory,folderName=None,fileName=None):
@@ -42,36 +48,22 @@ class generateMetaData():
 
       return False
 
-    def generate(self,CCODES,indent=None):
-      DB_CURSOR = self.DB_CONNECTION.cursor()
+    def getQuery(self):
+      fileQuery = None
+      folderQuery = None
 
-      RepoParentDirectoryPath = os.path.normpath(f'{self.DIR_PATH}{os.path.sep}..')
-
-      for absoluteDirectoryPath,folders,files in os.walk(self.DIR_PATH):
-        folderName = os.path.basename(absoluteDirectoryPath)
-
-
-        relativeDirectoryPath = absoluteDirectoryPath[len(RepoParentDirectoryPath) + 1 : len(absoluteDirectoryPath)]
-
-
-        if self.ignoreFunc(relativeDirectoryPath,folderName): continue
-
-        # FILTER FILES WITH IGNORE DATA [data input = .uspignore file]
-        files = [fileName for fileName in files if not (self.ignoreFunc(relativeDirectoryPath,fileName=fileName))]
-
+      if(self._TYPE==self.TYPES.initialize):
+        
         fileQuery = '''INSERT INTO files
 
                         (fileName,
                         folder_id,
-                        fileHash,
                         modified_time,
                         downloaded)
 
-                        VALUES (?,?,?,?,?)
+                        VALUES (?,?,?,?)
                     '''
-
-        self.totalFolders+=1
-
+        
         folderQuery = '''INSERT INTO folders
 
                           (folderName,
@@ -80,6 +72,49 @@ class generateMetaData():
 
                           VALUES (?,?,?)
                       '''
+
+      elif(self._TYPE == self.TYPES.detect):
+        self.DB_CONNECTION.cursor().execute("DELETE FROM temp_files").execute("DELETE FROM temp_folders") # CLEAR PREVIOUS SESSION DATA
+        fileQuery = '''INSERT INTO temp_files
+
+                        (fileName,
+                        folder_id,
+                        modified_time)
+
+                        VALUES (?,?,?)
+                    '''
+        
+        folderQuery = '''INSERT INTO temp_folders
+
+                          (folderName,
+                            folder_id,
+                            folderPath)
+
+                          VALUES (?,?,?)
+                      '''
+
+      return fileQuery, folderQuery
+
+    def generate(self,CCODES,indent=None):
+      DB_CURSOR = self.DB_CONNECTION.cursor()
+
+      RepoParentDirectoryPath = os.path.normpath(f'{self.DIR_PATH}{os.path.sep}..')
+      fileQuery,folderQuery = self.getQuery()
+      rootFolderName = os.path.basename(self.DIR_PATH)
+
+      for absoluteDirectoryPath,folders,files in os.walk(self.DIR_PATH):
+        folderName = os.path.basename(absoluteDirectoryPath)
+
+
+        relativeDirectoryPath = rootFolderName + absoluteDirectoryPath[len(self.DIR_PATH):]
+        
+
+        if self.ignoreFunc(relativeDirectoryPath,folderName): continue
+
+        # FILTER FILES WITH IGNORE DATA [data input = .uspignore file]
+        files = [fileName for fileName in files if not (self.ignoreFunc(relativeDirectoryPath,fileName=fileName))]
+
+        self.totalFolders+=1
 
         folderID = generateHash(data=relativeDirectoryPath)
 
@@ -90,15 +125,22 @@ class generateMetaData():
 
         for fileName in files:
           filePath = os.path.join(absoluteDirectoryPath, fileName)
-          modified_time = os.path.getmtime(filePath)
-          fileHash = generateFileHash(filePath,self.HASH)
+          modified_time = int(os.path.getmtime(filePath))
+          # fileHash = generateFileHash(filePath,self.HASH)
+          DB_ARGS = None
 
-          DB_CURSOR.execute(fileQuery,(fileName,folderID,fileHash,modified_time,1))
-
+          if(self._TYPE == self.TYPES.initialize):
+            DB_ARGS = (fileName,folderID,modified_time,1)
+          elif(self._TYPE == self.TYPES.detect):
+            DB_ARGS = (fileName,folderID,modified_time)
+            
+          DB_CURSOR = DB_CURSOR.execute(fileQuery,DB_ARGS)
           self.totalFiles+=1
 
       DB_CURSOR.close()
       self.DB_CONNECTION.commit()
+
+
 
     def getInfo(self):
         return {

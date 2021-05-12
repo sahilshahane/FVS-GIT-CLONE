@@ -5,10 +5,6 @@ import argparse
 import threading
 from typing import Dict
 import orjson
-from utils import output, loadJSON, saveJSON
-from LoadData import LOAD_COMMUNICATION_CODES, LOAD_APP_SETTINGS, GET_APP_FOLDER_PATH
-from DrivePart import GoogleDrive
-import main
 
 args_const = argparse.ArgumentParser()
 args_const.add_argument('-dev', "--development", action="store_true")
@@ -22,6 +18,12 @@ if launchArgs.development:
     os.environ["development"] = "1"
 if launchArgs.isGUI:
     os.environ["isGUI"] = "1"
+
+from utils import output, loadJSON, saveJSON
+from LoadData import LOAD_COMMUNICATION_CODES, LOAD_APP_SETTINGS, GET_APP_FOLDER_PATH
+from DrivePart import GoogleDrive
+import main
+
 
 CCODES = LOAD_COMMUNICATION_CODES()
 APP_SETTINGS = LOAD_APP_SETTINGS()
@@ -183,6 +185,17 @@ def checkChanges(task):
     except Exception as e:
         return {"code": CCODES["FAILED_CHECKING_CHANGES"], "data": {"RepoID": RepoID}, "exception": {"msg": str(e), "type":  str(e.__class__.__name__)}}
 
+def checkLocalChanges(task):
+    RepoID = task["data"]["RepoID"]
+    DIR_PATH = os.path.abspath(task["data"]["path"])
+
+    try:
+        changes = main.checkLocalChanges(CCODES, APP_SETTINGS, DIR_PATH)
+
+        return {"code": CCODES["FINISHED_CHECKING_LOCAL_CHANGES"], "data": {"RepoID": RepoID, "changes":  changes}}
+    except Exception as e:
+        return {"code": CCODES["FAILED_CHECKING_LOCAL_CHANGES"], "data": {"RepoID": RepoID}, "exception": {"msg": str(e), "type":  str(e.__class__.__name__)}}
+
 
 TASKS_DEFINITIONS = {
     CCODES["START_GOOGLE_LOGIN"]: startGoogleLogin,
@@ -192,73 +205,31 @@ TASKS_DEFINITIONS = {
     CCODES["RETRIVE_REPO_UPLOADS"]: retriveUploads,
     CCODES["CREATE_FOLDERS"]: createRepoFolders,
     CCODES["DOWNLOAD_FILE"]: downloadFile,
-    CCODES["CHECK_CHANGES"]: checkChanges
+    CCODES["CHECK_CHANGES"]: checkChanges,
+    CCODES["CHECK_LOCAL_CHANGES"]: checkLocalChanges
 }
 
 
 def addTask(task):
     # TASK_QUEUE.append(TASKS_DEFINITIONS[task.code])
-
-    threading.Thread(target=defaultWrapper, args=[
-                     TASKS_DEFINITIONS[task["code"]], task]).start()
-
+    if(not os.environ['development']):
+        # ASYNC
+        threading.Thread(target=defaultWrapper, args=[
+                        TASKS_DEFINITIONS[task["code"]], task]).start()
+    else:
+        # SYNC
+        defaultWrapper(TASKS_DEFINITIONS[task["code"]],task)
 
 def aloneMain():
     DIR_PATH = os.path.abspath("Testing")
-
     # os.environ["DISABLE_NODE_OUTPUT"] = '1'
+    import tests
 
-    task = {
-        "code": CCODES["CREATE_FOLDERS"],
-        "data": {
-            "RepoID": 'Ai0asjd7wgbn6c38h',
-
-            "repoFolderData": {
-                "folder_id": 1,
-                "folderPath": 'Testing',
-                "driveID": None,
-                "RepoName": 'Testing'
-            },
-            # 2021-03-23T13:54:54.732Z
-            # 12590
-            "folderData": [
-                {
-                    "folderPath": "Testing/asd22",
-                    "folder_id": 2
-                },
-            ]
-        }
-    }
-
-    # addTask(task)
-
-    task2 = {
-        "code": CCODES["CHECK_CHANGES"],
-        "data": {
-            "RepoID": "asdasdasdasd",
-            "trackingInfo": {"lastChecked": "2021-03-29T18:11:03.293Z","driveID": "1e4-j-oFlCdJSx-qdGHvE78w5EiQtsYpn"}
-        }
-    }
-
-    # addTask(task2)
-
-    task3 = {
-      "code": CCODES["START_GOOGLE_LOGIN"]
-    }
-
-    # addTask(task3)
-
-    task4 = {
-      "code": CCODES["INIT_DIR"],
-      "data":{
-      "localPath": path.abspath("Testing"),
-      "force": True
-      }
-    }
-
-    addTask(task4)
-
-
+    # addTask(tests.startGoogleLogin())
+    # addTask(tests.initDir())
+    # addTask(tests.creatFoldersInDrive(repoRootDriveID=))
+    # addTask(tests.checkDriveChanges(repoRootDriveID=))
+    addTask(tests.checkLocalChanges())
 
 def GUI_LAUNCH():
 

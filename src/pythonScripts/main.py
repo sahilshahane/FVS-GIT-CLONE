@@ -2,13 +2,14 @@
 import os
 from sqlite3.dbapi2 import Connection
 import time
+import types
 import orjson
 import io
+import sqlite3
+import shutil
 from utils import output
 from utils import loadJSON, saveJSON
 from generateData import generateMetaData
-import sqlite3
-import shutil
 
 # AVAILABLE HASHES, DEFAULT = xxh64
 # [blake2b, blake2s, md5,
@@ -98,13 +99,12 @@ def LOAD_IGNORE_DATA(CCODES,APP_SETTINGS,DIR_PATH):
   ignores.extend([ignore for ignore in generate_ignore(IGNORE_FILE_PATH_INSIDE_REPO)])
   ignores.extend([ignore for ignore in generate_ignore(IGNORE_FILE_PATH_OUTSIDE_REPO)])
   ignores = list(set(ignores))
-  output({"code":CCODES["IGNORE_DATA_LOADED"],"data":ignores,"msg":"Ignore Data Loaded"})
+  if(ignores): output({"code":CCODES["IGNORE_DATA_LOADED"],"data":ignores,"msg":"Ignore Data Loaded"})
   return ignores
 
-def GEN_MetaData(CCODES,APP_SETTINGS,DIR_PATH,DB_CONNECTION ):
+def GENERATE_META_DATA(CCODES,APP_SETTINGS,DIR_PATH,DB_CONNECTION,TYPE:generateMetaData.TYPES):
   ignores = LOAD_IGNORE_DATA(CCODES,APP_SETTINGS,DIR_PATH)
-
-  generateMetaData(CCODES, DIR_PATH, DB_CONNECTION, HASH="xxh3_64", ignore=ignores)
+  generateMetaData(CCODES, DIR_PATH, DB_CONNECTION,TYPE, HASH="xxh3_64", ignore=ignores)
 
 def detectChange(CCODES,NEW_MD_FILE_PATH,OLD_MD_FILE_PATH):
   with open(NEW_MD_FILE_PATH,'rb') as file_:
@@ -196,21 +196,38 @@ def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
 
   # FILES TABLE
   cur.execute(f'''CREATE TABLE files (
-                      fileName text ,
+                      fileName TEXT NOT NULL,
                       folder_id TEXT NOT NULL,
+                      modified_time INTEGER,
                       driveID TEXT,
                       uploaded INTEGER,
                       downloaded INTEGER,
+                      deleted INTEGER,
                       fileHash TEXT,
-                      modified_time REAL
+                      UNIQUE(fileName,folder_id)
                       )''')
 
   # FOLDERS TABLE
   cur.execute(f'''CREATE TABLE folders (
                       folderName TEXT NOT NULL,
-                      folder_id TEXT,
+                      folder_id TEXT NOT NULL,
                       driveID TEXT,
-                      folderPath TEXT PRIMARY KEY
+                      folderPath TEXT PRIMARY KEY,
+                      UNIQUE(folderName,folder_id)
+                    )''')
+
+  cur.execute(f'''CREATE TABLE temp_files (
+                      fileName TEXT NOT NULL,
+                      folder_id TEXT NOT NULL,
+                      modified_time INTEGER,
+                      UNIQUE(fileName,folder_id)
+                      )''')
+
+  cur.execute(f'''CREATE TABLE temp_folders (
+                      folderName TEXT NOT NULL,
+                      folder_id TEXT NOT NULL,
+                      folderPath TEXT PRIMARY KEY,
+                      UNIQUE(folderName,folder_id)
                     )''')
 
   cur.close()
@@ -218,7 +235,7 @@ def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
   DB_CONNECTION.commit()
 
   # GENERATE DATA
-  GEN_MetaData(CCODES,APP_SETTINGS,DIR_PATH, DB_CONNECTION)
+  GENERATE_META_DATA(CCODES,APP_SETTINGS,DIR_PATH, DB_CONNECTION,TYPE=generateMetaData.TYPES.initialize)
 
 def getGFID_FILE_DATA(DIR_PATH : str , fileName : str):
   GFID_FILE_PATH = os.path.join(DIR_PATH, os.environ["DEFAULT_REPO_CLOUD_STORAGE_FOLDER_PATH"], fileName)
@@ -237,3 +254,86 @@ def showUploads(CCODES,DIR_PATH, REPO_ID):
             parentID = GFID_DATA[parentDirPath]["id"]
             fileID = GFID_DATA[parentDirPath]["files"][index]["id"]
             output({"code": CCODES["ADD_UPLOAD"],"data":{"RepoId" : REPO_ID,"filePath": filePath, "parentID" : parentID, "driveID" : fileID, "fileName": GFID_DATA[parentDirPath]["files"][index]["name"]}})
+
+
+def checkLocalChanges(CCODES, APP_SETTINGS, DIR_PATH):
+  REPO_PATH = os.path.join(DIR_PATH,os.environ["DEFAULT_REPO_FOLDER_PATH"])
+  DB_PATH = os.path.join(REPO_PATH,os.environ["DEFAULT_DB_FILE_NAME"])
+  DB_CONNECTION = sqlite3.connect(DB_PATH)
+
+  GENERATE_META_DATA(CCODES, APP_SETTINGS, DIR_PATH,DB_CONNECTION,generateMetaData.TYPES.detect)
+
+  MODIFIED_FILES_QUERY = '''
+                          UPDATE files 
+                          SET uploaded = NULL,
+                          modified_time = temp_files.modified_time 
+                          FROM temp_files
+                          WHERE files.fileName = temp_files.fileName 
+                          AND files.folder_id = temp_files.folder_id 
+                          AND temp_files.modified_time > files.modified_time'''
+
+  NEW_FILES_QUERY = '''
+                    INSERT INTO files 
+                    (fileName,
+                    folder_id,
+                    modified_time,
+                    downloaded) 
+						  
+                    SELECT 
+						  		  temp_files.fileName, 
+                          temp_files.folder_id,
+                          temp_files.modified_time,
+                          1
+                          FROM (SELECT temp_files.fileName,
+                                temp_files.folder_id 
+                                FROM temp_files 
+                                EXCEPT 
+                                SELECT files.fileName, 
+                                files.folder_id FROM files) AS newTable 
+
+                          LEFT JOIN temp_files 
+                          ON temp_files.fileName = newTable.fileName 
+                          AND temp_files.folder_id = newTable.folder_id  
+                          '''
+                          
+  DELETED_FILES_QUERY = ''' UPDATE files SET deleted = 1 FROM ( 
+                                                              SELECT 
+                                                              files.fileName,
+                                                              files.folder_id
+                                                              FROM 
+                                                              (
+                                                                SELECT 
+                                                                fileName, 
+                                                                folder_id FROM files 
+                                                                  EXCEPT 
+                                                                SELECT 
+                                                                fileName, 
+                                                                folder_id FROM temp_files
+                                                              ) AS genTab1 
+
+                                                              LEFT JOIN files 
+                                                              ON files.fileName = genTab1.fileName 
+                                                              AND files.folder_id = genTab1.folder_id
+                                                              WHERE files.deleted IS NULL
+                                                          ) AS genTab2 
+                            WHERE files.fileName = genTab2.fileName AND files.folder_id = genTab2.folder_id 
+                        '''
+  
+  data = {"FILES":dict(),"FOLDERS":dict()}
+  DB_CURSOR = DB_CONNECTION.cursor()
+
+  DB_CURSOR = DB_CURSOR.execute(MODIFIED_FILES_QUERY)
+  data["FILES"]["MODIFIED"] = DB_CURSOR.rowcount
+
+  DB_CURSOR.execute(NEW_FILES_QUERY)
+  data["FILES"]["NEW"] = DB_CURSOR.rowcount
+
+  DB_CURSOR.execute(DELETED_FILES_QUERY)
+  data["FILES"]["DELETED"] = DB_CURSOR.rowcount
+
+  DB_CURSOR.execute("DELETE FROM temp_files").execute("DELETE FROM temp_folders") # CLEAR CURRENT SESSION DATA
+
+  DB_CURSOR.close()
+  DB_CONNECTION.commit()
+
+  return data
