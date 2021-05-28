@@ -24,7 +24,7 @@ import io
 import pyrfc3339
 from datetime import datetime
 import math
-
+from utils import output
 
 CREDENTIALS = None
 service: Resource = None
@@ -265,13 +265,39 @@ def createFolder(CCODES, folderName, GdriveID=None, parentID=None, fields="id", 
 
     return service.files().create(body=folder_metadata, fields=fields)
 
+def getMime(filePath):
+    '''This basically returns the google workspace mimeIds for the files that have .docx/.pptx/.xlsx as their extension'''
+    fileName, fileExt = os.path.splitext(filePath)
+    fileExtension = {
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "application/vnd.google-apps.document",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "application/vnd.google-apps.spreadsheet",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation": "application/vnd.google-apps.presentation"
+    }
+    if mimetypes.guess_type(filePath)[0] in fileExtension:
+        return fileExtension[mimetypes.guess_type(filePath)[0]]
+    else: return ""
+
+def updateFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID):
+    service = getService(CCODES)
+    media = MediaFileUpload(filePath, resumable=True)
+    response = service.files().update(
+        media_body=media,
+        fileId=driveID
+    ).execute()
+
+    print(response)
+    return response['id']
+
 def uploadFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID):
     service = getService(CCODES)
-
+    # mimeType = getMime(filePath)
     metaData = {
         "name": fileName,
         "parents": [parentDriveID]
     }
+    # output(f"!!!!!!!!!!!!!!!!!!!!!!!!!{mimeType}")
+    # if(mimeType):
+    #     metaData["mimeType"]=mimeType
 
     if(driveID):
         metaData["id"] = driveID

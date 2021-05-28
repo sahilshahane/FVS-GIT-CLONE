@@ -197,6 +197,25 @@ def checkLocalChanges(task):
     except Exception as e:
         return {"code": CCODES["FAILED_CHECKING_LOCAL_CHANGES"], "data": {"RepoID": RepoID}, "exception": {"msg": str(e), "type":  str(e.__class__.__name__)}}
 
+def updateFile(task):
+    RepoID = task["data"]["RepoID"]
+    driveID = task["data"].get("driveID")
+    fileName = task["data"]["fileName"]
+    filePath = task["data"]["filePath"]
+    parentDriveID = task["data"]["parentDriveID"]
+
+    try:
+        task["data"]["driveID"] = GoogleDrive.updateFile(
+            CCODES, RepoID, fileName, filePath, driveID, parentDriveID)
+
+        return {
+            "code": CCODES["UPLOAD_SUCCESS"],
+            "data": task["data"]
+            }
+
+    except Exception as e:
+        return {"code": CCODES["UPLOAD_FAILED"], "data": task["data"], "exception": {"msg": str(e), "type": str(e.__class__.__name__)}}
+
 
 TASKS_DEFINITIONS = {
     CCODES["START_GOOGLE_LOGIN"]: startGoogleLogin,
@@ -207,7 +226,8 @@ TASKS_DEFINITIONS = {
     CCODES["CREATE_FOLDERS"]: createRepoFolders,
     CCODES["DOWNLOAD_FILE"]: downloadFile,
     CCODES["CHECK_CHANGES"]: checkChanges,
-    CCODES["CHECK_LOCAL_CHANGES"]: checkLocalChanges
+    CCODES["CHECK_LOCAL_CHANGES"]: checkLocalChanges,
+    CCODES["UPDATE_FILE"]: updateFile
 }
 
 
