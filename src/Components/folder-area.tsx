@@ -10,6 +10,7 @@ import path from 'path';
 import { File, Folder, Repository } from './folder-area-ui';
 import { store } from '../Redux/store';
 import { setMediaFileStack } from '../Redux/MediaPlayerSlicer';
+import { getAllFilesWithPaths } from '../modules/Database';
 
 const ALL_Repositories = () => {
   const repositoryData = useSelector((state: store) => {
@@ -63,16 +64,31 @@ const Selected_Repository_Directory = () => {
   const currentDirectory = useSelector((state: store) => {
     return state.UserRepoData.currentDirectory.localLocation;
   });
-
   const [sortBy, sortByType] = useSelector((state: store) => [
     state.AppSettings.directorySortBy.current,
     state.AppSettings.directorySortBy.type,
   ]);
-
   const [FILES, set_FILES] = useState<string[]>([]);
   const [FOLDERS, set_FOLDERS] = useState<string[]>([]);
-
   const dispatch = useDispatch();
+  const repositoryData = useSelector((state: store) => {
+    return state.UserRepoData.info;
+  });
+  const syncStatusInfo = {};
+
+  if (FILES) {
+    let currentRepoID = '';
+
+    Object.keys(repositoryData).forEach((RepoID) => {
+      if (currentDirectory.includes(repositoryData[RepoID].localLocation)) {
+        currentRepoID = RepoID;
+      }
+    });
+    getAllFilesWithPaths(currentRepoID).forEach((file) => {
+      const absPath = path.join(currentDirectory, file.fileName);
+      syncStatusInfo[absPath] = file.uploaded;
+    });
+  }
 
   useEffect(() => {
     if (currentDirectory && currentDirectory !== 'Home') {
@@ -135,6 +151,7 @@ const Selected_Repository_Directory = () => {
               id={nanoid()}
               filePath={filePath}
               currDir={currentDirectory}
+              syncStatusInfo={syncStatusInfo}
             />
           </Col>
         );

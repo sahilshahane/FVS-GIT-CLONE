@@ -45,7 +45,6 @@ const getDB = (RepoID: string | number) => {
   if (DB_CONNECTIONS[RepoID]) return DB_CONNECTIONS[RepoID];
 
   const { UserRepoData } = Reduxstore.getState();
-
   const { localLocation } = UserRepoData.info[RepoID];
   const DB_FILE_PATH = path.join(localLocation, '.usp', 'database.db');
   try {
@@ -461,4 +460,24 @@ export const setRepoDownload: setRepoDownload_ = (RepoID, data) => {
   run();
 
   log.info('Updated File Data Succesfully', { RepoID, data });
+};
+
+export const getAllFilesWithPaths = (RepoID: String) => {
+  const DB = getDB(RepoID);
+  const response = DB.prepare(
+    'SELECT files.fileName, files.folder_id, files.modified_time, files.driveID, files.uploaded, files.downloaded, files.deleted, files.fileHash, folders.folderPath FROM files INNER JOIN folders ON folders.folder_id = files.folder_id'
+  ).all();
+  return response;
+};
+
+export const getAllFiles = (RepoID: String) => {
+  const DB = getDB(RepoID);
+  const response = DB.prepare('SELECT * FROM files').all();
+  return response;
+};
+
+export const getAllFolders = (RepoID: String) => {
+  const DB = getDB(RepoID);
+  const response = DB.prepare('SELECT * FROM folders').all();
+  return response;
 };

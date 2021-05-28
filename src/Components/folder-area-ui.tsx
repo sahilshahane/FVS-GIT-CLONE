@@ -10,9 +10,9 @@ import {
 import { getMediaType } from '../modules/MediaPlayer';
 import { showMediaPlayer } from '../Redux/MediaPlayerSlicer';
 
-export const File = ({ currDir, filePath }: any) => {
+export const File = ({ currDir, filePath, syncStatusInfo }: any) => {
   const fileName = path.basename(filePath);
-  const syncStatus = false;
+  const syncStatus = syncStatusInfo[path.join(currDir, filePath)];
   const dispatch = useDispatch();
   const mediaType = getMediaType(fileName);
   let classname = 'file-ui';
