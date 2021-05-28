@@ -24,7 +24,12 @@ import {
   updateFolderDriveID,
 } from './Database';
 import { performGDriveChanges, createRepoFoldersInDrive } from './GoogleDrive';
-
+import {
+  checkGDriveChanges,
+  checkLocalChanges,
+  setCheckingOperationChanges,
+} from './changes';
+const TAG = 'GlobalHandler.ts';
 const { dispatch } = ReduxStore;
 
 export interface NotificationInfo {
@@ -182,11 +187,83 @@ const Handler = (
 
       break;
     case CCODES.FINISHED_CHECKING_CHANGES:
+      setCheckingOperationChanges({
+        RepoID: response.data.RepoID,
+        type: 'onlineChanges',
+        value: false,
+      });
+
       performGDriveChanges({
         RepoID: response.data.RepoID,
         changes: response.data.changes,
         trackingInfo: response.data.trackingInfo,
       });
+
+      setTimeout(() => {
+        const {
+          UserRepoData: { info },
+        } = ReduxStore.getState();
+        checkLocalChanges(response.data.RepoID, info[response.data.RepoID]);
+      }, 1000 * 60 * 60);
+      break;
+
+    case CCODES.FAILED_CHECKING_CHANGES:
+      setCheckingOperationChanges({
+        RepoID: response.data.RepoID,
+        type: 'onlineChanges',
+        value: false,
+      });
+
+      setTimeout(() => {
+        const {
+          UserRepoData: { info },
+        } = ReduxStore.getState();
+        checkLocalChanges(response.data.RepoID, info[response.data.RepoID]);
+      }, 1000 * 60 * 60);
+
+      ShowError(
+        'Failed to retrieve online changes',
+        "please make sure you're online"
+      );
+
+      log.error(TAG, 'Failed to retrieve google drive changes');
+      break;
+
+    case CCODES.FINISHED_CHECKING_LOCAL_CHANGES:
+      setCheckingOperationChanges({
+        RepoID: response.data.RepoID,
+        type: 'localChanges',
+        value: false,
+      });
+
+      const {
+        UserRepoData: { info },
+      } = ReduxStore.getState();
+
+      const repoData = info[response.data.RepoID];
+      checkGDriveChanges(response.data.RepoID, repoData);
+      break;
+
+    case CCODES.FAILED_CHECKING_LOCAL_CHANGES:
+      setCheckingOperationChanges({
+        RepoID: response.data.RepoID,
+        type: 'localChanges',
+        value: false,
+      });
+
+      ShowError(
+        'Failed to retrieve local changes',
+        'please make sure no one is currenctly using the repository'
+      );
+
+      setTimeout(() => {
+        const {
+          UserRepoData: { info },
+        } = ReduxStore.getState();
+        checkLocalChanges(response.data.RepoID, info[response.data.RepoID]);
+      }, 1000 * 60 * 60);
+
+      log.error(TAG, 'Failed to retrieve local changes');
       break;
   }
 };

@@ -5,11 +5,16 @@ import { ipcRenderer } from 'electron';
 import log from 'electron-log';
 import {
   APP_SETTINGS_FILE_PATH,
+  CCODES,
+  sendSchedulerTask,
   USER_REPOSITORY_DATA_FILE_PATH,
 } from './get_AppData';
 import Reduxstore from '../Redux/store';
-import { checkGDriveChanges, createRepoFoldersInDrive } from './GoogleDrive';
+import { createRepoFoldersInDrive } from './GoogleDrive';
 import { InitializeDatabase } from './Database';
+import { trackingInfo_ } from '../Redux/UserRepositorySlicer';
+import { checkLocalChanges } from './changes';
+import ShowError from './ErrorPopup_dialog';
 
 const TAG = 'backgroundTasks.ts > ';
 
@@ -18,20 +23,23 @@ export const PerformInitialTask = () => {
 
   // eslint-disable-next-line consistent-return
   Object.keys(UserRepoData.info).forEach((RepoID) => {
-    // CREATE DATABASE CONNECTION
-    const isDBinitialize = InitializeDatabase(RepoID);
-    if (!isDBinitialize)
-      // DISPLAY SOME ERROR MSG, NOTIFY THE USER ABOUT THIS
-      // TODO
-
-      return null;
-
     const { displayName, trackingInfo } = UserRepoData.info[RepoID];
+
+    try {
+      // CREATE DATABASE CONNECTION
+      InitializeDatabase(RepoID);
+    } catch {
+      ShowError(
+        `Failed to connect ${displayName}`,
+        'Please make sure no one is connected to the database or make sure the database exists'
+      );
+      return null;
+    }
 
     // CREATE FOLDERS IN DRIVE FOR FIRST TIME
     if (!trackingInfo) createRepoFoldersInDrive(RepoID, displayName);
     // ELSE CHECK CHANGES IN GOOGLE DRIVE
-    else checkGDriveChanges(RepoID, trackingInfo);
+    else checkLocalChanges(RepoID, UserRepoData.info[RepoID]);
   });
 };
 
