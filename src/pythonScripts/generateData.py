@@ -108,7 +108,6 @@ class generateMetaData():
 
 
         relativeDirectoryPath = rootFolderName + absoluteDirectoryPath[len(self.DIR_PATH):]
-        
 
         if self.ignoreFunc(relativeDirectoryPath,folderName): continue
 
@@ -117,7 +116,7 @@ class generateMetaData():
 
         self.totalFolders+=1
 
-        folderID = generateHash(data=relativeDirectoryPath)
+        folderID = generateHash(data=relativeDirectoryPath,hashType="md5")
 
         # FIX FOR ROOT FOLDER's PARENT NOT SHOWING UP
         # if(not parentDirPath): parentDirPath = directory
@@ -129,7 +128,7 @@ class generateMetaData():
 
         for fileName in files:
           filePath = os.path.join(absoluteDirectoryPath, fileName)
-          modified_time = int(os.path.getmtime(filePath))
+          modified_time = int(os.path.getmtime(filePath)) * 1000
           # fileHash = generateFileHash(filePath,self.HASH)
           DB_ARGS = None
 

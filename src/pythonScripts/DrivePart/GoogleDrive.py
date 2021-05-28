@@ -23,6 +23,8 @@ import mimetypes
 import io
 import pyrfc3339
 from datetime import datetime
+import math
+
 
 CREDENTIALS = None
 service: Resource = None
@@ -433,10 +435,9 @@ def getActivities_API(activityService, repoDriveId, trackingTime):
                 "name": driveItems["title"],
                 "mimeType": driveItems["mimeType"],
                 "actions": {},
-                "timestamp": activity["timestamp"]
+                "timestamp": math.ceil(pyrfc3339.parse(activity["timestamp"]).timestamp()) * 1000
             }
-
-
+            
         actionFunction = ActionFunctions.get(primaryAction, lambda *args: True)
 
         shouldUpdateActions = actionFunction(id, activity)

@@ -1,12 +1,13 @@
 /* eslint-disable import/no-cycle */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable import/prefer-default-export */
-import Sqlite3 from 'better-sqlite3';
+
+import Sqlite3, { Statement } from 'better-sqlite3';
 import path from 'path';
 import log from 'electron-log';
-import { nanoid } from '@reduxjs/toolkit';
 import Reduxstore from '../Redux/store';
 import { DoingQueue } from '../Redux/SynchronizationSlicer';
+import md5 from 'md5';
 
 const TAG = 'Database.ts > ';
 
@@ -47,18 +48,13 @@ const getDB = (RepoID: string | number) => {
   const { UserRepoData } = Reduxstore.getState();
   const { localLocation } = UserRepoData.info[RepoID];
   const DB_FILE_PATH = path.join(localLocation, '.usp', 'database.db');
-  try {
-    const DB = connect(DB_FILE_PATH);
 
-    // ADD IT to DB_CONNECTIONS
-    DB_CONNECTIONS[RepoID] = DB;
-    log.info(TAG, 'Connected to Database Successfully', { RepoID });
-    return DB;
-  } catch (error) {
-    log.error(TAG, `Failed to connect to database`, { RepoID, error });
-  }
+  const DB = connect(DB_FILE_PATH);
 
-  return false;
+  // ADD IT to DB_CONNECTIONS
+  DB_CONNECTIONS[RepoID] = DB;
+  log.info(TAG, 'Connected to Database Successfully', { RepoID });
+  return DB;
 };
 
 export const getRemainingUploadsName = (RepoID: string | number) => {
@@ -263,11 +259,12 @@ export const getParentPathFromRepoDatabase = ({
   );
 
   let response: {
-    folderPath?: string;
-    folder_id?: string;
-    isRootFolder?: boolean;
+    folderPath: string;
+    folder_id: string;
+    isRootFolder: boolean;
   } = {
     ...stmt.get(parentID),
+    isRootFolder: false,
   };
 
   if (!response?.folderPath) {
@@ -282,6 +279,7 @@ export const getParentPathFromRepoDatabase = ({
       );
 
       response = {
+        ...response,
         folderPath,
         isRootFolder: true,
       };
@@ -298,37 +296,37 @@ export const getParentPathFromRepoDatabase = ({
 type addFolderRepoDB_ = (
   RepoID: string,
   data: {
+    folderName: string;
     folderPath: string;
     driveID?: string;
   }
 ) => void;
 
 export const addFolderRepoDB: addFolderRepoDB_ = (RepoID, data) => {
-  try {
-    const DB = getDB(RepoID);
+  const DB = getDB(RepoID);
+  const { UserRepoData } = Reduxstore.getState();
+  const { localLocation } = UserRepoData.info[RepoID];
 
-    const stmt = DB.prepare(
-      'INSERT INTO folders (folderName,folder_id,driveID,folderPath) VALUES (@folderName,@folder_id,@driveID,@folderPath)'
-    );
-    const run = DB.transaction(() => {
-      stmt.run({
-        driveID: data?.driveID,
-        folder_id: nanoid(32),
-        folderName: path.basename(data.folderPath),
-        folderPath: data.folderPath,
-      });
-    });
+  const stmt = DB.prepare(
+    'INSERT or IGNORE INTO folders (folderName,folder_id,driveID,folderPath) VALUES (@folderName,@folder_id,@driveID,@folderPath)'
+  );
 
-    // RUN THE TRANSACTION
-    run();
-    log.info(TAG, 'Added Folder Data Succesfully', { RepoID, data });
-  } catch (errr) {
-    log.error(TAG, 'FOLDER ALREADY EXISTS (this is normal)', {
-      RepoID,
-      data,
-      errr,
+  const relativePath = data.folderPath.substr(
+    localLocation.lastIndexOf(path.sep) + 1
+  );
+
+  const run = DB.transaction(() => {
+    stmt.run({
+      driveID: data?.driveID,
+      folder_id: md5(relativePath),
+      folderName: data.folderName,
+      folderPath: data.folderPath,
     });
-  }
+  });
+
+  // RUN THE TRANSACTION
+  run();
+  log.info(TAG, 'Added Folder Data Succesfully', { RepoID, data });
 };
 
 type removeFolderRepoDB_ = (
@@ -367,35 +365,31 @@ type addFileRepoDB_ = (
     uploaded?: 1 | null;
     downloaded?: 1 | null;
     fileHash?: string;
-    modified_time?: string;
+    modified_time: number;
   }
 ) => void;
 
 export const addFileRepoDB: addFileRepoDB_ = (RepoID, data) => {
-  try {
-    const DB = getDB(RepoID);
+  const DB = getDB(RepoID);
 
-    const stmt = DB.prepare(
-      'INSERT INTO files (fileName,folder_id,driveID,uploaded,downloaded,fileHash,modified_time) VALUES (@fileName,@folder_id,@driveID,@uploaded,@downloaded,@fileHash,@modified_time)'
-    );
-    const run = DB.transaction(() => {
-      stmt.run({
-        driveID: data.driveID,
-        folder_id: data.folder_id,
-        fileName: path.basename(data.filePath),
-        uploaded: data.uploaded,
-        downloaded: data.downloaded,
-        fileHash: data.fileHash,
-        modified_time: data.modified_time,
-      });
+  const stmt = DB.prepare(
+    'INSERT or IGNORE INTO files (fileName,folder_id,driveID,uploaded,downloaded,fileHash,modified_time) VALUES (@fileName,@folder_id,@driveID,@uploaded,@downloaded,@fileHash,@modified_time)'
+  );
+  const run = DB.transaction(() => {
+    stmt.run({
+      driveID: data.driveID,
+      folder_id: data.folder_id,
+      fileName: path.basename(data.filePath),
+      uploaded: data.uploaded,
+      downloaded: data.downloaded,
+      fileHash: data.fileHash,
+      modified_time: data.modified_time,
     });
+  });
 
-    // RUN THE TRANSACTION
-    run();
-    log.info('Added File Data Succesfully', { RepoID, data });
-  } catch (errr) {
-    log.error('FOLDER ALREADY EXISTS', errr);
-  }
+  // RUN THE TRANSACTION
+  run();
+  log.info('Added File Data Succesfully', { RepoID, data });
 };
 
 type removeFileRepoDB_ = (
@@ -429,6 +423,7 @@ type setRepoDownload_ = (
   RepoID: string,
   data: {
     driveID: string;
+    modified_time?: number;
     type: 'ADD' | 'COMPLETE';
   }
 ) => void;
@@ -436,30 +431,157 @@ type setRepoDownload_ = (
 export const setRepoDownload: setRepoDownload_ = (RepoID, data) => {
   const DB = getDB(RepoID);
 
-  const stmt = DB.prepare(
-    `UPDATE files SET downloaded = @downloaded WHERE driveID = @driveID`
-  );
+  let run = () => {};
 
-  const run = DB.transaction(() => {
-    const modifiedVal: {
-      driveID: string;
-      downloaded?: number | null;
-    } = {
-      driveID: data.driveID,
-      downloaded: null,
-    };
+  if (data.type === 'ADD') {
+    const stmt = DB.prepare(
+      `UPDATE files SET downloaded = @downloaded WHERE driveID = @driveID AND modified_time >= @modified_time`
+    );
 
-    if (data.type == 'COMPLETE') {
-      modifiedVal.downloaded = 1;
-    }
+    run = DB.transaction(() => {
+      stmt.run({
+        driveID: data.driveID,
+        modified_time: data.modified_time,
+        downloaded: null,
+      });
+    });
+  } else {
+    const stmt = DB.prepare(
+      `UPDATE files SET downloaded = @downloaded WHERE driveID = @driveID`
+    );
 
-    stmt.run(modifiedVal);
-  });
+    run = DB.transaction(() => {
+      stmt.run({
+        driveID: data.driveID,
+        downloaded: 1,
+      });
+    });
+  }
 
   // RUN THE TRANSACTION
   run();
 
   log.info('Updated File Data Succesfully', { RepoID, data });
+};
+
+type getFilePath_ = (data: {
+  RepoID: string;
+  driveID: string;
+}) => { folderPath: string; fileName: string };
+
+export const getFilePathFromDB: getFilePath_ = ({ RepoID, driveID }) => {
+  const DB = getDB(RepoID);
+
+  const stmt = DB.prepare(
+    'SELECT folders.folderPath, files.fileName from folders,files WHERE files.driveID = @driveID AND files.folder_id = folders.folder_id'
+  );
+
+  const data = stmt.get({
+    driveID,
+  });
+
+  // RUN THE TRANSACTION
+  return data;
+};
+
+type getFolderPath_ = (data: {
+  RepoID: string;
+  driveID: string;
+}) => { folderName: string; folderPath: string };
+
+export const getFolderPathFromDB: getFolderPath_ = ({ RepoID, driveID }) => {
+  const DB = getDB(RepoID);
+
+  const stmt = DB.prepare(
+    'SELECT folderName,folderPath from folders WHERE driveID = @driveID'
+  );
+
+  const data = stmt.get({
+    driveID,
+  });
+
+  // RUN THE TRANSACTION
+  return data;
+};
+
+type renameFileNamefromDB_ = (data: {
+  RepoID: string;
+  driveID: string;
+  fileName: string;
+}) => void;
+
+export const renameFileNamefromDB: renameFileNamefromDB_ = ({
+  RepoID,
+  driveID,
+  fileName,
+}) => {
+  const DB = getDB(RepoID);
+
+  const stmt = DB.prepare(
+    'UPDATE files SET fileName = @fileName WHERE driveID = @driveID'
+  );
+
+  const run = DB.transaction(() => {
+    stmt.run({
+      driveID,
+      fileName,
+    });
+  });
+
+  run();
+};
+
+type renameFolderNamefromDB_ = (data: {
+  RepoID: string;
+  driveID: string;
+  folderName: string;
+  oldFolderPath: string;
+  newFolderPath: string;
+}) => void;
+
+export const renameFolderNamefromDB: renameFolderNamefromDB_ = ({
+  RepoID,
+  driveID,
+  folderName,
+  oldFolderPath,
+  newFolderPath,
+}) => {
+  const DB = getDB(RepoID);
+
+  const stmt = DB.prepare(
+    'UPDATE folders SET folderName = @folderName WHERE driveID = @driveID'
+  );
+
+  const { UserRepoData } = Reduxstore.getState();
+  const { localLocation } = UserRepoData.info[RepoID];
+
+  const regex = new RegExp(`^${oldFolderPath}`);
+
+  DB.function('MD5', (folderPath: string) => {
+    const newPath = folderPath.replace(regex, newFolderPath);
+    const relativePath = newPath.substr(
+      localLocation.lastIndexOf(path.sep) + 1
+    );
+    return md5(relativePath);
+  });
+
+  const stmt2 = DB.prepare(
+    "UPDATE OR REPLACE folders SET folderPath = REPLACE(folderPath,@oldFolderPath,@newFolderPath), folder_id = MD5(folderPath) WHERE folderPath LIKE @oldFolderPath || '%'"
+  );
+
+  const run = DB.transaction(() => {
+    stmt.run({
+      driveID,
+      folderName,
+    });
+
+    stmt2.run({
+      oldFolderPath,
+      newFolderPath,
+    });
+  });
+
+  run();
 };
 
 export const getAllFilesWithPaths = (RepoID: String) => {

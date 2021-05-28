@@ -11,10 +11,14 @@ import {
   addFileRepoDB,
   addFolderRepoDB,
   disconnectDB,
+  getFilePathFromDB,
+  getFolderPathFromDB,
   getNonCreatedFolder,
   getParentPathFromRepoDatabase,
   removeFileRepoDB,
   removeFolderRepoDB,
+  renameFileNamefromDB,
+  renameFolderNamefromDB,
   setRepoDownload,
 } from './Database';
 import { sendSchedulerTask, CCODES } from './get_AppData';
@@ -24,7 +28,7 @@ import {
   updateUploadingQueue,
 } from '../Redux/SynchronizationSlicer';
 import { removeRepositoryDialog } from '../Components/remove-Repository';
-
+import filenamify from 'filenamify';
 const TAG = 'GoogleDrive.ts > ';
 
 type MimeTypes =
@@ -81,7 +85,7 @@ type DriveChange = {
   name: string;
   mimeType: MimeTypes;
   parents: string;
-  timestamp: string;
+  timestamp: number;
   actions: {
     create?: {
       new?: {
@@ -174,11 +178,11 @@ class BasicChange {
 
   RepoID: string;
 
-  parentPath: string | undefined;
+  parentPath: string;
 
-  parentFolderID: string | undefined;
+  parentFolderID: string;
 
-  isRootFolder: boolean | undefined;
+  isRootFolder: boolean;
 
   constructor(data: DriveChange, driveID: string, RepoID: string) {
     this.data = data;
@@ -219,6 +223,10 @@ class BasicChange {
   rename = () => {};
 
   perform = () => {};
+
+  sanitizeName = (name: string) => {
+    return filenamify(name);
+  };
 }
 
 class FolderChange extends BasicChange {
@@ -227,7 +235,21 @@ class FolderChange extends BasicChange {
   constructor(RepoID: string, driveID: string, data: DriveChange) {
     super(data, driveID, RepoID);
 
-    this.folderPath = path.join(this.parentPath, this.data.name);
+    if (!this.parentPath) {
+      console.log(this.getInfo());
+    }
+
+    const { folderPath } = getFolderPathFromDB({
+      RepoID: this.RepoID,
+      driveID: this.driveID,
+    });
+
+    if (!folderPath)
+      this.folderPath = path.join(
+        this.parentPath,
+        this.sanitizeName(this.data.name)
+      );
+    else this.folderPath = folderPath;
   }
 
   create = () => {
@@ -236,17 +258,12 @@ class FolderChange extends BasicChange {
     addFolderRepoDB(this.RepoID, {
       folderPath: this.folderPath,
       driveID: this.driveID,
+      folderName: this.data.name,
     });
   };
 
   delete = () => {
     if (this.isRootFolder) {
-      // const onOk = () => {
-      //   removeRepository(this.RepoID);
-      //   disconnectDB(this.RepoID);
-      //   fs.removeSync(this.folderPath);
-      // };
-
       removeRepositoryDialog({ RepoID: this.RepoID });
 
       ReduxStore.dispatch(removeRepository(this.RepoID));
@@ -267,39 +284,58 @@ class FolderChange extends BasicChange {
     this.create();
   };
 
+  rename = () => {
+    const {
+      actions: { rename },
+    } = this.data;
+
+    if (rename?.newTitle) {
+      const oldFolderPath = this.folderPath;
+
+      const newFolderPath = path.resolve(
+        this.folderPath,
+        '..',
+        this.sanitizeName(rename.newTitle)
+      );
+
+      renameFolderNamefromDB({
+        RepoID: this.RepoID,
+        driveID: this.driveID,
+        folderName: rename.newTitle,
+        oldFolderPath,
+        newFolderPath,
+      });
+
+      fs.renameSync(oldFolderPath, newFolderPath);
+    }
+  };
+
+  getInfo = () =>
+    JSON.parse(
+      JSON.stringify({ data: this.data, folderPath: this.folderPath })
+    );
+
   perform = () => {
     const { actions } = this.data;
 
     if (actions?.delete) {
-      log.warn(
-        TAG,
-        'PERFORMING FOLDER DELETE OEPRATION',
-        JSON.parse(
-          JSON.stringify({ data: this.data, folderPath: this.folderPath })
-        )
-      );
+      log.warn(TAG, 'PERFORMING FOLDER DELETE OEPRATION', this.getInfo());
 
       this.delete();
     } else if (actions?.create?.new) {
-      log.warn(
-        TAG,
-        'PERFORMING FOLDER CREATE OEPRATION',
-        JSON.parse(
-          JSON.stringify({ data: this.data, folderPath: this.folderPath })
-        )
-      );
+      log.warn(TAG, 'PERFORMING FOLDER CREATE OEPRATION', this.getInfo());
 
       this.create();
     } else if (actions?.restore) {
-      log.warn(
-        TAG,
-        'PERFORMING FOLDER RESTORE OEPRATION',
-        JSON.parse(
-          JSON.stringify({ data: this.data, folderPath: this.folderPath })
-        )
-      );
+      log.warn(TAG, 'PERFORMING FOLDER RESTORE OEPRATION', this.getInfo());
 
       this.restore();
+    }
+
+    if (actions?.rename) {
+      log.warn(TAG, 'PERFORMING FOLDER RENAME OEPRATION', this.getInfo());
+
+      this.rename();
     }
   };
 }
@@ -310,45 +346,73 @@ class FileChange extends BasicChange {
   constructor(RepoID: string, driveID: string, data: DriveChange) {
     super(data, driveID, RepoID);
 
-    this.filePath = path.join(this.parentPath, data.name);
+    const { folderPath: parentFolderPath, fileName } = getFilePathFromDB({
+      RepoID: this.RepoID,
+      driveID: this.driveID,
+    });
+
+    if (!fileName)
+      this.filePath = path.join(this.parentPath, this.sanitizeName(data.name));
+    else this.filePath = path.join(this.parentPath, fileName);
+
+    switch (this.data.mimeType) {
+      case 'application/vnd.google-apps.document':
+        this.filePath += '.docx';
+        break;
+    }
   }
 
   perform = () => {
     const { actions } = this.data;
 
     if (actions?.delete) {
-      log.warn(
-        TAG,
-        'PERFORMING FILE DELETE OEPRATION',
-        JSON.parse(JSON.stringify({ data: this.data, filePath: this.filePath }))
-      );
+      log.warn(TAG, 'PERFORMING FILE DELETE OEPRATION', this.getInfo());
 
       this.delete();
     } else if (actions?.create?.new) {
-      log.warn(
-        TAG,
-        'PERFORMING FILE CREATE OEPRATION',
-        JSON.parse(JSON.stringify({ data: this.data, filePath: this.filePath }))
-      );
+      log.warn(TAG, 'PERFORMING FILE CREATE OEPRATION', this.getInfo());
 
       this.create();
     } else if (actions?.restore) {
-      log.warn(
-        TAG,
-        'PERFORMING FILE RESTORE OEPRATION',
-        JSON.parse(JSON.stringify({ data: this.data, filePath: this.filePath }))
-      );
+      log.warn(TAG, 'PERFORMING FILE RESTORE OEPRATION', this.getInfo());
 
       this.restore();
     }
 
     if (actions?.edit) {
-      log.warn(
-        TAG,
-        'PERFORMING FILE EDIT OEPRATION',
-        JSON.parse(JSON.stringify({ data: this.data, filePath: this.filePath }))
-      );
+      log.warn(TAG, 'PERFORMING FILE EDIT OEPRATION', this.getInfo());
       this.edit();
+    }
+
+    if (actions?.rename) {
+      log.warn(TAG, 'PERFORMING FILE RENAME OEPRATION', this.getInfo());
+
+      this.rename();
+    }
+  };
+
+  getInfo = () =>
+    JSON.parse(JSON.stringify({ data: this.data, filePath: this.filePath }));
+
+  rename = () => {
+    const {
+      actions: { rename },
+    } = this.data;
+
+    if (rename) {
+      const newFilePath = path.resolve(
+        this.filePath,
+        '..',
+        this.sanitizeName(rename.newTitle)
+      );
+
+      renameFileNamefromDB({
+        RepoID: this.RepoID,
+        driveID: this.driveID,
+        fileName: path.basename(newFilePath),
+      });
+
+      fs.renameSync(this.filePath, newFilePath);
     }
   };
 
@@ -361,6 +425,7 @@ class FileChange extends BasicChange {
       filePath: this.filePath,
       uploaded: 1,
       downloaded: null,
+      modified_time: this.data.timestamp,
     });
   };
 
@@ -377,6 +442,7 @@ class FileChange extends BasicChange {
     setRepoDownload(this.RepoID, {
       driveID: this.driveID,
       type: 'ADD',
+      modified_time: this.data.timestamp,
     });
   };
 
@@ -402,15 +468,10 @@ const getChangeObject = (
 };
 
 const getSortedChanges = (changes: { [driveID: string]: DriveChange }) => {
-  return Object.keys(changes).sort((PREVdriveID, NEXTdriveID) => {
-    const PREVactivityTimestamp: number = new Date(
-      changes[PREVdriveID].timestamp
-    );
-    const NEXTactivityTimestamp: number = new Date(
-      changes[NEXTdriveID].timestamp
-    );
-
-    return PREVactivityTimestamp - NEXTactivityTimestamp;
+  return Object.keys(changes).sort((chg1, chg2) => {
+    const timestamp1 = changes[chg1].timestamp;
+    const timestamp2 = changes[chg2].timestamp;
+    return timestamp1 - timestamp2;
   });
 };
 
@@ -420,6 +481,14 @@ export const performGDriveChanges = ({
   trackingInfo,
 }: PerformGDriveChangesIF) => {
   const failedUpdates: { driveID: string; error: any }[] = [];
+
+  fs.writeJSONSync(
+    './data.json',
+    getSortedChanges(changes).map((driveID) => changes[driveID]),
+    {
+      spaces: 2,
+    }
+  );
 
   getSortedChanges(changes).every((driveID) => {
     try {

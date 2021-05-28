@@ -3,6 +3,7 @@
 const DB = require('better-sqlite3')('Testing/.usp/database.db');
 const path = require('path');
 const crypto = require('crypto');
+const md5 = require('md5');
 
 DB.function('combineStrings', (...arr) => arr.join(' '));
 
@@ -85,7 +86,7 @@ const addFolderRepoDB = (RepoID, data) => {
   const folder_id = nanoid();
 
   const stmt = DB.prepare(
-    'INSERT INTO folders (folderName,folder_id,driveID,folderPath) VALUES (@folderName,@folder_id,@driveID,@folderPath)'
+    'INSERT or IGNORE INTO folders (folderName,folder_id,driveID,folderPath) VALUES (@folderName,@folder_id,@driveID,@folderPath)'
   );
   const run = DB.transaction(() => {
     stmt.run({
@@ -101,8 +102,9 @@ const addFolderRepoDB = (RepoID, data) => {
 };
 
 // addFolderRepoDB('ASDASD', {
-//   folderPath: 'D:\\MajorProject\\fhs_sql\\T2estsing',
-//   driveID: 'ASDASD',
+//   folderPath:
+//     '/run/media/void/42E6C46EE6C4642F/MajorProject/LINUX_FVS_GIT_CLONE/Testing/Random',
+//   driveID: '123123',
 // });
 
 const removeFolderRepoDB = (RepoID, data) => {
@@ -144,9 +146,111 @@ const addFileRepoDB = (RepoID, data) => {
   run();
 };
 
-addFileRepoDB('ASDASD', {
-  driveID: 'RADALASUN',
-  filePath: 'Testing\\FUCIMG GEY',
-  uploaded: 1,
-  folder_id: '123123',
+// addFileRepoDB('ASDASD', {
+//   driveID: '123',
+//   filePath: 'Testing\\FUCIMG GEY',
+//   uploaded: 1,
+//   folder_id: '66294dc7209e79c772cc71b270d663d2',
+// });
+
+const getFilePath = ({ RepoID, driveID }) => {
+  const stmt = DB.prepare(
+    'SELECT folders.folderPath, files.fileName from folders,files WHERE files.driveID = @driveID AND files.folder_id = folders.folder_id'
+  );
+  const data = stmt.get({
+    driveID,
+  });
+  console.log(data);
+  // RUN THE TRANSACTION
+  return data;
+};
+
+// getFilePath({
+//   RepoID: 'ASDASD',
+//   driveID: '123',
+// });
+
+const renameFileNamefromDB = ({ RepoID, driveID, fileName }) => {
+  const stmt = DB.prepare(
+    'UPDATE files SET fileName = @fileName WHERE driveID = @driveID'
+  );
+
+  const run = DB.transaction(() => {
+    stmt.run({
+      driveID,
+      fileName,
+    });
+  });
+
+  run();
+};
+
+// renameFileNamefromDB({
+//   RepoID: 'ASDASD',
+//   driveID: '18STix_iGLczqbABGcVbkazRzwwURig0d',
+//   fileName: 'sex22.doc',
+// });
+
+const renameFolderNamefromDB = ({
+  RepoID,
+  driveID,
+  oldFolderPath,
+  newFolderPath,
+}) => {
+  const stmt = DB.prepare(
+    'UPDATE folders SET folderName = @folderName WHERE driveID = @driveID'
+  );
+
+  const localLocation = '/Testing';
+  const regex = new RegExp(`^${oldFolderPath}`);
+
+  DB.function('RENAME_ALL_PATHS', (folderPath) => {
+    const newPath = folderPath.replace(regex, newFolderPath);
+
+    return newPath;
+  });
+
+  DB.function('MD5', (folderPath) => {
+    const newPath = folderPath.replace(regex, newFolderPath);
+    const relativePath = newPath.substr(
+      localLocation.lastIndexOf(path.sep) + 1
+    );
+    console.log(relativePath, md5(relativePath));
+    return md5(relativePath);
+  });
+
+  const stmt2 = DB.prepare(
+    "UPDATE folders SET folderPath = RENAME_ALL_PATHS(folderPath), folder_id = MD5(folderPath) WHERE folderPath LIKE @oldFolderPath || '%'"
+  );
+
+  console.table(
+    DB.prepare(
+      "UPDATE OR REPLACE folders SET folderPath = REPLACE(folderPath,@oldFolderPath,@newFolderPath), folder_id = MD5(folderPath) WHERE folderPath LIKE @oldFolderPath || '%'"
+    ).run({
+      oldFolderPath,
+      newFolderPath,
+    })
+  );
+
+  // const run = DB.transaction(() => {
+  //   stmt.run({
+  //     driveID,
+  //     folderName: path.basename(newFolderPath),
+  //   });
+
+  //   stmt2.run({
+  //     oldFolderPath,
+  //   });
+  // });
+
+  // run();
+};
+
+renameFolderNamefromDB({
+  RepoID: 'asdas',
+  driveID: '1bC2YZh6Chx8vDM8Csy2NxC6wUgoL70IU',
+  newFolderPath:
+    '/run/media/void/42E6C46EE6C4642F/MajorProject/LINUX_FVS_GIT_CLONE/Testing/oh rock on',
+  oldFolderPath:
+    '/run/media/void/42E6C46EE6C4642F/MajorProject/LINUX_FVS_GIT_CLONE/Testing/oh yes',
 });

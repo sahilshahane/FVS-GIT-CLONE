@@ -23,12 +23,9 @@ HASHES = {
         "xxh3_64":xxhash.xxh3_64,
     }
 
-def generateHash(data,hashType="xxh3_64"):
-    try:
-        return HASHES[hashType](data).hexdigest()
-    except TypeError:
-        raise Exception("Only Input String Data for Hasing")
-
+def generateHash(data:str,hashType="xxh3_64"):
+    return HASHES[hashType](data.encode('utf-8')).hexdigest()
+   
 # Checks a File in Chucks to make it memory efficient and faster
 def generateFileHash(filePath,hashType="xxh3_64",BYTE_SIZE=32768):
        with open(filePath,"rb") as file_:
