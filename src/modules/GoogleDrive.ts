@@ -127,19 +127,6 @@ interface PerformGDriveChangesIF {
   trackingInfo: trackingInfo_;
 }
 
-export const checkGDriveChanges = (
-  RepoID: string,
-  trackingInfo: trackingInfo_
-) => {
-  sendSchedulerTask({
-    code: CCODES.CHECK_CHANGES,
-    data: {
-      RepoID,
-      trackingInfo,
-    },
-  });
-};
-
 export const createRepoFoldersInDrive = (
   RepoID: string,
   RepoName: string,
