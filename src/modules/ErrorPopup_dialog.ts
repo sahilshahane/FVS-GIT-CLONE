@@ -1,13 +1,13 @@
 import { Modal } from 'antd';
 
-const ShowError = (title = '', message = '') => {
+const ShowError = (title: String, message: String) => {
   Modal.error({
     title,
     content: message,
   });
 };
 
-export const ShowInfo = (title:string = '', message:string = 'null') => {
+export const ShowInfo = (title: string = '', message: string = 'null') => {
   const data = {};
 
   if (title) data.title = title;

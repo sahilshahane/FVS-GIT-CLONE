@@ -11,12 +11,6 @@ import { showNotification } from '../modules/GlobalHandler';
 const initFolder = async () => {
   let SELECTED_FOLDER = null;
 
-  const info = {
-    title: 'Adding new folder',
-    body: 'body for adding a new folder',
-  };
-  showNotification(info);
-
   if (process.env.NODE_ENV === 'development')
     SELECTED_FOLDER = path.resolve('Testing');
   else SELECTED_FOLDER = await selectDirectory({});

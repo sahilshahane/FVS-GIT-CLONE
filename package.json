@@ -9,13 +9,15 @@
     "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir src",
     "lint": "cross-env NODE_ENV=development eslint . --cache --ext .js,.jsx,.ts,.tsx",
     "package": "cp 'assets/installation/.usp' ~ -R && rm -rf src/dist && yarn build && electron-builder build --publish never",
-    "postinstall": "node -r @babel/register .erb/scripts/CheckNativeDep.js && electron-builder install-app-deps && (pipenv || pip install pipenv) && (cd src/pythonScripts && (mkdir .venv || echo \"Already Exists\") && pipenv install) && yarn cross-env NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.babel.js && opencollective-postinstall && yarn-deduplicate yarn.lock && yarn autoclean --force",
+    "postinstall": "node -r @babel/register .erb/scripts/CheckNativeDep.js && electron-builder install-app-deps && yarn cross-env NODE_ENV=development webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.babel.js && opencollective-postinstall && yarn-deduplicate yarn.lock",
     "start": "node -r @babel/register ./.erb/scripts/CheckPortInUse.js && cross-env yarn start:renderer",
     "start:main": "cross-env NODE_ENV=development electron -r ./.erb/scripts/BabelRegister ./src/main.dev.ts",
     "start:renderer": "cross-env NODE_ENV=development webpack serve --config ./.erb/configs/webpack.config.renderer.dev.babel.js",
     "test": "jest",
+    "pipenv": "(pipenv || pip install pipenv) && (cd src/pythonScripts && (mkdir .venv || echo \"Already Exists\") && pipenv install)",
     "py": "python src/pythonScripts/scheduler.py -dev",
-    "py:env": "cd src/pythonScripts && pipenv shell"
+    "py:env": "cd src/pythonScripts && pipenv shell",
+    "dbtest": "node \"Database Query Testing/test\""
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -184,6 +186,7 @@
     "@types/enzyme-adapter-react-16": "^1.0.6",
     "@types/history": "4.7.6",
     "@types/jest": "^26.0.15",
+    "@types/md5": "^2.3.0",
     "@types/node": "14.14.10",
     "@types/react": "^16.9.44",
     "@types/react-dom": "^16.9.9",
@@ -271,9 +274,11 @@
     "electron-log": "^4.2.4",
     "electron-updater": "^4.3.4",
     "fdir": "^5.0.0",
+    "filenamify": "^4.3.0",
     "fs-extra": "^9.1.0",
     "history": "^5.0.0",
     "immutable": "^4.0.0-rc.12",
+    "md5": "^2.3.0",
     "nodejs-file-downloader": "^4.4.2",
     "rc-animate": "^3.1.1",
     "react": "^17.0.1",

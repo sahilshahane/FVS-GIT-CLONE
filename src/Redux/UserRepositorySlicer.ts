@@ -11,7 +11,7 @@ import {
 const TAG = 'UserRepositorySlicer.ts > ';
 
 export type trackingInfo_ = {
-  lastChecked: string;
+  lastChecked: number;
   driveID: string;
 };
 export type currentDirectory = {

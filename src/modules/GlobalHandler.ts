@@ -43,6 +43,7 @@ const Handler = (
   history: History<unknown>
 ) => {
   // eslint-disable-next-line default-case
+
   switch (response.code) {
     case CCODES.INIT_DONE:
       dispatch(
@@ -60,8 +61,10 @@ const Handler = (
       );
 
       break;
-    case CCODES.INIT_FAILED:
-      log.error('Failed to Initialize Repository', response);
+    case CCODES.INIT_DIR_FAILED:
+      ShowError(response.exception?.type, response.exception?.msg);
+      // ShowInfo(response.exception?.type, response.exception?.msg);
+      log.error('INIT_DIR_FAILED', response);
       break;
     case CCODES.ALL_FOLDERS_CREATED_DRIVE:
       log.info('Uncreated Folders are Created in drive', response.data);

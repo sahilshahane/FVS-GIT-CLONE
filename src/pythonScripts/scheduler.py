@@ -88,8 +88,9 @@ def Init_Dir(task):
         # FINALLY NOTIFY THE CALLER / GUI / NODEjs
         return {"code": CCODES["INIT_DONE"], "msg": "Repository Initialization Completed", "data": task["data"]}
     except FileExistsError as e:
-        return {"code": CCODES["INIT_FAILED"], "msg": "Repository Initialization Failed", "data": task["data"], "exception": {"code": e.errno, "type": e.__class__.__name__}}
-
+        return {"code": CCODES["INIT_DIR_FAILED"], "data": task["data"], "exception": {"code": e.errno, "type": e.__class__.__name__,  "msg": "Repository Initialization Failed"}}
+    except FileNotFoundError as e:
+        return {"code": CCODES["INIT_DIR_FAILED"], "data": task["data"], "exception": {"code": e.errno, "type": e.__class__.__name__, "msg": "Please make sure the folder exists"}}
 
 def uploadFile(task):
     RepoID = task["data"]["RepoID"]
@@ -226,10 +227,10 @@ def aloneMain():
     import tests
 
     # addTask(tests.startGoogleLogin())
-    # addTask(tests.initDir())
+    addTask(tests.initDir())
     # addTask(tests.creatFoldersInDrive(repoRootDriveID=))
     # addTask(tests.checkDriveChanges(repoRootDriveID=))
-    addTask(tests.checkLocalChanges())
+    # addTask(tests.checkLocalChanges())
 
 def GUI_LAUNCH():
 

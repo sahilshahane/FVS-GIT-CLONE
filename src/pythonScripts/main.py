@@ -214,7 +214,7 @@ def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
                       driveID TEXT,
                       folderPath TEXT PRIMARY KEY,
                       deleted INTEGER,
-                      UNIQUE(folderName,folder_id)
+                      UNIQUE(folderPath,folder_id)
                     )''')
 
   cur.execute(f'''CREATE TABLE temp_files (
@@ -228,7 +228,7 @@ def initialize(CCODES, APP_SETTINGS, DIR_PATH, force=False):
                       folderName TEXT NOT NULL,
                       folder_id TEXT NOT NULL,
                       folderPath TEXT PRIMARY KEY,
-                      UNIQUE(folderName,folder_id)
+                      UNIQUE(folderPath,folder_id)
                     )''')
 
   cur.close()
