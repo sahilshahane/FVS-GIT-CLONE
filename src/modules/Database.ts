@@ -27,6 +27,7 @@ export const disconnectDB = (RepoID: string) => {
   try {
     if (DB_CONNECTIONS[RepoID]) {
       DB_CONNECTIONS[RepoID].close();
+      delete DB_CONNECTIONS[RepoID];
       log.info(TAG, 'Disconnected from database', { RepoID });
     } else {
       log.warn(
@@ -39,6 +40,12 @@ export const disconnectDB = (RepoID: string) => {
     return false;
   }
   return true;
+};
+
+export const disconnectDB_all = () => {
+  Object.keys(DB_CONNECTIONS).forEach((RepoID) => {
+    disconnectDB(RepoID);
+  });
 };
 
 const getDB = (RepoID: string | number) => {
@@ -57,38 +64,6 @@ const getDB = (RepoID: string | number) => {
   return DB;
 };
 
-export const getRemainingUploadsName = (RepoID: string | number) => {
-  const DB = getDB(RepoID);
-
-  // THIS STATEMENT RETURNS fileName, directoryName, parentPath
-  // const stmt = DB.prepare(`SELECT name as fileName,
-  //                         (SELECT name from folders WHERE folder_id = files.folder_id ) AS folderName,
-  //                         (SELECT parentPath from folders WHERE folder_id = files.folder_id ) AS parentPath FROM files
-  //                           WHERE uploaded IS NULL`);
-
-  const response = DB.prepare(
-    'SELECT fileName from files WHERE uploaded IS NULL'
-  ).all();
-
-  return response;
-};
-
-export const getRemainingDownloadsName = (RepoID: string | number) => {
-  const DB = getDB(RepoID);
-
-  // THIS STATEMENT RETURNS fileName, directoryName, parentPath
-  // const stmt = DB.prepare(`SELECT name as fileName,
-  //                         (SELECT name from folders WHERE folder_id = files.folder_id ) AS folderName,
-  //                         (SELECT parentPath from folders WHERE folder_id = files.folder_id ) AS parentPath FROM files
-  //                           WHERE uploaded IS NULL`);
-
-  const response = DB.prepare(
-    'SELECT fileName from files WHERE downloaded IS NULL'
-  ).all();
-
-  return response;
-};
-
 export const getFinishedUploadsName = (RepoID: number) => {
   const DB = getDB(RepoID);
 
@@ -104,22 +79,24 @@ export const getFinishedUploadsName = (RepoID: number) => {
 
   return response;
 };
+export type getRemainingQueue_ = (
+  RepoID: string,
+  limit?: number
+) => DoingQueue[];
 
-export const getRemainingUploads = (RepoID: string, limit = -1) => {
+export const getRemainingUploads: getRemainingQueue_ = (
+  RepoID: string,
+  limit = -1
+) => {
   const DB = getDB(RepoID);
 
   const file_data = DB.prepare(
-    `SELECT fileName, driveID, folder_id FROM files WHERE uploaded IS NULL LIMIT ?`
+    `SELECT files.fileName, files.driveID, files.folder_id, folders.folderPath, folders.driveID AS parentDriveID FROM files,folders WHERE files.folder_id = folders.folder_id AND files.deleted IS NULL AND files.uploaded IS NULL LIMIT ?`
   ).all(limit);
 
-  const stmt_folders = DB.prepare(
-    `SELECT folderName, folderPath, driveID AS parentDriveID FROM folders WHERE folder_id = ?`
-  );
-
   const response: Array<DoingQueue> = file_data.map(
-    ({ fileName, driveID, folder_id }) => {
-      const { folderPath, parentDriveID } = stmt_folders.all(folder_id)[0];
-      const filePath = path.join(folderPath, fileName);
+    ({ fileName, driveID, folder_id, folderPath, parentDriveID }) => {
+      const filePath = path.resolve(folderPath, fileName);
       return { RepoID, fileName, filePath, driveID, parentDriveID, folder_id };
     }
   );
@@ -127,24 +104,57 @@ export const getRemainingUploads = (RepoID: string, limit = -1) => {
   return response;
 };
 
-export const getRemainingDownloads = (RepoID: string, limit = -1) => {
+export const getRemainingDownloads: getRemainingQueue_ = (
+  RepoID,
+  limit = -1
+) => {
   const DB = getDB(RepoID);
 
   const file_data = DB.prepare(
-    `SELECT fileName, driveID, folder_id FROM files WHERE downloaded IS NULL LIMIT ?`
+    'SELECT files.fileName, files.driveID, files.folder_id, folders.folderPath, folders.driveID AS parentDriveID FROM files,folders WHERE files.folder_id = folders.folder_id AND files.deleted IS NULL AND files.downloaded IS NULL LIMIT ?'
   ).all(limit);
 
-  const stmt_folders = DB.prepare(
-    `SELECT folderName, folderPath, driveID AS parentDriveID FROM folders WHERE folder_id = ?`
+  const response: Array<DoingQueue> = file_data.map(
+    ({ fileName, driveID, folder_id, folderPath, parentDriveID }) => {
+      const filePath = path.resolve(folderPath, fileName);
+      return { RepoID, fileName, filePath, driveID, parentDriveID, folder_id };
+    }
   );
 
-  const response: Array<DoingQueue> = file_data.map(
-    ({ fileName, driveID, folder_id }) => {
-      const { folderPath, parentDriveID } = stmt_folders.all(folder_id)[0];
+  return response;
+};
+
+interface DeletingQueue {
+  files: DoingQueue[];
+  folders: Array<{
+    folderPath: string;
+    driveID: string;
+    folderName: string;
+  }>;
+}
+
+export const getRemainingDeletes = (RepoID: string) => {
+  const DB = getDB(RepoID);
+
+  const file_data = DB.prepare(
+    'SELECT files.fileName, files.driveID, files.folder_id, folders.folderPath, folders.driveID AS parentDriveID FROM files,folders WHERE files.folder_id = folders.folder_id AND files.deleted = 1'
+  ).all();
+
+  const folder_data = DB.prepare(
+    'SELECT folderPath, driveID, folderName FROM folders WHERE deleted = 1'
+  ).all();
+
+  const file_response: Array<DoingQueue> = file_data.map(
+    ({ fileName, driveID, folder_id, folderPath, parentDriveID }) => {
       const filePath = path.join(folderPath, fileName);
       return { RepoID, fileName, filePath, driveID, parentDriveID, folder_id };
     }
   );
+
+  const response: DeletingQueue = {
+    files: file_response,
+    folders: folder_data,
+  };
 
   return response;
 };
@@ -404,7 +414,7 @@ export const removeFileRepoDB: removeFileRepoDB_ = (RepoID, data) => {
   const DB = getDB(RepoID);
 
   const stmt = DB.prepare(
-    'DELETE FROM files WHERE driveID = @driveID AND folder_id = @folder_id'
+    'UPDATE files SET deleted = 2 WHERE driveID = @driveID AND folder_id = @folder_id'
   );
 
   const run = DB.transaction(() => {

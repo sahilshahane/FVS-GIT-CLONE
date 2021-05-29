@@ -6,10 +6,12 @@ import AppSettingsReducer, {
   AppSettings_DATA_STRUCTURE,
 } from './AppSettingsSlicer';
 import User_Repository_Reducer, {
+  removeRepository,
   USER_REPOSITORY_DATA_STRUCTURE,
 } from './UserRepositorySlicer';
 import SynchronizationSlice, {
   addUploadFinishedQueue,
+  removeRepositorySyncData,
   SYNC_DATA_STRUCTURE,
   updateUploadingQueue,
 } from './SynchronizationSlicer';
@@ -32,6 +34,10 @@ export default configureStore({
             storeAPI.dispatch(
               updateUploadingQueue(storeAPI.getState().UserRepoData)
             );
+            break;
+          case removeRepository.type:
+            next(removeRepositorySyncData(action));
+            next(action);
             break;
           default:
             next(action);

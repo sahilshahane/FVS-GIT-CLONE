@@ -7,6 +7,7 @@ import {
   USER_REPOSITORY_DATA,
   USER_REPOSITORY_DATA_FILE_PATH,
 } from '../modules/get_AppData';
+import { disconnectDB } from '../modules/Database';
 
 const TAG = 'UserRepositorySlicer.ts > ';
 
@@ -138,23 +139,19 @@ export const USER_REPOSITORY_Slice = createSlice({
     saveUserRepositoryData: (state) => {
       SAVE(state);
     },
-    clearUserRepositories: (state) => {
-      state.info = {};
-      log.info(TAG, 'Clearing All User Repositories');
-      SAVE(state);
-    },
     setSyncStatus: (state, action: setSyncStatus) => {
       const { RepoID, status } = action.payload;
       state.info[RepoID].syncStatus = status;
     },
     removeRepository: (state, action: removeRepository_) => {
-      const repoToBeRemoved = state.info[action.payload];
-      delete state.info[action.payload];
+      const RepoID = action.payload;
+      disconnectDB(RepoID);
       log.warn(
         TAG,
-        'Removed a Repository',
-        JSON.parse(JSON.stringify(repoToBeRemoved))
+        'Removing Repository',
+        JSON.parse(JSON.stringify(state.info[RepoID]))
       );
+      delete state.info[action.payload];
       return state;
     },
   },
@@ -165,7 +162,6 @@ export const {
   setCurrentDirectory,
   saveUserRepositoryData,
   setRepositoryTrackingInfo,
-  clearUserRepositories,
   removeRepository,
 } = USER_REPOSITORY_Slice.actions;
 

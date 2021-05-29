@@ -15,6 +15,8 @@ import {
 } from '../modules/get_AppData';
 import { USER_REPOSITORY_DATA_STRUCTURE } from './UserRepositorySlicer';
 
+const TAG = 'SynchronizationSlicer.ts';
+
 export interface SYNC_INPUT {
   fileName: string;
   filePath: string;
@@ -249,6 +251,24 @@ export const SynchronizationSlice = createSlice({
         }
       });
     },
+    removeRepositorySyncData: (
+      state,
+      { payload: RepoID }: { payload: string }
+    ) => {
+      state.uploadingQueue = state.uploadingQueue.filter(
+        (val) => val.RepoID !== RepoID
+      );
+      if (state.uploadFinishedQueue[RepoID])
+        delete state.uploadFinishedQueue[RepoID];
+
+      state.downloadingQueue = state.downloadingQueue.filter(
+        (val) => val.RepoID !== RepoID
+      );
+      if (state.downloadFinishedQueue[RepoID])
+        delete state.downloadFinishedQueue[RepoID];
+
+      log.warn(TAG, 'Removed Repository Sync Data');
+    },
     showUploadsDrawer: (state) => {
       state.showUploadsDrawer = true;
       state.showDownloadsDrawer = false;
@@ -273,6 +293,7 @@ export const {
   updateDownloadingQueue,
   addUploadFinishedQueue,
   addDownloadFinishedQueue,
+  removeRepositorySyncData,
 } = SynchronizationSlice.actions;
 
 export const SYNC_ACTIONS = SynchronizationSlice.actions;
