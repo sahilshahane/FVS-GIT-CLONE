@@ -19,7 +19,7 @@ import pathlib
 import google_auth_httplib2
 from urllib.error import HTTPError
 import httplib2
-import mimetypes
+from mimetypes import guess_type
 import io
 import pyrfc3339
 from datetime import datetime
@@ -273,40 +273,37 @@ def getMime(filePath):
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "application/vnd.google-apps.spreadsheet",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation": "application/vnd.google-apps.presentation"
     }
-    if mimetypes.guess_type(filePath)[0] in fileExtension:
-        return fileExtension[mimetypes.guess_type(filePath)[0]]
-    else: return ""
-
-def updateFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID):
-    service = getService(CCODES)
-    media = MediaFileUpload(filePath, resumable=True)
-    response = service.files().update(
-        media_body=media,
-        fileId=driveID
-    ).execute()
-
-    print(response)
-    return response['id']
+    if guess_type(filePath)[0] in fileExtension:
+        return fileExtension[guess_type(filePath)[0]]
+    else: return guess_type(filePath)[0]
 
 def uploadFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID):
+    output("!!!!!!!!!!!UPLOADING!!!!!!!!!!!!!!")
     service = getService(CCODES)
-    # mimeType = getMime(filePath)
-    metaData = {
-        "name": fileName,
-        "parents": [parentDriveID]
-    }
-    # output(f"!!!!!!!!!!!!!!!!!!!!!!!!!{mimeType}")
-    # if(mimeType):
-    #     metaData["mimeType"]=mimeType
+    mimeType = getMime(filePath)
+    try:
+        metaData = {
+            "name": fileName,
+            "parents": [parentDriveID],
+            "mimeType": mimeType
+        }
+        if(driveID):
+            metaData["id"] = driveID
 
-    if(driveID):
-        metaData["id"] = driveID
+        media = MediaFileUpload(filePath, resumable=True)
+        response = service.files().create(
+            body=metaData, media_body=media, fields='id').execute()
 
-    media = MediaFileUpload(filePath)
-    response = service.files().create(
-        body=metaData, media_body=media, fields='id').execute()
-
-    driveID = response['id']
+        driveID = response['id']
+    except Exception as err:
+        output("!!!!!!!!!!!!!!!!!!UPDATING FILE!!!!!!!!!!!!!!!!!")
+        
+        media = MediaFileUpload(filePath, resumable=True)
+        response = service.files().update(
+            media_body=media,
+            fileId=driveID
+        ).execute()
+        driveID = response['id']
 
     # if(os.path.getsize(filePath)/(10**6) < 6):
     #   media = MediaFileUpload(filePath)

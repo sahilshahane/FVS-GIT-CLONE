@@ -1,40 +1,11 @@
 [
   {
-    "name": "adsaad",
+    "name": "delete2",
     "mimeType": "application/vnd.google-apps.document",
     "actions": {
-      "edit": {},
-      "move": {
-        "addedParents": [
-          {
-            "driveItem": {
-              "name": "items/13gFxP0nfZVwOkPopgsPnUD0PHpuKxi4r",
-              "title": "Testing",
-              "folder": {
-                "type": "STANDARD_FOLDER"
-              },
-              "driveFolder": {
-                "type": "STANDARD_FOLDER"
-              }
-            }
-          }
-        ],
-        "removedParents": [
-          {
-            "driveItem": {
-              "name": "items/0AEHi7cZJu23bUk9PVA",
-              "folder": {
-                "type": "MY_DRIVE_ROOT"
-              },
-              "driveFolder": {
-                "type": "MY_DRIVE_ROOT"
-              }
-            }
-          }
-        ]
-      }
+      "edit": {}
     },
-    "timestamp": 1622237826000,
-    "parents": "13gFxP0nfZVwOkPopgsPnUD0PHpuKxi4r"
+    "timestamp": 1622301941000,
+    "parents": "1qGsZBW981AOtVpwCoChBviN8DUew--mp"
   }
 ]
