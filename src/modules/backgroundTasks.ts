@@ -12,7 +12,7 @@ import {
 import Reduxstore from '../Redux/store';
 import { createRepoFoldersInDrive } from './GoogleDrive';
 import { InitializeDatabase } from './Database';
-import { trackingInfo_ } from '../Redux/UserRepositorySlicer';
+import { removeRepository, trackingInfo_ } from '../Redux/UserRepositorySlicer';
 import { checkLocalChanges } from './changes';
 import ShowError from './ErrorPopup_dialog';
 

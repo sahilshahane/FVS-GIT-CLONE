@@ -246,11 +246,23 @@ const renameFolderNamefromDB = ({
   // run();
 };
 
-renameFolderNamefromDB({
-  RepoID: 'asdas',
-  driveID: '1bC2YZh6Chx8vDM8Csy2NxC6wUgoL70IU',
-  newFolderPath:
-    '/run/media/void/42E6C46EE6C4642F/MajorProject/LINUX_FVS_GIT_CLONE/Testing/oh rock on',
-  oldFolderPath:
-    '/run/media/void/42E6C46EE6C4642F/MajorProject/LINUX_FVS_GIT_CLONE/Testing/oh yes',
-});
+// renameFolderNamefromDB({
+//   RepoID: 'asdas',
+//   driveID: '1bC2YZh6Chx8vDM8Csy2NxC6wUgoL70IU',
+//   newFolderPath:
+//     '/run/media/void/42E6C46EE6C4642F/MajorProject/LINUX_FVS_GIT_CLONE/Testing/oh rock on',
+//   oldFolderPath:
+//     '/run/media/void/42E6C46EE6C4642F/MajorProject/LINUX_FVS_GIT_CLONE/Testing/oh yes',
+// });
+
+console.log(
+  DB.prepare(
+    'SELECT files.fileName, files.driveID, files.folder_id, folders.folderPath, folders.driveID AS parentDriveID FROM files,folders WHERE files.folder_id = folders.folder_id AND files.deleted IS NULL AND files.downloaded IS NULL LIMIT ?'
+  ).all(2)
+);
+
+console.log(
+  DB.prepare(
+    'SELECT folderPath, driveID, folderName FROM folders WHERE deleted = 1'
+  ).all()
+);

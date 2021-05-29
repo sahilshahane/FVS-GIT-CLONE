@@ -469,14 +469,6 @@ export const performGDriveChanges = ({
 }: PerformGDriveChangesIF) => {
   const failedUpdates: { driveID: string; error: any }[] = [];
 
-  fs.writeJSONSync(
-    './data.json',
-    getSortedChanges(changes).map((driveID) => changes[driveID]),
-    {
-      spaces: 2,
-    }
-  );
-
   getSortedChanges(changes).every((driveID) => {
     try {
       const ChangeObj = getChangeObject(RepoID, driveID, changes[driveID]);

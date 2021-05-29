@@ -16,9 +16,11 @@ import Login from './Pages/Login';
 import GlobalScriptHandler from './modules/GlobalHandler';
 import {
   clearUserRepositories,
+  removeRepository,
   saveUserRepositoryData,
 } from './Redux/UserRepositorySlicer';
-
+import ReduxStore from './Redux/store';
+import { disconnectDB_all } from './modules/Database';
 // Top Routes
 const MAIN = () => {
   const history = useHistory();
@@ -32,9 +34,15 @@ const MAIN = () => {
       dispatch(saveUserRepositoryData())
     );
 
-    ipcRenderer.on('clear-user-repositories', () =>
-      dispatch(clearUserRepositories())
-    );
+    ipcRenderer.on('clear-user-repositories', () => {
+      const {
+        UserRepoData: { info },
+      } = ReduxStore.getState();
+
+      Object.keys(info).forEach((RepoID) =>
+        ReduxStore.dispatch(removeRepository(RepoID))
+      );
+    });
   }, []);
 
   const isGoogleLoggedIN = useSelector(
