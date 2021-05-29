@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { FC } from 'react';
+import React, { FC, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Drawer, List, Collapse } from 'antd';
 import { nanoid } from '@reduxjs/toolkit';
@@ -80,10 +80,19 @@ const BaseDrawer: FC<BaseDrawer_> = ({
   remainingQueueFunction,
 }) => {
   const UserRepos = useSelector((state: store) => state.UserRepoData.info);
+  const [activeLKey, setActiveKey] = useState<string | string[]>(['']);
 
+  const handleOnChange = (key: string | string[]) => {
+    setActiveKey(key);
+  };
   return (
-    <Collapse bordered={false} style={{ margin: 0, padding: 0, width: 300 }}>
-      {Object.keys(UserRepos).map((RepoID) => {
+    <Collapse
+      bordered={false}
+      style={{ margin: 0, padding: 0, width: 300 }}
+      onChange={handleOnChange}
+      activeKey={activeLKey}
+    >
+      {Object.keys(UserRepos).map((RepoID, index) => {
         const waitingQueue = remainingQueueFunction(RepoID).filter((val1) => {
           return !(
             doingQueue.find((val) => val.filePath === val1.filePath) ||
@@ -102,10 +111,7 @@ const BaseDrawer: FC<BaseDrawer_> = ({
 
         if (shouldShow)
           return (
-            <Collapse.Panel
-              header={UserRepos[RepoID].displayName}
-              key={nanoid()}
-            >
+            <Collapse.Panel header={UserRepos[RepoID].displayName} key={index}>
               {doingQueue.length ? (
                 <List
                   dataSource={doingQueue}

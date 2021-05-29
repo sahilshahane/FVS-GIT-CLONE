@@ -41,7 +41,12 @@ const FileSysten_NavigationBar = () => {
   const [BreadCrumbPath, setBreadCrumbPath] = useState<string[]>([]);
 
   useEffect(() => {
-    if (currentDirectory !== 'Home' && currentDirectory && RepoID) {
+    if (
+      currentDirectory !== 'Home' &&
+      currentDirectory &&
+      RepoID &&
+      UserRepoData.info[RepoID]
+    ) {
       const RepoInfo = UserRepoData.info[RepoID];
 
       const newBreadLoc = currentDirectory

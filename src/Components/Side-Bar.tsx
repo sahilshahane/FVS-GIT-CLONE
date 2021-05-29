@@ -2,7 +2,11 @@ import React, { useState, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { Layout, Menu, Divider } from 'antd';
 import { VscSyncIgnored } from 'react-icons/vsc';
-import { IoCloudUploadSharp, IoCloudDownloadSharp } from 'react-icons/io5';
+import {
+  IoCloudUploadSharp,
+  IoCloudDownloadSharp,
+  IoSyncCircle,
+} from 'react-icons/io5';
 import log from 'electron-log';
 import Profile from './Side-Bar_Profile';
 import IgnoreDataSelector from './IgnoreDataSelector';
@@ -10,6 +14,7 @@ import {
   showDownloadsDrawer,
   showUploadsDrawer,
 } from '../Redux/SynchronizationSlicer';
+import SyncFiles from './SidebarItems/SyncFiles';
 
 const { Sider } = Layout;
 
@@ -35,14 +40,14 @@ const SiderBar = () => {
           <Profile showName={collapsed} />
         </Divider>
         <Menu theme="dark" mode="inline" style={{ backgroundColor: 'inherit' }}>
-          <Menu.Item
+          {/* <Menu.Item
             key="StateIgnore"
             icon={<VscSyncIgnored />}
             onClick={() => IgnoreRef.current.show()}
           >
             Ignore Files
             <IgnoreDataSelector ref={IgnoreRef} />
-          </Menu.Item>
+          </Menu.Item> */}
 
           <Menu.Item
             icon={<IoCloudUploadSharp />}
@@ -57,6 +62,7 @@ const SiderBar = () => {
           >
             Downloads
           </Menu.Item>
+          <SyncFiles/>
         </Menu>
       </Sider>
     </div>
