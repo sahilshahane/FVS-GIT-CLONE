@@ -3,20 +3,30 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col } from 'antd';
 import { useSelector, useDispatch } from 'react-redux';
-import { nanoid } from '@reduxjs/toolkit';
+import { current, nanoid } from '@reduxjs/toolkit';
 import { fdir as FDIR } from 'fdir';
 import log from 'electron-log';
 import path from 'path';
 import { File, Folder, Repository } from './folder-area-ui';
 import { store } from '../Redux/store';
 import { setMediaFileStack } from '../Redux/MediaPlayerSlicer';
-import { getAllFilesWithPaths } from '../modules/Database';
+import {
+  getAllFilesWithPaths,
+  checkAllFilesSynced,
+  getAllFolders,
+  checkFilesSyncedOrNot,
+} from '../modules/Database';
+
+interface folderPathAndID {
+  folderPath: string;
+  folder_id: string;
+  synced?: boolean;
+}
 
 const ALL_Repositories = () => {
   const repositoryData = useSelector((state: store) => {
     return state.UserRepoData.info;
   });
-
   return (
     <Row gutter={[5, 5]} className="folder-area">
       {Object.keys(repositoryData).map((repoID) => {
@@ -31,6 +41,7 @@ const ALL_Repositories = () => {
               key={nanoid()}
               RepoID={repoID}
               info={repositoryData[repoID]}
+              syncStatus={checkAllFilesSynced(repoID)}
             />
           </Col>
         );
@@ -74,19 +85,85 @@ const Selected_Repository_Directory = () => {
   const repositoryData = useSelector((state: store) => {
     return state.UserRepoData.info;
   });
+
   const syncStatusInfo = {};
+  let currentRepoID = '';
+  Object.keys(repositoryData).every((RepoID) => {
+    if (currentDirectory?.includes(repositoryData[RepoID].localLocation)) {
+      currentRepoID = RepoID;
+      return false;
+    }
+    return true;
+  });
 
-  if (FILES) {
-    let currentRepoID = '';
-
-    Object.keys(repositoryData).forEach((RepoID) => {
-      if (currentDirectory.includes(repositoryData[RepoID].localLocation)) {
-        currentRepoID = RepoID;
-      }
-    });
+  if (FILES.length !== 0 && currentDirectory) {
     getAllFilesWithPaths(currentRepoID).forEach((file) => {
       const absPath = path.join(currentDirectory, file.fileName);
       syncStatusInfo[absPath] = file.uploaded;
+    });
+  }
+
+  const allFolders: folderPathAndID[] = getAllFolders(currentRepoID);
+  let directChildFolders: folderPathAndID[] = [];
+
+  const checkFolderSynced = (folder: folderPathAndID): boolean => {
+    const filesSynced = checkFilesSyncedOrNot(currentRepoID, folder.folder_id);
+    if (!filesSynced) {
+      return false;
+    }
+
+    const childFolders = allFolders.filter((child) => {
+      if (
+        child.folderPath.includes(folder.folderPath) &&
+        child.folderPath !== folder.folderPath &&
+        child.folderPath
+          .substr(folder.folderPath.length + 1)
+          .indexOf(path.sep) === -1 &&
+        path.dirname(child.folderPath) === folder.folderPath
+      ) {
+        return true;
+      }
+      return false;
+    });
+
+    let synced = true;
+    childFolders.every((childFolder) => {
+      synced = checkFolderSynced(childFolder);
+      if (!synced) {
+        synced = false;
+        return false;
+      }
+      return true;
+    });
+    return synced;
+  };
+
+  if (FOLDERS.length !== 0) {
+    directChildFolders = allFolders.filter((folder) => {
+      const { folderPath } = folder;
+      // I know the below condition doesn't explain what this condition does, sorry for that
+      // This basically finds the direct children of a directory. Children as in the folders, i.e. the direct folders
+      // eg. currentDirectory -> a/b/c/d
+      //     rest of the dirs ->a/b/c/d - a/b/c/d/e - a/b/c/d/e/f/g - a/b/c/d/i - a/b/c/d/j/k
+      //     So this if will will only be true for -> a/b/c/d/e and a/b/c/d/i
+      //     Cuz they are the direct first children folders and not some grandchildren folders.
+      // Here the folderPath represents one path out of all the folder paths in that repo.
+      if (
+        currentDirectory &&
+        folderPath.includes(currentDirectory) &&
+        folderPath !== currentDirectory &&
+        folderPath.substr(currentDirectory.length + 1).indexOf(path.sep) ===
+          -1 &&
+        path.dirname(folderPath) === currentDirectory
+      ) {
+        return true;
+      }
+      return false;
+    });
+    // console.log(directChildFolders);
+    directChildFolders.forEach((childFolder) => {
+      const result: boolean = checkFolderSynced(childFolder);
+      childFolder.synced = result;
     });
   }
 
@@ -95,11 +172,11 @@ const Selected_Repository_Directory = () => {
       console.log('Changing...', currentDirectory);
       set_FILES([]);
       set_FOLDERS([]);
+
       // FOR FOLDERS
       getFolders(currentDirectory)
         .then((folderPaths) => {
           set_FOLDERS(folderPaths);
-
           return folderPaths;
         })
         .catch((err) => log.error('Failed Retrieving Folders', err));
@@ -125,7 +202,7 @@ const Selected_Repository_Directory = () => {
   return (
     <Row gutter={[5, 5]} className="folder-area">
       {/* ~~~~~~~~~~~~~RENDERS FOLDER~~~~~~~~~~~~~ */}
-      {FOLDERS.map((folderPath: string) => {
+      {directChildFolders.map((childFolder) => {
         return (
           <Col
             xs={{ span: 24 }}
@@ -133,7 +210,11 @@ const Selected_Repository_Directory = () => {
             md={{ span: 6 }}
             key={nanoid()}
           >
-            <Folder id={nanoid()} folderPath={folderPath} />
+            <Folder
+              id={nanoid()}
+              folderPath={childFolder.folderPath}
+              syncStatus={childFolder.synced}
+            />
           </Col>
         );
       })}
