@@ -378,6 +378,15 @@ body {
   overflow: hidden;
 }
 
+.no-connection-message{
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  position: absolute;
+  z-index: 100;
+}
+
 /* Zombie code indexes */
 
 /*      1

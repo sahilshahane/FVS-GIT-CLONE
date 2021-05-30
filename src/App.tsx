@@ -8,6 +8,7 @@ import SideBar from './Components/Side-Bar';
 import AddFolder from './Components/Add-Folder';
 import MediaPlayer from './Components/MediaPlayer';
 import { LOAD_ONCE_AFTER_APP_READY } from './modules/backgroundTasks';
+import ConnectionError from './Components/ConnectionError';
 
 const { Content } = Layout;
 
@@ -21,6 +22,7 @@ const App = () => {
   return (
     <Layout>
       <SideBar />
+      <ConnectionError />
       <MediaPlayer />
       <Layout style={{ padding: 5 }} className="app-bg">
         <Content style={{ backgroundColor: 'inherit' }}>
