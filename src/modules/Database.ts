@@ -5,9 +5,9 @@
 import Sqlite3, { Statement } from 'better-sqlite3';
 import path from 'path';
 import log from 'electron-log';
+import md5 from 'md5';
 import Reduxstore from '../Redux/store';
 import { DoingQueue } from '../Redux/SynchronizationSlicer';
-import md5 from 'md5';
 
 const TAG = 'Database.ts > ';
 
@@ -594,7 +594,7 @@ export const renameFolderNamefromDB: renameFolderNamefromDB_ = ({
   run();
 };
 
-export const getAllFilesWithPaths = (RepoID: String) => {
+export const getAllFilesWithPaths = (RepoID: string) => {
   const DB = getDB(RepoID);
   const response = DB.prepare(
     'SELECT files.fileName, files.folder_id, files.modified_time, files.driveID, files.uploaded, files.downloaded, files.deleted, files.fileHash, folders.folderPath FROM files INNER JOIN folders ON folders.folder_id = files.folder_id'
@@ -602,14 +602,42 @@ export const getAllFilesWithPaths = (RepoID: String) => {
   return response;
 };
 
-export const getAllFiles = (RepoID: String) => {
+export const getAllFiles = (RepoID: string) => {
   const DB = getDB(RepoID);
   const response = DB.prepare('SELECT * FROM files').all();
   return response;
 };
 
-export const getAllFolders = (RepoID: String) => {
+export const getAllFolders = (RepoID: string) => {
   const DB = getDB(RepoID);
-  const response = DB.prepare('SELECT * FROM folders').all();
+  const response = DB.prepare(
+    `SELECT folderPath, folder_id FROM folders`
+  ).all();
   return response;
+};
+
+export const checkAllFilesSynced = (RepoID: string): boolean => {
+  const DB = getDB(RepoID);
+  const response = DB.prepare(
+    'SELECT * FROM files WHERE uploaded=0 OR uploaded IS NULL'
+  ).all();
+  // true if the files arent uploaded
+  if (response.length > 0) {
+    return false;
+  }
+  return true;
+};
+
+export const checkFilesSyncedOrNot = (
+  RepoID: string,
+  folder_id: string
+): boolean => {
+  const DB = getDB(RepoID);
+  const response = DB.prepare(
+    `SELECT * FROM files WHERE (files.folder_id = '${folder_id}') AND (uploaded=0 OR uploaded IS NULL)`
+  ).all();
+  if (response.length > 0) {
+    return false;
+  }
+  return true;
 };

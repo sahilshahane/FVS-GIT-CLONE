@@ -45,7 +45,7 @@ export const File = ({ currDir, filePath, syncStatusInfo }: any) => {
   );
 };
 
-export const Folder = ({ folderPath }: any) => {
+export const Folder = ({ folderPath, syncStatus }: any) => {
   const dispatch = useDispatch();
 
   const folderName = path.basename(folderPath);
@@ -54,7 +54,7 @@ export const Folder = ({ folderPath }: any) => {
     dispatch(setCurrentDirectory({ localLocation: folderPath }));
   };
 
-  const syncStatus = false;
+  // const syncStatus = false;
 
   return (
     <div onDoubleClick={changeLocation} className="folder-ui">
@@ -73,9 +73,11 @@ export const Folder = ({ folderPath }: any) => {
 export const Repository = ({
   RepoID,
   info,
+  syncStatus,
 }: {
   RepoID: string;
   info: RepositoryInfo;
+  syncStatus: boolean;
 }) => {
   const dispatch = useDispatch();
   const { localLocation } = info;
@@ -95,7 +97,7 @@ export const Repository = ({
           {info.displayName}
         </p>
       </div>
-      <span className={info.syncStatus ? 'synced-true' : 'synced-false'} />
+      <span className={syncStatus ? 'synced-true' : 'synced-false'} />
     </div>
   );
 };

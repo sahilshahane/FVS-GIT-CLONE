@@ -31,7 +31,6 @@ const MediaPlayer = () => {
   }
 
   useEffect(() => {
-    console.log('IN UE 1');
     if (
       currentPlayingIndex < mediaFileStack.length &&
       currentPlayingIndex >= 0
@@ -51,7 +50,6 @@ const MediaPlayer = () => {
   }, [currentPlayingIndex]);
 
   useEffect(() => {
-    console.log('IN UE 2');
     if (
       mediaFileStack.length &&
       currentPlayingPath !== mediaLocation &&
