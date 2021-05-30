@@ -11,10 +11,14 @@ interface operations_ {
 
 let operations: operations_ = {};
 
+export class SyncInProgress extends Error {}
+
 export const checkLocalChanges = (RepoID: string, repoData: RepositoryInfo) => {
   if (!operations[RepoID]) operations[RepoID] = {};
 
   if (!operations[RepoID].localChanges && !operations[RepoID].onlineChanges) {
+    console.warn(`Syncing Repository`, repoData);
+
     sendSchedulerTask({
       code: CCODES.CHECK_LOCAL_CHANGES,
       data: {
@@ -27,6 +31,8 @@ export const checkLocalChanges = (RepoID: string, repoData: RepositoryInfo) => {
       ...operations[RepoID],
       localChanges: true,
     };
+  } else {
+    throw new SyncInProgress();
   }
 };
 
@@ -66,4 +72,17 @@ export const setCheckingOperationChanges = ({
   if (!operations[RepoID]) operations[RepoID] = {};
 
   operations[RepoID][type] = value;
+};
+
+export const scheduleSync = (RepoID: string) => {
+  try {
+    setTimeout(() => {
+      const {
+        UserRepoData: { info: Repositories },
+      } = Reduxstore.getState();
+      checkLocalChanges(RepoID, Repositories[RepoID]);
+    }, 1000 * 60 * 60);
+  } catch (e) {
+    scheduleSync(RepoID);
+  }
 };

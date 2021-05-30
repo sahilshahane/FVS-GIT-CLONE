@@ -10,8 +10,6 @@ import Page_404 from './Pages/Page_404';
 
 // Inner Routes
 const InnerRoutes = () => {
-  log.info('Rendering InnerRoutes.tsx');
-
   return (
     <div style={{ width: '100%' }}>
       <Switch>

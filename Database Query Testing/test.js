@@ -255,14 +255,20 @@ const renameFolderNamefromDB = ({
 //     '/run/media/void/42E6C46EE6C4642F/MajorProject/LINUX_FVS_GIT_CLONE/Testing/oh yes',
 // });
 
-console.log(
-  DB.prepare(
-    'SELECT files.fileName, files.driveID, files.folder_id, folders.folderPath, folders.driveID AS parentDriveID FROM files,folders WHERE files.folder_id = folders.folder_id AND files.deleted IS NULL AND files.downloaded IS NULL LIMIT ?'
-  ).all(2)
-);
+// console.log(
+//   DB.prepare(
+//     'SELECT files.fileName, files.driveID, files.folder_id, folders.folderPath, folders.driveID AS parentDriveID FROM files,folders WHERE files.folder_id = folders.folder_id AND files.deleted IS NULL AND files.downloaded IS NULL LIMIT ?'
+//   ).all(2)
+// );
+
+// console.log(
+//   DB.prepare(
+//     'SELECT folderPath, driveID, folderName FROM folders WHERE deleted = 1'
+//   ).all()
+// );
 
 console.log(
   DB.prepare(
-    'SELECT folderPath, driveID, folderName FROM folders WHERE deleted = 1'
-  ).all()
+    "SELECT * FROM folders WHERE folder_id = 'fa6a53224d7da66d9e0bdec25f62cf0'"
+  ).get()
 );

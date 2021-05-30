@@ -48,7 +48,7 @@ export const disconnectDB_all = () => {
   });
 };
 
-const getDB = (RepoID: string | number) => {
+const getDB = (RepoID: string) => {
   // IF DB EXSISTS IN DB_CONNECTIONS, just Return it
   if (DB_CONNECTIONS[RepoID]) return DB_CONNECTIONS[RepoID];
 
@@ -477,7 +477,7 @@ export const setRepoDownload: setRepoDownload_ = (RepoID, data) => {
 type getFilePath_ = (data: {
   RepoID: string;
   driveID: string;
-}) => { folderPath: string; fileName: string };
+}) => { folderPath?: string; fileName?: string };
 
 export const getFilePathFromDB: getFilePath_ = ({ RepoID, driveID }) => {
   const DB = getDB(RepoID);
@@ -486,10 +486,11 @@ export const getFilePathFromDB: getFilePath_ = ({ RepoID, driveID }) => {
     'SELECT folders.folderPath, files.fileName from folders,files WHERE files.driveID = @driveID AND files.folder_id = folders.folder_id'
   );
 
-  const data = stmt.get({
+  let data = stmt.get({
     driveID,
   });
 
+  if (!data) data = {};
   // RUN THE TRANSACTION
   return data;
 };
@@ -497,18 +498,20 @@ export const getFilePathFromDB: getFilePath_ = ({ RepoID, driveID }) => {
 type getFolderPath_ = (data: {
   RepoID: string;
   driveID: string;
-}) => { folderName: string; folderPath: string };
+}) => { folderName?: string; folderPath?: string };
 
 export const getFolderPathFromDB: getFolderPath_ = ({ RepoID, driveID }) => {
   const DB = getDB(RepoID);
 
   const stmt = DB.prepare(
-    'SELECT folderName,folderPath from folders WHERE driveID = @driveID'
+    'SELECT folderName, folderPath from folders WHERE driveID = @driveID'
   );
 
-  const data = stmt.get({
+  let data = stmt.get({
     driveID,
   });
+
+  if (!data) data = {};
 
   // RUN THE TRANSACTION
   return data;
@@ -558,31 +561,39 @@ export const renameFolderNamefromDB: renameFolderNamefromDB_ = ({
 }) => {
   const DB = getDB(RepoID);
 
+  const { UserRepoData } = Reduxstore.getState();
+  const { localLocation } = UserRepoData.info[RepoID];
+
+  let regex = new RegExp('^' + oldFolderPath);
+
+  if (process.platform == 'win32')
+    regex = new RegExp('^' + oldFolderPath.replaceAll('\\', '\\\\'));
+
+  DB.function('MD5', (folderPath: string) => {
+    const newRelativePath = folderPath
+      .replace(regex, newFolderPath)
+      .substr(localLocation.lastIndexOf(path.sep) + 1);
+
+    return md5(newRelativePath);
+  });
+
+  // const stmt = DB.prepare(
+  //   'UPDATE folders SET folderName = @folderName, folderPath = @newFolderPath, folder_id = MD5(@newFolderPath) WHERE driveID = @driveID'
+  // );
+
   const stmt = DB.prepare(
     'UPDATE folders SET folderName = @folderName WHERE driveID = @driveID'
   );
 
-  const { UserRepoData } = Reduxstore.getState();
-  const { localLocation } = UserRepoData.info[RepoID];
-
-  const regex = new RegExp(`^${oldFolderPath}`);
-
-  DB.function('MD5', (folderPath: string) => {
-    const newPath = folderPath.replace(regex, newFolderPath);
-    const relativePath = newPath.substr(
-      localLocation.lastIndexOf(path.sep) + 1
-    );
-    return md5(relativePath);
-  });
-
   const stmt2 = DB.prepare(
-    "UPDATE OR REPLACE folders SET folderPath = REPLACE(folderPath,@oldFolderPath,@newFolderPath), folder_id = MD5(folderPath) WHERE folderPath LIKE @oldFolderPath || '%'"
+    "UPDATE OR REPLACE folders SET folder_id = MD5(folderPath), folderPath = REPLACE(folderPath,@oldFolderPath,@newFolderPath) WHERE folderPath LIKE @oldFolderPath || '%'"
   );
 
   const run = DB.transaction(() => {
     stmt.run({
       driveID,
       folderName,
+      newFolderPath,
     });
 
     stmt2.run({
