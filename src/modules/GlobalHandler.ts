@@ -27,6 +27,7 @@ import { performGDriveChanges, createRepoFoldersInDrive } from './GoogleDrive';
 import {
   checkGDriveChanges,
   checkLocalChanges,
+  scheduleSync,
   setCheckingOperationChanges,
 } from './changes';
 const TAG = 'GlobalHandler.ts';
@@ -48,6 +49,10 @@ const Handler = (
   history: History<unknown>
 ) => {
   // eslint-disable-next-line default-case
+
+  const {
+    UserRepoData: { info: Repositories },
+  } = ReduxStore.getState();
 
   switch (response.code) {
     case CCODES.INIT_DONE:
@@ -187,6 +192,10 @@ const Handler = (
 
       break;
     case CCODES.FINISHED_CHECKING_CHANGES:
+      console.warn('Finished Syncing Local Changes', {
+        RepoInfo: Repositories[response.data.RepoID],
+      });
+
       setCheckingOperationChanges({
         RepoID: response.data.RepoID,
         type: 'onlineChanges',
@@ -199,37 +208,14 @@ const Handler = (
         trackingInfo: response.data.trackingInfo,
       });
 
-      setTimeout(() => {
-        const {
-          UserRepoData: { info },
-        } = ReduxStore.getState();
-        checkLocalChanges(response.data.RepoID, info[response.data.RepoID]);
-      }, 1000 * 60 * 60);
-      break;
-
-    case CCODES.FAILED_CHECKING_CHANGES:
-      setCheckingOperationChanges({
-        RepoID: response.data.RepoID,
-        type: 'onlineChanges',
-        value: false,
-      });
-
-      setTimeout(() => {
-        const {
-          UserRepoData: { info },
-        } = ReduxStore.getState();
-        checkLocalChanges(response.data.RepoID, info[response.data.RepoID]);
-      }, 1000 * 60 * 60);
-
-      ShowError(
-        'Failed to retrieve online changes',
-        "please make sure you're online"
-      );
-
-      log.error(TAG, 'Failed to retrieve google drive changes');
+      scheduleSync(response.data.RepoID);
       break;
 
     case CCODES.FINISHED_CHECKING_LOCAL_CHANGES:
+      console.warn('Finished Getting Google Drive Changes', {
+        RepoInfo: Repositories[response.data.RepoID],
+      });
+
       setCheckingOperationChanges({
         RepoID: response.data.RepoID,
         type: 'localChanges',
@@ -244,7 +230,34 @@ const Handler = (
       checkGDriveChanges(response.data.RepoID, repoData);
       break;
 
+    case CCODES.FAILED_CHECKING_CHANGES:
+      console.error('Failed Getting Google Drive Changes', {
+        RepoInfo: Repositories[response.data.RepoID],
+        error: response.exception,
+      });
+
+      setCheckingOperationChanges({
+        RepoID: response.data.RepoID,
+        type: 'onlineChanges',
+        value: false,
+      });
+
+      scheduleSync(response.data.RepoID);
+
+      ShowError(
+        'Failed to retrieve online changes',
+        "please make sure you're online"
+      );
+
+      log.error(TAG, 'Failed to retrieve google drive changes');
+      break;
+
     case CCODES.FAILED_CHECKING_LOCAL_CHANGES:
+      console.error('Failed Syncing Local Changes', {
+        RepoInfo: Repositories[response.data.RepoID],
+        error: response.exception,
+      });
+
       setCheckingOperationChanges({
         RepoID: response.data.RepoID,
         type: 'localChanges',
@@ -256,12 +269,7 @@ const Handler = (
         'please make sure no one is currenctly using the repository'
       );
 
-      setTimeout(() => {
-        const {
-          UserRepoData: { info },
-        } = ReduxStore.getState();
-        checkLocalChanges(response.data.RepoID, info[response.data.RepoID]);
-      }, 1000 * 60 * 60);
+      scheduleSync(response.data.RepoID);
 
       log.error(TAG, 'Failed to retrieve local changes');
       break;

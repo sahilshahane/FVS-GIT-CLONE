@@ -322,60 +322,65 @@ def checkLocalChanges(CCODES, APP_SETTINGS, DIR_PATH):
   NEW_FOLDERS_QUERY = '''
                       INSERT INTO folders (folderName,folderPath,folder_id)
                                           SELECT 
-                                          folderName,
-                                          folderPath,
-                                          folder_id 
-                                          FROM temp_folders 
-                                          EXCEPT 
-                                          SELECT 
-                                          folderName,
-                                          folderPath,
-                                          folder_id 
-                                          FROM folders
+                                          temp_folders.folderName,
+                                          NEW_TABLE.folderPath,
+                                          NEW_TABLE.folder_id FROM  
+                                            (
+                                            SELECT 
+                                              folderPath,
+                                              folder_id 
+                                              FROM temp_folders 
+                                              EXCEPT 
+                                              SELECT 
+                                              folderPath,
+                                              folder_id 
+                                              FROM folders
+                                            ) AS NEW_TABLE, temp_folders
+                                            WHERE NEW_TABLE.folder_id = temp_folders.folder_id
                     '''
 
   DELETED_FOLDERS_QUERY = '''
     UPDATE folders SET deleted = 1 FROM ( 
                                           SELECT 
-                                          folders.folderName,
+                                          folders.folderPath,
                                           folders.folder_id
                                           FROM 
                                           (
                                             SELECT 
-                                            folderName, 
+                                            folderPath, 
                                             folder_id FROM folders 
                                               EXCEPT 
                                             SELECT 
-                                            folderName, 
+                                            folderPath, 
                                             folder_id FROM temp_folders
                                           ) AS genTab1 
 
                                           LEFT JOIN folders 
-                                          ON folders.folderName = genTab1.folderName 
+                                          ON folders.folderPath = genTab1.folderPath 
                                           AND folders.folder_id = genTab1.folder_id
                                           WHERE folders.deleted IS NULL
                                         ) AS genTab2 
-          WHERE folders.folderName = genTab2. folderName AND folders.folder_id = genTab2.folder_id 
+          WHERE folders.folderPath = genTab2.folderPath AND folders.folder_id = genTab2.folder_id 
   '''
 
   data = {"FILES":dict(),"FOLDERS":dict()}
   DB_CURSOR = DB_CONNECTION.cursor()
-
+  # output(data)
   DB_CURSOR = DB_CURSOR.execute(MODIFIED_FILES_QUERY)
   data["FILES"]["MODIFIED"] = DB_CURSOR.rowcount
-
+  # output(data)
   DB_CURSOR = DB_CURSOR.execute(NEW_FILES_QUERY)
   data["FILES"]["NEW"] = DB_CURSOR.rowcount
-
+  # output(data)
   DB_CURSOR = DB_CURSOR.execute(DELETED_FILES_QUERY)
   data["FILES"]["DELETED"] = DB_CURSOR.rowcount
-
+  # output(data)
   DB_CURSOR = DB_CURSOR.execute(NEW_FOLDERS_QUERY)
   data["FOLDERS"]["NEW"] = DB_CURSOR.rowcount
-
+  # output(data)
   DB_CURSOR = DB_CURSOR.execute(DELETED_FOLDERS_QUERY)
   data["FOLDERS"]["DELETED"] = DB_CURSOR.rowcount
-
+  # output(data)
   # DB_CURSOR = DB_CURSOR.execute("DELETE FROM temp_files").execute("DELETE FROM temp_folders") # CLEAR CURRENT SESSION DATA
   DB_CURSOR.close()
   DB_CONNECTION.commit()

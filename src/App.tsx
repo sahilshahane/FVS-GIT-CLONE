@@ -12,8 +12,6 @@ import { LOAD_ONCE_AFTER_APP_READY } from './modules/backgroundTasks';
 const { Content } = Layout;
 
 const App = () => {
-  log.info('Rendering App_Inner.tsx');
-
   useEffect(() => {
     LOAD_ONCE_AFTER_APP_READY();
   }, []);

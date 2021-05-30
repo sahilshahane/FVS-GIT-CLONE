@@ -15,9 +15,7 @@ interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   submenu?: DarwinMenuItemConstructorOptions[] | Menu;
 }
 
-const onReload = () => {
-  ipcMain.emit('restart-python-server');
-};
+const onReload = () => {};
 
 export default class MenuBuilder {
   mainWindow: BrowserWindow;

@@ -13,17 +13,19 @@ import Reduxstore from '../Redux/store';
 import { createRepoFoldersInDrive } from './GoogleDrive';
 import { InitializeDatabase } from './Database';
 import { removeRepository, trackingInfo_ } from '../Redux/UserRepositorySlicer';
-import { checkLocalChanges } from './changes';
+import { checkLocalChanges, SyncInProgress } from './changes';
 import ShowError from './ErrorPopup_dialog';
 
 const TAG = 'backgroundTasks.ts > ';
 
 export const PerformInitialTask = () => {
-  const { UserRepoData } = Reduxstore.getState();
+  const {
+    UserRepoData: { info: Repositories },
+  } = Reduxstore.getState();
 
   // eslint-disable-next-line consistent-return
-  Object.keys(UserRepoData.info).forEach((RepoID) => {
-    const { displayName, trackingInfo } = UserRepoData.info[RepoID];
+  Object.keys(Repositories).forEach((RepoID) => {
+    const { displayName, trackingInfo } = Repositories[RepoID];
 
     try {
       // CREATE DATABASE CONNECTION
@@ -39,7 +41,16 @@ export const PerformInitialTask = () => {
     // CREATE FOLDERS IN DRIVE FOR FIRST TIME
     if (!trackingInfo) createRepoFoldersInDrive(RepoID, displayName);
     // ELSE CHECK CHANGES IN GOOGLE DRIVE
-    else checkLocalChanges(RepoID, UserRepoData.info[RepoID]);
+    else {
+      try {
+        checkLocalChanges(RepoID, Repositories[RepoID]);
+      } catch (e) {
+        if (e instanceof SyncInProgress) {
+          console.warn('Sync in Progress', Repositories[RepoID]);
+        } else
+          console.error('Caught Errors while Syncing', e, Repositories[RepoID]);
+      }
+    }
   });
 };
 

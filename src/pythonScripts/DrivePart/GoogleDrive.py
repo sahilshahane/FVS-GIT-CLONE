@@ -25,6 +25,7 @@ import pyrfc3339
 from datetime import datetime
 import math
 from utils import output
+from collections import OrderedDict
 
 CREDENTIALS = None
 service: Resource = None
@@ -420,15 +421,6 @@ def getActivities_API(activityService, repoDriveId, trackingTime):
 
         return True
 
-    def deleteAction(driveID, activity):
-        doesRestoreActionExists = CHANGES[id]["actions"].get("restore")
-        # IF THE RESTORE ACTION EXISTS, THEN DO NOT UPDATE
-        if(doesRestoreActionExists):
-            return False
-
-        # IF THE RESTORE ACTION DOES NOT EXISTS, THEN UPDATE IT
-        return True
-
     def moveAction(driveID, activity):
         parentID = activity["primaryActionDetail"]["move"]["addedParents"][0]["driveItem"]["name"][6:]
         CHANGES[id]["parents"] = parentID
@@ -436,12 +428,17 @@ def getActivities_API(activityService, repoDriveId, trackingTime):
         return True
 
     ActionFunctions = {
-        "delete": deleteAction,
         "create": createAction,
         "move": moveAction
     }
 
-    CHANGES = {}
+    CHANGES = OrderedDict()
+
+    activities = activities[::-1]
+
+    # f = open('temp1.json','wb')
+    # f.write(orjson.dumps(activities))
+    # f.close()
 
     for activity in activities:
         driveItems = activity["targets"][0]["driveItem"]
@@ -450,13 +447,7 @@ def getActivities_API(activityService, repoDriveId, trackingTime):
 
         primaryAction = next(iter(activity["primaryActionDetail"]))
 
-        if CHANGES.get(id):
-            doesActionExists = CHANGES[id]["actions"].get(primaryAction)
-
-            if(doesActionExists):
-                continue
-
-        else:
+        if not CHANGES.get(id):
             CHANGES[id] = {
                 "name": driveItems["title"],
                 "mimeType": driveItems["mimeType"],
@@ -536,6 +527,10 @@ def checkChanges(CCODES, repoDriveId, lastCheckedTime):
             request_count += 1
 
     batch.execute()
+    
+    # f = open('temp2.json','wb')
+    # f.write(orjson.dumps(ACTIVITIES_API_RESPONSE))
+    # f.close()
 
     return {
         "changes": ACTIVITIES_API_RESPONSE,

@@ -222,24 +222,25 @@ class FolderChange extends BasicChange {
   constructor(RepoID: string, driveID: string, data: DriveChange) {
     super(data, driveID, RepoID);
 
-    if (!this.parentPath) {
-      console.log(this.getInfo());
-    }
-
     const { folderPath } = getFolderPathFromDB({
       RepoID: this.RepoID,
       driveID: this.driveID,
     });
 
-    if (!folderPath)
+    if (!folderPath) {
+      console.log(this.parentPath, this.getInfo());
       this.folderPath = path.join(
         this.parentPath,
         this.sanitizeName(this.data.name)
       );
-    else this.folderPath = folderPath;
+    } else {
+      this.folderPath = folderPath;
+    }
   }
 
   create = () => {
+    console.warn('PERFORMING FOLDER CREATE OEPRATION', this.getInfo());
+
     fs.ensureDirSync(this.folderPath);
 
     addFolderRepoDB(this.RepoID, {
@@ -250,6 +251,8 @@ class FolderChange extends BasicChange {
   };
 
   delete = () => {
+    console.warn('PERFORMING FOLDER DELETE OEPRATION', this.getInfo());
+
     if (this.isRootFolder) {
       removeRepositoryDialog({ RepoID: this.RepoID });
 
@@ -268,6 +271,8 @@ class FolderChange extends BasicChange {
   };
 
   restore = () => {
+    console.warn('PERFORMING FOLDER RESTORE OEPRATION', this.getInfo());
+
     this.create();
   };
 
@@ -285,6 +290,12 @@ class FolderChange extends BasicChange {
         this.sanitizeName(rename.newTitle)
       );
 
+      console.warn('PERFORMING FOLDER RENAME OEPRATION', {
+        ...this.getInfo(),
+        oldFolderPath,
+        newFolderPath,
+      });
+
       renameFolderNamefromDB({
         RepoID: this.RepoID,
         driveID: this.driveID,
@@ -294,34 +305,34 @@ class FolderChange extends BasicChange {
       });
 
       fs.renameSync(oldFolderPath, newFolderPath);
+      this.folderPath = newFolderPath;
     }
   };
 
   getInfo = () =>
     JSON.parse(
-      JSON.stringify({ data: this.data, folderPath: this.folderPath })
+      JSON.stringify({
+        data: this.data,
+        driveID: this.driveID,
+        folderPath: this.folderPath,
+        parentPath: this.parentPath,
+        isRootFolder: this.isRootFolder,
+        parentFolderID: this.parentFolderID,
+      })
     );
 
   perform = () => {
     const { actions } = this.data;
 
     if (actions?.delete) {
-      log.warn(TAG, 'PERFORMING FOLDER DELETE OEPRATION', this.getInfo());
-
       this.delete();
     } else if (actions?.create?.new) {
-      log.warn(TAG, 'PERFORMING FOLDER CREATE OEPRATION', this.getInfo());
-
       this.create();
     } else if (actions?.restore) {
-      log.warn(TAG, 'PERFORMING FOLDER RESTORE OEPRATION', this.getInfo());
-
       this.restore();
     }
 
     if (actions?.rename) {
-      log.warn(TAG, 'PERFORMING FOLDER RENAME OEPRATION', this.getInfo());
-
       this.rename();
     }
   };
@@ -338,15 +349,14 @@ class FileChange extends BasicChange {
       driveID: this.driveID,
     });
 
-    if (!fileName)
+    if (!fileName) {
+      console.log(this.parentPath, this.getInfo());
       this.filePath = path.join(this.parentPath, this.sanitizeName(data.name));
-    else this.filePath = path.join(this.parentPath, fileName);
-
-    switch (this.data.mimeType) {
-      case 'application/vnd.google-apps.document':
-        this.filePath += '.docx';
-        break;
+    } else {
+      this.filePath = path.join(this.parentPath, fileName);
     }
+
+    this.filePath = this.getMimePath(this.filePath);
   }
 
   perform = () => {
@@ -379,7 +389,28 @@ class FileChange extends BasicChange {
   };
 
   getInfo = () =>
-    JSON.parse(JSON.stringify({ data: this.data, filePath: this.filePath }));
+    JSON.parse(
+      JSON.stringify({
+        data: this.data,
+        filePath: this.filePath,
+        driveID: this.driveID,
+        parentPath: this.parentPath,
+        isRootFolder: this.isRootFolder,
+        parentFolderID: this.parentFolderID,
+      })
+    );
+
+  getMimePath = (filePath: string) => {
+    let newFilePath = filePath;
+
+    switch (this.data.mimeType) {
+      case 'application/vnd.google-apps.document':
+        if (newFilePath.search(/.docx$/) == -1) newFilePath += '.docx';
+        break;
+    }
+
+    return newFilePath;
+  };
 
   rename = () => {
     const {
@@ -387,11 +418,13 @@ class FileChange extends BasicChange {
     } = this.data;
 
     if (rename) {
-      const newFilePath = path.resolve(
+      let newFilePath = path.resolve(
         this.filePath,
         '..',
         this.sanitizeName(rename.newTitle)
       );
+
+      newFilePath = this.getMimePath(newFilePath);
 
       renameFileNamefromDB({
         RepoID: this.RepoID,
@@ -400,12 +433,19 @@ class FileChange extends BasicChange {
       });
 
       fs.renameSync(this.filePath, newFilePath);
+
+      this.filePath = newFilePath;
+      this.setFileModifiedTime();
     }
+  };
+
+  setFileModifiedTime = () => {
+    fs.lutimesSync(this.filePath, 0, this.data.timestamp);
   };
 
   create = () => {
     fs.ensureFileSync(this.filePath);
-
+    this.setFileModifiedTime();
     addFileRepoDB(this.RepoID, {
       driveID: this.driveID,
       folder_id: this.parentFolderID,
@@ -431,6 +471,8 @@ class FileChange extends BasicChange {
       type: 'ADD',
       modified_time: this.data.timestamp,
     });
+
+    this.setFileModifiedTime();
   };
 
   restore = () => {
@@ -467,7 +509,16 @@ export const performGDriveChanges = ({
   changes,
   trackingInfo,
 }: PerformGDriveChangesIF) => {
-  const failedUpdates: { driveID: string; error: any }[] = [];
+  const failedUpdates: {
+    driveID: string;
+    error: any;
+    data: any;
+  }[] = [];
+
+  // fs.writeJSONSync(
+  //   'data.json',
+  //   getSortedChanges(changes).map((driveID) => changes[driveID])
+  // );
 
   getSortedChanges(changes).every((driveID) => {
     try {
@@ -485,7 +536,13 @@ export const performGDriveChanges = ({
         })
       );
     } catch (error) {
-      failedUpdates.push({ driveID, error });
+      failedUpdates.push({
+        driveID,
+        error,
+        data: {
+          ...getChangeObject(RepoID, driveID, changes[driveID]).getInfo(),
+        },
+      });
       if (error instanceof RootFolderDeleted) return false;
       log.error(TAG, 'Failed Performing Changes', error);
     }
