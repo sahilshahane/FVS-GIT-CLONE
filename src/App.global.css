@@ -129,9 +129,18 @@ body {
   padding-left: 10px;
   padding-top: 7px;
   margin: 2px;
+  opacity: 80%;
+
+  transition: 0.5s;
+  margin: 10px;
+  background: linear-gradient(90deg, var(--c1, #76bdff), var(--c2, #000000) 51%, var(--c1, #f85e5e)) var(--x, 0)/ 200%;
+  color: rgb(0, 0, 0);
+
 }
 .folder-ui:hover {
-  background-color: rgb(18, 18, 18);
+  --x: 100%;
+  /* background-color: rgb(18, 18, 18);
+  opacity: 100%; */
 }
 
 .breadcrumb {
@@ -143,6 +152,7 @@ body {
   font-size: 18px;
   background-color: rgb(20, 20, 20);
   padding: 5px 15px;
+  opacity: 70%;
 }
 
 .ignore-btn {
@@ -241,4 +251,21 @@ body {
 .Image-Align-google {
   height: 20px;
   width: 20px;
+}
+.dropdown-menu{
+  height: 200;
+  line-height: 200px;
+}
+.radial-gradient {
+  position:fixed;
+  top:0px;
+  left:0px;
+  height:100%;
+  width:100%;
+
+  /*Fallback if gradeints don't work */
+  background: #000000;
+  /*Linear gradient... */
+  background:
+  linear-gradient(-60deg, var(--c1, #76bdff) , var(--c2, #000000) 50%, var(--c1, #f85e5e)) var(--x, 0)/ 100%;
 }

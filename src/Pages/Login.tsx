@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { CCODES, sendSchedulerTask } from '../modules/get_AppData';
 import { store } from '../Redux/store';
 import GoogleDrivePNG from '../../assets/icons/googledriveicon.png';
+import ExampleLOGO from '../../assets/icons/ExampleLOGO.png';
 import Particles from 'react-particles-js';
 import particlesConfig from 'C:/FVS-GIT-CLONE/src/configParticles.js'
 
@@ -43,6 +44,7 @@ const Login = () => {
   }, [isGoogleLoggedIN]);
   return (
     <div
+    className = "radial-gradient"
       style={{
         width: '100%',
         height: '100%',
@@ -56,7 +58,7 @@ const Login = () => {
  <div style={{position: 'absolute'}}>
 
       <Col
-        className="component-bg"
+        // className="component-bg"
 
 
         style={{
@@ -65,6 +67,7 @@ const Login = () => {
         alignItems: 'center'
         }}
       >
+        {/* <img src={ExampleLOGO} className="Image-Align-google"/> */}
         <Divider className="Divider-align"/>
          <div className="space-align-block">
         <Space align="center">

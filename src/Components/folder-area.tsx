@@ -8,6 +8,15 @@ import path from 'path';
 import { File, Folder, Repository } from './folder-area-ui';
 import LiveDirView from '../modules/Live-Directory-View';
 import { store } from '../Redux/store';
+import { Menu, Dropdown } from 'antd';
+
+const menu = (
+  <Menu>
+    <Menu.Item key="1">1st menu item</Menu.Item>
+    <Menu.Item key="2">2nd menu item</Menu.Item>
+    <Menu.Item key="3">3rd menu item</Menu.Item>
+  </Menu>
+);
 
 const ALL_Repositories = () => {
   const repositoryData = useSelector((state: store) => {
@@ -98,13 +107,20 @@ const DisplayArea = () => {
   });
 
   return (
+
+
     <div>
+      <Dropdown overlay={menu} trigger={['contextMenu']}>
+        <div>
       {isRepositorySelected ? (
         <Selected_Repository_Directory />
       ) : (
         <ALL_Repositories />
       )}
+      </div>
+      </Dropdown>
     </div>
+
   );
 };
 
