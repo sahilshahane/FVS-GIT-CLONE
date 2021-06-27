@@ -2,6 +2,7 @@
 import log from 'electron-log';
 import fs from 'fs-extra';
 import path from 'path';
+import filenamify from 'filenamify';
 import {
   removeRepository,
   setRepositoryTrackingInfo,
@@ -28,7 +29,7 @@ import {
   updateUploadingQueue,
 } from '../Redux/SynchronizationSlicer';
 import { removeRepositoryDialog } from '../Components/remove-Repository';
-import filenamify from 'filenamify';
+
 const TAG = 'GoogleDrive.ts > ';
 
 type MimeTypes =
@@ -403,9 +404,10 @@ class FileChange extends BasicChange {
   getMimePath = (filePath: string) => {
     let newFilePath = filePath;
 
+    // eslint-disable-next-line default-case
     switch (this.data.mimeType) {
       case 'application/vnd.google-apps.document':
-        if (newFilePath.search(/.docx$/) == -1) newFilePath += '.docx';
+        if (newFilePath.search(/.docx$/) === -1) newFilePath += '.docx';
         break;
     }
 

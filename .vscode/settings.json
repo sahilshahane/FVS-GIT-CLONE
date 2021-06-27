@@ -45,6 +45,8 @@
   "python.pythonPath": "src\\pythonScripts\\.venv\\Scripts\\python.exe",
   "python.analysis.extraPaths": [
     "src/pythonScripts",
-    "src/pythonScripts/.venv/Lib/site-packages"
+    "src/pythonScripts/.venv/Lib/site-packages",
+    "src\\pythonScripts",
+    "src\\pythonScripts\\.venv\\Lib\\site-packages"
   ]
 }

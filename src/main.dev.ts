@@ -31,6 +31,38 @@ import { NotificationInfo } from './modules/GlobalHandler';
 
 const TAG = 'main.dev.ts > ';
 
+const getAppHomePath = () => {
+  if (process.env.NODE_ENV === 'development')
+    return path.join('assets', 'installation', '.usp');
+
+  return path.join(app.getPath('home'), '.usp');
+};
+
+const Error_Dialog = (title: string, message: string) => {
+  dialog.showErrorBox(title, message);
+};
+
+try {
+  if (
+    process.env.NODE_ENV !== 'development' &&
+    !fs.pathExistsSync(getAppHomePath())
+  ) {
+    const productionUSPFolder = path.join(
+      process.resourcesPath,
+      'assets',
+      'installation',
+      'production'
+    );
+    const APP_HOME_PATH = getAppHomePath();
+    fs.copySync(productionUSPFolder, APP_HOME_PATH);
+  }
+} catch (error) {
+  Error_Dialog(
+    'First Time Installation',
+    'Something went wrong while performing first time installtion'
+  );
+}
+
 export default class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
@@ -41,13 +73,6 @@ export default class AppUpdater {
 const QUIT = () => {
   // eslint-disable-next-line @typescript-eslint/no-use-before-define
   mainWindow.close();
-};
-
-const getAppHomePath = () => {
-  if (process.env.NODE_ENV === 'development')
-    return path.join('assets', 'installation', '.usp');
-
-  return path.join(app.getPath('home'), '.usp');
 };
 
 const Load_CCODES = () => {
@@ -70,9 +95,9 @@ const Load_CCODES = () => {
   return VALUE;
 };
 
-const Error_Dialog = (title: string, message: string) => {
-  dialog.showErrorBox(title, message);
-};
+// const Error_Dialog = (title: string, message: string) => {
+//   dialog.showErrorBox(title, message);
+// };
 
 let mainWindow: BrowserWindow = null;
 const CCODES = Load_CCODES();

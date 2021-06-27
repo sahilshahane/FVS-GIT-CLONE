@@ -13,7 +13,7 @@ import {
   updateDownloadingQueue,
 } from '../Redux/SynchronizationSlicer';
 import { CCODES } from './get_AppData';
-import ShowError, { ShowInfo } from './ErrorPopup_dialog';
+import ShowError, { destryAllModals, ShowInfo } from './ErrorPopup_dialog';
 import {
   saveGoogleLogin,
   saveRepositorySettings,
@@ -54,7 +54,11 @@ const Handler = (
     UserRepoData: { info: Repositories },
   } = ReduxStore.getState();
 
+  // eslint-disable-next-line default-case
   switch (response.code) {
+    case CCODES.OPEN_BROWSER:
+      ShowInfo('Opening your browser for google signin', '');
+      break;
     case CCODES.INIT_DONE:
       dispatch(
         addRepository({
@@ -191,6 +195,11 @@ const Handler = (
       });
 
       break;
+    case CCODES.GOOGLE_LOGIN_FAILED:
+      destryAllModals();
+      ShowError('Failed to login', response.exception?.msg || '');
+      break;
+
     case CCODES.FINISHED_CHECKING_CHANGES:
       console.warn('Finished Syncing Local Changes', {
         RepoInfo: Repositories[response.data.RepoID],

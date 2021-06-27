@@ -10,7 +10,7 @@ const Home = () => {
     <>
       <Navigation_Bar />
       <RepositoryArea />
-      <SyncStatus />
+      {/* <SyncStatus /> */}
     </>
   );
 };

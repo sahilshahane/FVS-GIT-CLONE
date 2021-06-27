@@ -35,9 +35,11 @@ const Login = () => {
     showWarning();
     sendSchedulerTask({ code: CCODES.START_GOOGLE_LOGIN });
   };
+
   const isGoogleLoggedIN = useSelector(
     (state: store) => state.AppSettings.cloudLoginStatus.googleDrive
   );
+
   useEffect(() => {
     if (isGoogleLoggedIN) {
       Modal.destroyAll();

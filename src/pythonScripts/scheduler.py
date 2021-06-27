@@ -32,8 +32,7 @@ os.environ["APP_HOME_PATH"] = GET_APP_FOLDER_PATH()
 os.environ["DEFAULT_REPO_FOLDER_PATH"] = ".usp"
 os.environ["DEFAULT_DB_FILE_NAME"] = "database.db"
 os.environ["DEFAULT_REPO_DATA_FILE_NAME"] = "data.json"
-os.environ["DRIVE_CHANGES_DB"] = os.path.join(
-    os.environ["APP_HOME_PATH"], 'drive_changes.db')
+os.environ["DRIVE_CHANGES_DB"] = os.path.join(os.environ["APP_HOME_PATH"], 'drive_changes.db')
 
 os.environ["TESTING_FOLDER"] = os.path.join('..', '..', "Testing")
 
@@ -233,7 +232,7 @@ TASKS_DEFINITIONS = {
 
 def addTask(task):
     # TASK_QUEUE.append(TASKS_DEFINITIONS[task.code])
-    if(not os.environ['development']):
+    if(os.environ['isGUI']):
         # ASYNC
         threading.Thread(target=defaultWrapper, args=[
                         TASKS_DEFINITIONS[task["code"]], task]).start()
@@ -247,7 +246,7 @@ def aloneMain():
     import tests
 
     # addTask(tests.startGoogleLogin())
-    addTask(tests.initDir())
+    # addTask(tests.initDir())
     # addTask(tests.creatFoldersInDrive(repoRootDriveID=))
     # addTask(tests.checkDriveChanges(repoRootDriveID=))
     # addTask(tests.checkLocalChanges())

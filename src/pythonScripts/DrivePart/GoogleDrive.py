@@ -121,8 +121,7 @@ def getActivityService(CCODES):
     return ActivityService
 
 def startLogin(CCODES):
-    output({"code": CCODES["GOOGLE_LOGIN_STARTED"],
-           "msg": "Google Login Started"})
+    output({"code": CCODES["GOOGLE_LOGIN_STARTED"], "msg": "Google Login Started"})
 
     try:
         SCOPES = ["https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/drive.appdata",
@@ -135,8 +134,7 @@ def startLogin(CCODES):
         host = "localhost"
         port = 8000
 
-        flow = InstalledAppFlow.from_client_secrets_file(
-            CREDS_FILE_PATH, SCOPES)
+        flow = InstalledAppFlow.from_client_secrets_file(CREDS_FILE_PATH, SCOPES)
         flow.redirect_uri = f"http://{host}:{port}"
         auth_url, _ = flow.authorization_url(prompt='consent')
 
@@ -160,8 +158,7 @@ def startLogin(CCODES):
 
         # Note: using https here because oauthlib is very picky that
         # OAuth 2.0 should only occur over https.
-        authorization_response = wsgi_app.last_request_uri.replace(
-            'http', 'https')
+        authorization_response = wsgi_app.last_request_uri.replace('http', 'https')
         # output({"code":CCODES["GOOGLE_LOGIN_URL"],"msg":"Google Login URL","data":{"url":authorization_response}})
 
         flow.fetch_token(authorization_response=authorization_response)
@@ -170,10 +167,10 @@ def startLogin(CCODES):
 
         return getService(CCODES, creds=creds)
     except OSError as e:
-        output({"code": CCODES["INTERNET_CONNECTION_ERROR"], "msg": str(e)})
-        output({"code": CCODES["GOOGLE_LOGIN_FAILED"], "msg": str(e)})
+        # output({"code": CCODES["INTERNET_CONNECTION_ERROR"], "exception" : { "msg": str(e), "type" : e.__class__.__name__ }})
+        output({"code": CCODES["GOOGLE_LOGIN_FAILED"],"exception" : { "msg": str(e), "type" : e.__class__.__name__ }})
     except Exception as e:
-        output({"code": CCODES["GOOGLE_LOGIN_FAILED"], "msg": str(e)})
+        output({"code": CCODES["GOOGLE_LOGIN_FAILED"],"exception" : { "msg": str(e), "type" : e.__class__.__name__ }})
 
 def getUSERInfo(CCODES):
     service = getService(CCODES)
@@ -298,7 +295,7 @@ def uploadFile(CCODES, RepoID, fileName, filePath, driveID, parentDriveID):
         driveID = response['id']
     except Exception as err:
         output("!!!!!!!!!!!!!!!!!!UPDATING FILE!!!!!!!!!!!!!!!!!")
-        
+
         media = MediaFileUpload(filePath, resumable=True)
         response = service.files().update(
             media_body=media,
@@ -451,7 +448,7 @@ def getActivities_API(activityService, repoDriveId, trackingTime):
                 "actions": {},
                 "timestamp": math.ceil(pyrfc3339.parse(activity["timestamp"]).timestamp()) * 1000
             }
-            
+
         actionFunction = ActionFunctions.get(primaryAction, lambda *args: True)
 
         shouldUpdateActions = actionFunction(id, activity)
@@ -524,7 +521,7 @@ def checkChanges(CCODES, repoDriveId, lastCheckedTime):
             request_count += 1
 
     batch.execute()
-    
+
     # f = open('temp2.json','wb')
     # f.write(orjson.dumps(ACTIVITIES_API_RESPONSE))
     # f.close()

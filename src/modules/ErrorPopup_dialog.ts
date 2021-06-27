@@ -16,4 +16,8 @@ export const ShowInfo = (title: string = '', message: string = 'null') => {
   Modal.info(data);
 };
 
+export const destryAllModals = () => {
+  Modal.destroyAll();
+};
+
 export default ShowError;
